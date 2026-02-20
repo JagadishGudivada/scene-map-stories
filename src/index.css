@@ -176,4 +176,29 @@
     color: hsl(270 60% 70%);
     border: 1px solid hsl(270 40% 50% / 0.3);
   }
+
+  /* Leaflet dark theme overrides */
+  .leaflet-popup-content-wrapper {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 8px !important;
+    padding: 0 !important;
+  }
+  .leaflet-popup-tip {
+    background: hsl(0 0% 8%) !important;
+  }
+  .leaflet-popup-content {
+    margin: 0 !important;
+  }
+  .sarevista-popup .leaflet-popup-content-wrapper {
+    background: transparent !important;
+  }
+  .leaflet-control-zoom a {
+    background: hsl(0 0% 8%) !important;
+    color: hsl(40 33% 94%) !important;
+    border-color: hsl(0 0% 14%) !important;
+  }
+  .leaflet-control-zoom a:hover {
+    background: hsl(0 0% 12%) !important;
+  }
 }

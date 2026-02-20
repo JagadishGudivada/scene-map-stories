@@ -1,7 +1,12 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Bookmark, MapPin, Star } from "lucide-react";
 import type { Title } from "@/lib/mockData";
+
+function slugify(title: string, year: number) {
+  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
+}
 
 interface CinemaCardProps {
   title: Title;
@@ -25,6 +30,7 @@ export default function CinemaCard({ title, size = "md", delay = 0 }: CinemaCard
   };
 
   return (
+    <Link to={`/title/${slugify(title.title, title.year)}`}>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -94,5 +100,6 @@ export default function CinemaCard({ title, size = "md", delay = 0 }: CinemaCard
         </div>
       </div>
     </motion.div>
+    </Link>
   );
 }
