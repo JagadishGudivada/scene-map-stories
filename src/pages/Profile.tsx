@@ -69,16 +69,16 @@ export default function Profile() {
                 onClick={() => setFollowing(!following)}
                 className={`h-9 px-5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                   following
-                    ? "glass border border-white/10 text-foreground hover:border-red-400/30 hover:text-red-400"
+                    ? "glass border border-border text-foreground hover:border-red-400/30 hover:text-red-400"
                     : "bg-gradient-amber text-charcoal hover:opacity-90 shadow-amber"
                 }`}
               >
                 {following ? "Following" : "Follow"}
               </button>
-              <button className="h-9 w-9 rounded-xl glass border border-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              <button className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                 <Share2 className="w-4 h-4" />
               </button>
-              <button className="h-9 w-9 rounded-xl glass border border-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              <button className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
                 <Settings className="w-4 h-4" />
               </button>
             </div>
@@ -94,7 +94,7 @@ export default function Profile() {
           </div>
 
           {/* Stats Row */}
-          <div className="flex items-center gap-0 mt-5 glass rounded-2xl border border-white/8 divide-x divide-white/5 overflow-hidden">
+          <div className="flex items-center gap-0 mt-5 glass rounded-2xl border border-border divide-x divide-border overflow-hidden">
             {[
               { label: "Titles Saved", value: user.titlesSaved, icon: Bookmark, color: "text-amber" },
               { label: "Locations", value: user.locationsMapped, icon: MapPin, color: "text-teal" },
@@ -103,7 +103,7 @@ export default function Profile() {
             ].map((stat) => (
               <div
                 key={stat.label}
-                className="flex-1 flex flex-col items-center py-4 px-2 hover:bg-white/5 transition-colors cursor-pointer"
+                className="flex-1 flex flex-col items-center py-4 px-2 hover:bg-muted/50 transition-colors cursor-pointer"
               >
                 <stat.icon className={`w-4 h-4 mb-1.5 ${stat.color}`} />
                 <span className={`text-xl font-bold font-serif ${stat.color}`}>{stat.value}</span>
@@ -114,7 +114,7 @@ export default function Profile() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-white/5 mb-6 overflow-x-auto no-scrollbar">
+        <div className="flex border-b border-border mb-6 overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.id}
@@ -148,7 +148,7 @@ export default function Profile() {
                 <LeafletMap pins={allMapPins} className="h-80" />
                 <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {mockTitles.slice(0, 3).map((t, i) => (
-                    <div key={t.id} className="glass rounded-xl p-3 border border-white/8 flex items-center gap-3">
+                    <div key={t.id} className="glass rounded-xl p-3 border border-border flex items-center gap-3">
                       <img src={t.coverImage} className="w-10 h-10 rounded-lg object-cover" alt={t.title} />
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-foreground truncate">{t.title}</p>

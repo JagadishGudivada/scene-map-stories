@@ -81,11 +81,11 @@ export default function Explore() {
               onFocus={() => setSearchFocused(true)}
               onBlur={() => setSearchFocused(false)}
               placeholder="Search titles, locations, users, lists..."
-              className="w-full h-14 pl-12 pr-24 rounded-2xl bg-card text-foreground text-sm border border-white/10 outline-none placeholder:text-muted-foreground transition-all"
+              className="w-full h-14 pl-12 pr-24 rounded-2xl bg-card text-foreground text-sm border border-border outline-none placeholder:text-muted-foreground transition-all"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="p-1.5 rounded-lg hover:bg-white/5">
+                <button onClick={() => setSearchQuery("")} className="p-1.5 rounded-lg hover:bg-muted/50">
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
@@ -94,7 +94,7 @@ export default function Explore() {
                 className={`p-2 rounded-xl transition-all ${
                   showFilters || hasActiveFilters
                     ? "bg-amber/10 text-amber border border-amber/30"
-                    : "glass border border-white/10 text-muted-foreground hover:text-foreground"
+                    : "glass border border-border text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <SlidersHorizontal className="w-4 h-4" />
@@ -112,7 +112,7 @@ export default function Explore() {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden mb-6"
             >
-              <div className="glass rounded-2xl p-5 border border-white/10 space-y-4">
+              <div className="glass rounded-2xl p-5 border border-border space-y-4">
                 {/* Media Type */}
                 <FilterRow label="Type" options={mediaTypes} selected={selectedType} onSelect={setSelectedType} />
                 <FilterRow label="Genre" options={genres} selected={selectedGenre} onSelect={setSelectedGenre} />
@@ -140,7 +140,7 @@ export default function Explore() {
               <button
                 key={t.tag}
                 onClick={() => setSearchQuery(t.tag.replace("#", ""))}
-                className="glass rounded-full px-4 py-2 border border-white/8 text-sm text-foreground hover:border-amber/30 hover:text-amber transition-all group"
+                className="glass rounded-full px-4 py-2 border border-border text-sm text-foreground hover:border-amber/30 hover:text-amber transition-all group"
               >
                 <span className="text-amber group-hover:text-amber">{t.tag}</span>
                 <span className="text-muted-foreground ml-1.5 text-xs">{t.count}</span>
@@ -169,7 +169,7 @@ export default function Explore() {
             <h2 className="font-serif text-2xl text-foreground">
               {searchQuery || hasActiveFilters ? "Results" : "All Titles"}
             </h2>
-            <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-white/10">
+            <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-border">
               {filteredTitles.length}
             </span>
           </div>
@@ -181,7 +181,7 @@ export default function Explore() {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 glass rounded-2xl border border-white/10">
+            <div className="text-center py-16 glass rounded-2xl border border-border">
               <p className="text-muted-foreground text-sm">No titles match your filters</p>
               <button onClick={clearFilters} className="mt-3 text-amber text-sm hover:underline">
                 Clear filters
@@ -216,7 +216,7 @@ function FilterRow({
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
               selected === opt
                 ? "bg-amber/15 text-amber border border-amber/30"
-                : "bg-white/5 text-muted-foreground border border-white/5 hover:border-white/15 hover:text-foreground"
+                : "bg-muted/50 text-muted-foreground border border-border hover:border-border hover:text-foreground"
             }`}
           >
             {opt}

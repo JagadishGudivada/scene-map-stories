@@ -116,7 +116,7 @@ export default function Index() {
               <button className="px-8 py-3 rounded-xl bg-gradient-amber text-charcoal font-bold hover:opacity-90 transition-opacity shadow-amber">
                 Create Free Account
               </button>
-              <button className="px-8 py-3 rounded-xl glass border border-white/10 text-foreground font-medium hover:glass-hover transition-all">
+              <button className="px-8 py-3 rounded-xl glass border border-border text-foreground font-medium hover:glass-hover transition-all">
                 Explore First
               </button>
             </div>

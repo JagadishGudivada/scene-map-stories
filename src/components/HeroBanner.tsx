@@ -101,7 +101,7 @@ export default function HeroBanner() {
               <button className="px-5 py-2.5 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:opacity-90 transition-opacity shadow-amber">
                 Explore Locations
               </button>
-              <button className="px-5 py-2.5 rounded-xl glass text-foreground font-medium text-sm hover:glass-hover transition-all border border-white/10">
+              <button className="px-5 py-2.5 rounded-xl glass text-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
                 Save to Map
               </button>
             </div>
@@ -130,7 +130,7 @@ export default function HeroBanner() {
             key={i}
             onClick={() => go(i)}
             className={`rounded-full transition-all duration-300 ${
-              i === current ? "w-6 h-2 bg-amber" : "w-2 h-2 bg-white/30 hover:bg-white/50"
+              i === current ? "w-6 h-2 bg-amber" : "w-2 h-2 bg-foreground/30 hover:bg-foreground/50"
             }`}
           />
         ))}

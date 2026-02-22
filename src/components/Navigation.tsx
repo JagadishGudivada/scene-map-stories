@@ -26,7 +26,7 @@ export default function Navigation() {
     <>
       {/* Desktop/Tablet Top Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 h-16">
-        <div className="glass border-b border-white/5 h-full">
+        <div className="glass border-b border-border/50 h-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -47,7 +47,7 @@ export default function Navigation() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                     location.pathname === link.href
                       ? "bg-muted text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
                 >
                   <link.icon className="w-4 h-4" />
@@ -73,7 +73,7 @@ export default function Navigation() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search titles, locations, users..."
-                      className="w-full h-9 pl-9 pr-9 rounded-lg bg-muted text-sm text-foreground placeholder:text-muted-foreground border border-white/10 outline-none focus:border-amber/50 transition-colors"
+                      className="w-full h-9 pl-9 pr-9 rounded-lg bg-muted text-sm text-foreground placeholder:text-muted-foreground border border-border outline-none focus:border-amber/50 transition-colors"
                     />
                     <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <button
@@ -88,7 +88,7 @@ export default function Navigation() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     onClick={() => setSearchOpen(true)}
-                    className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
                   >
                     <Search className="w-4 h-4" />
                   </motion.button>
@@ -98,14 +98,14 @@ export default function Navigation() {
               {/* Theme Toggle */}
               <button
                 onClick={toggleTheme}
-                className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
                 aria-label="Toggle theme"
               >
                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
               {/* Notifications */}
-              <button className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all relative">
+              <button className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all relative">
                 <Bell className="w-4 h-4" />
                 <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber border-2 border-background" />
               </button>
@@ -135,7 +135,7 @@ export default function Navigation() {
       </nav>
 
       {/* Mobile Bottom Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-white/5 pb-safe">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 pb-safe">
         <div className="h-16 flex items-center justify-around px-2">
           {mobileLinks.map((link) => {
             const isActive = location.pathname === link.href;
