@@ -19,7 +19,7 @@ export default function PopularLocations() {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.05 }}
-            className="group flex items-center gap-2 px-4 py-2.5 rounded-full glass border border-white/10 hover:border-amber/40 hover:bg-amber/5 transition-all duration-200"
+            className="group flex items-center gap-2 px-4 py-2.5 rounded-full glass border border-border hover:border-amber/40 hover:bg-amber/5 transition-all duration-200"
           >
             <span className="text-base leading-none">{loc.country}</span>
             <span className="text-sm font-medium text-foreground">{loc.name}</span>

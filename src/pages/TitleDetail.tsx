@@ -54,7 +54,7 @@ export default function TitleDetail() {
         {/* Back button */}
         <Link
           to="/"
-          className="absolute top-20 left-4 sm:left-8 z-10 glass rounded-xl p-2.5 border border-white/10 text-foreground hover:bg-white/10 transition-colors"
+          className="absolute top-20 left-4 sm:left-8 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
         </Link>
@@ -86,7 +86,7 @@ export default function TitleDetail() {
               {/* Genre tags */}
               <div className="flex flex-wrap gap-2 mb-5">
                 {title.genres.map((g) => (
-                  <span key={g} className="glass rounded-full px-3 py-1 text-xs text-foreground border border-white/10">
+                  <span key={g} className="glass rounded-full px-3 py-1 text-xs text-foreground border border-border">
                     {g}
                   </span>
                 ))}
@@ -97,7 +97,7 @@ export default function TitleDetail() {
                 <button className="h-11 px-6 rounded-xl bg-gradient-amber text-charcoal font-bold text-sm hover:opacity-90 transition-opacity shadow-amber flex items-center gap-2">
                   <Bookmark className="w-4 h-4" /> Save to Map
                 </button>
-                <button className="h-11 px-6 rounded-xl glass border border-white/10 text-foreground font-medium text-sm hover:bg-white/10 transition-all flex items-center gap-2">
+                <button className="h-11 px-6 rounded-xl glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" /> I've Been Here
                 </button>
               </div>
@@ -112,7 +112,7 @@ export default function TitleDetail() {
           <div className="flex items-center gap-3 mb-5">
             <MapPin className="w-5 h-5 text-amber" />
             <h2 className="font-serif text-2xl text-foreground">Filming Locations</h2>
-            <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-white/10">
+            <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-border">
               {pins.length} pinned
             </span>
           </div>
@@ -128,7 +128,7 @@ export default function TitleDetail() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.06 }}
-                className="glass rounded-xl p-4 border border-white/8 flex items-center gap-3 group cursor-pointer hover:border-amber/20 transition-all"
+                className="glass rounded-xl p-4 border border-border flex items-center gap-3 group cursor-pointer hover:border-amber/20 transition-all"
               >
                 <div className={`w-8 h-8 rounded-lg flex items-center justify-center badge-${title.type.toLowerCase()}`}>
                   <MapPin className="w-4 h-4" />
@@ -155,7 +155,7 @@ export default function TitleDetail() {
               ))}
             </div>
           ) : (
-            <div className="glass rounded-2xl border border-white/10 p-10 text-center">
+            <div className="glass rounded-2xl border border-border p-10 text-center">
               <Camera className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground text-sm">No community photos yet. Be the first!</p>
             </div>
