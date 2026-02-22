@@ -71,6 +71,65 @@
     --sidebar-border: 0 0% 12%;
     --sidebar-ring: 38 80% 56%;
   }
+
+  .light {
+    --background: 40 33% 97%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 38 80% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 180 38% 39%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 40 20% 92%;
+    --muted-foreground: 0 0% 40%;
+
+    --accent: 38 80% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 15% 86%;
+    --input: 40 15% 90%;
+    --ring: 38 80% 50%;
+
+    --amber: 38 80% 50%;
+    --amber-dim: 38 60% 40%;
+    --teal: 180 38% 35%;
+    --teal-dim: 180 30% 25%;
+    --ivory: 0 0% 10%;
+    --charcoal: 0 0% 100%;
+    --glass-bg: 0 0% 0% / 0.03;
+    --glass-border: 0 0% 0% / 0.08;
+    --glass-hover: 0 0% 0% / 0.05;
+
+    --gradient-hero: linear-gradient(180deg, transparent 0%, hsl(40 33% 97% / 0.6) 50%, hsl(40 33% 97%) 100%);
+    --gradient-card: linear-gradient(180deg, transparent 30%, hsl(0 0% 100% / 0.95) 100%);
+    --gradient-amber: linear-gradient(135deg, hsl(38 80% 50%), hsl(28 90% 45%));
+    --gradient-teal: linear-gradient(135deg, hsl(180 38% 35%), hsl(190 50% 28%));
+    --gradient-shimmer: linear-gradient(90deg, transparent, hsl(0 0% 0% / 0.04), transparent);
+
+    --shadow-amber: 0 0 30px hsl(38 80% 50% / 0.15);
+    --shadow-card: 0 8px 32px hsl(0 0% 0% / 0.08);
+    --shadow-float: 0 20px 60px hsl(0 0% 0% / 0.12);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 38 80% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 20% 92%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 40 15% 86%;
+    --sidebar-ring: 38 80% 50%;
+  }
 }
 
 @layer base {

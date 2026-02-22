@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, Plus, MapPin, User, X, Bell, Film } from "lucide-react";
+import { Search, Compass, Plus, MapPin, User, X, Bell, Film, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/hooks/use-theme";
 
 const navLinks = [
   { label: "Explore", href: "/explore", icon: Compass },
@@ -19,6 +20,7 @@ export default function Navigation() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <>
@@ -92,6 +94,15 @@ export default function Navigation() {
                   </motion.button>
                 )}
               </AnimatePresence>
+
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all"
+                aria-label="Toggle theme"
+              >
+                {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
 
               {/* Notifications */}
               <button className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-white/5 transition-all relative">
