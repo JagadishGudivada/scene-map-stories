@@ -9,6 +9,8 @@ import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Explore from "./pages/Explore";
 import TitleDetail from "./pages/TitleDetail";
+import MapPage from "./pages/MapPage";
+import AddTitle from "./pages/AddTitle";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +27,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/explore" element={<Explore />} />
             <Route path="/title/:slug" element={<TitleDetail />} />
+            <Route path="/map" element={<MapPage />} />
+            <Route path="/add" element={<AddTitle />} />
             <Route path="/u/:username" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
