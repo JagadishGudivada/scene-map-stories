@@ -12,6 +12,7 @@ import TitleDetail from "./pages/TitleDetail";
 import MapPage from "./pages/MapPage";
 import AddTitle from "./pages/AddTitle";
 import SceneMode from "./pages/SceneMode";
+import LocationDetail from "./pages/LocationDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/map" element={<MapPage />} />
             <Route path="/add" element={<AddTitle />} />
             <Route path="/scene-mode/:slug" element={<SceneMode />} />
+            <Route path="/location/:slug" element={<LocationDetail />} />
             <Route path="/u/:username" element={<Profile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
