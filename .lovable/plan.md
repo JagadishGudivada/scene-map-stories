@@ -1,18 +1,63 @@
 
 
-# Generate BRANDING_GUIDELINES.md for Sarevista
+# Add Authentication Page to Sarevista
 
 ## What
-Analyze the entire codebase (CSS variables, Tailwind config, components, typography, animations) and produce a comprehensive `BRANDING_GUIDELINES.md` file saved to the repository root.
+Create a polished `/auth` page with email+password sign-up/sign-in and Google OAuth, matching the existing Sarevista dark cinematic design system. This requires connecting an external Supabase project first.
 
-## How
-1. **Create `BRANDING_GUIDELINES.md`** at the project root with these sections extracted directly from the code:
-   - **Brand Identity** — mission, tagline ("Not a list. Your memory map."), target audience, and the "cinematic travel" positioning
-   - **Color Palette** — all HSL tokens from `:root` and `.light`, converted to hex equivalents, organized by role (background, foreground, primary/amber, secondary/teal, destructive, muted, glass tokens)
-   - **Typography** — Google Fonts (Instrument Serif, Inter, JetBrains Mono), weights loaded, heading hierarchy (`h1-h3` use Instrument Serif with `-0.02em` tracking, body uses Inter, monospace data uses JetBrains Mono), and specific size patterns observed (88px hero, 52px page titles, 36px section headings, etc.)
-   - **UI Components** — documented atomic elements: Button variants (primary amber gradient, outlined glass, ghost), CinemaCard (3 sizes, type badges, save toggle), PostCard (social card with engagement), HeroBanner (carousel), TrendingRow (horizontal scroll), PopularLocations (pill chips), Navigation (top bar + mobile bottom bar), glassmorphism card pattern, badge types (movie/series/book)
-   - **Design Principles** — glassmorphism specs (blur 16px, saturate 180%), grain texture overlay, border radius scale (sm/md/lg/xl/2xl from `--radius: 0.75rem`), shadow system (amber/card/float), animation library (fade-up, fade-in, shimmer, pulse-amber, shimmer-sweep), and dark-first responsive design approach
-   - **Theme System** — dark (default) and light mode token mapping, toggle mechanism via `useTheme` hook and `localStorage`
+## Prerequisites
+- Connect an external Supabase project to enable authentication
+- Enable Google OAuth provider in the Supabase dashboard
 
-This is a single-file creation task — no other files are modified.
+## Implementation
+
+### 1. Connect Supabase
+Set up the Supabase client integration (`src/integrations/supabase/client.ts`) and environment variables.
+
+### 2. Create Auth page (`src/pages/Auth.tsx`)
+A single page handling both sign-in and sign-up modes with a toggle.
+
+**Layout:**
+- Full-viewport split: left panel = cinematic hero image with grain overlay, tagline, and branding; right panel = auth form
+- Mobile: form only, hero hidden
+- Glassmorphism form card matching existing card style
+
+**Form features:**
+- Email + password fields with validation (zod)
+- Toggle between "Sign In" and "Create Account" modes
+- Google OAuth button (outlined, with Google icon)
+- "Forgot password?" link → triggers `resetPasswordForEmail`
+- Amber primary CTA button with `shimmer-sweep` animation
+- Error/success toasts via existing toast system
+- Loading states on buttons
+
+**Typography & colors:** Instrument Serif heading, Inter body, all existing CSS tokens (amber CTA, glass cards, grain texture)
+
+### 3. Create Reset Password page (`src/pages/ResetPassword.tsx`)
+- Simple centered form to set a new password
+- Checks for `type=recovery` in URL hash
+- Calls `supabase.auth.updateUser({ password })`
+
+### 4. Create Auth context (`src/hooks/useAuth.tsx`)
+- `AuthProvider` wrapping the app with `onAuthStateChange` listener (set up BEFORE `getSession()`)
+- Exposes `user`, `session`, `signOut`, `loading`
+- Used by Navigation to show avatar/login button conditionally
+
+### 5. Update routing (`src/App.tsx`)
+- Add `/auth` and `/reset-password` routes (public, no nav)
+- Wrap app with `AuthProvider`
+- Conditionally hide nav on auth pages
+
+### 6. Update Navigation
+- Replace static avatar with conditional: logged in → avatar + sign out; logged out → "Sign In" amber button linking to `/auth`
+
+## Files Changed
+| File | Action |
+|---|---|
+| `src/integrations/supabase/client.ts` | Create — Supabase client init |
+| `src/pages/Auth.tsx` | Create — Auth page |
+| `src/pages/ResetPassword.tsx` | Create — Password reset page |
+| `src/hooks/useAuth.tsx` | Create — Auth context/provider |
+| `src/App.tsx` | Edit — Add routes, wrap with AuthProvider |
+| `src/components/Navigation.tsx` | Edit — Conditional auth UI |
 
