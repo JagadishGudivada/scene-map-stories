@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { AuthProvider } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Profile from "./pages/Profile";
 import Explore from "./pages/Explore";
@@ -32,10 +33,10 @@ function AppRoutes() {
         <Route path="/explore" element={<Explore />} />
         <Route path="/title/:slug" element={<TitleDetail />} />
         <Route path="/map" element={<MapPage />} />
-        <Route path="/add" element={<AddTitle />} />
+        <Route path="/add" element={<ProtectedRoute><AddTitle /></ProtectedRoute>} />
         <Route path="/scene-mode/:slug" element={<SceneMode />} />
         <Route path="/location/:slug" element={<LocationDetail />} />
-        <Route path="/u/:username" element={<Profile />} />
+        <Route path="/u/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="*" element={<NotFound />} />
