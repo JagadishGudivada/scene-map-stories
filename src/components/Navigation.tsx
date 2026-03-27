@@ -114,24 +114,44 @@ export default function Navigation() {
               </button>
 
               {/* Add button */}
-              <Link
-                to="/add"
-                className="hidden sm:flex h-9 px-3 rounded-lg items-center gap-1.5 bg-gradient-amber text-charcoal text-sm font-semibold hover:opacity-90 transition-opacity shadow-amber"
-              >
-                <Plus className="w-4 h-4" strokeWidth={2.5} />
-                Add Title
-              </Link>
+              {user && (
+                <Link
+                  to="/add"
+                  className="hidden sm:flex h-9 px-3 rounded-lg items-center gap-1.5 bg-gradient-amber text-charcoal text-sm font-semibold hover:opacity-90 transition-opacity shadow-amber"
+                >
+                  <Plus className="w-4 h-4" strokeWidth={2.5} />
+                  Add Title
+                </Link>
+              )}
 
-              {/* Avatar */}
-              <Link to="/u/elenarossi" className="shrink-0">
-                <div className="w-9 h-9 rounded-full amber-ring overflow-hidden">
-                  <img
-                    src="https://api.dicebear.com/9.x/avataaars/svg?seed=elena"
-                    alt="Profile"
-                    className="w-full h-full object-cover bg-muted"
-                  />
+              {/* Auth-dependent UI */}
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <Link to="/u/elenarossi" className="shrink-0">
+                    <div className="w-9 h-9 rounded-full amber-ring overflow-hidden">
+                      <img
+                        src={user.user_metadata?.avatar_url || `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.email}`}
+                        alt="Profile"
+                        className="w-full h-full object-cover bg-muted"
+                      />
+                    </div>
+                  </Link>
+                  <button
+                    onClick={async () => { await signOut(); navigate("/"); }}
+                    className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
                 </div>
-              </Link>
+              ) : (
+                <Link
+                  to="/auth"
+                  className="h-9 px-4 rounded-lg flex items-center gap-1.5 bg-gradient-amber text-charcoal text-sm font-semibold hover:opacity-90 transition-opacity shadow-amber"
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
           </div>
         </div>
