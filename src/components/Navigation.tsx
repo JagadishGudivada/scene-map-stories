@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, Plus, MapPin, User, X, Bell, Film, Sun, Moon } from "lucide-react";
+import { Search, Compass, Plus, MapPin, User, X, Bell, Film, Sun, Moon, LogOut } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
   { label: "Explore", href: "/explore", icon: Compass },
