@@ -70,8 +70,6 @@ export default function LeafletMap({
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const { theme } = useTheme();
-  const isDark = theme === "dark";
 
   useEffect(() => {
     if (!mapRef.current || leafletMap.current) return;
