@@ -10,11 +10,6 @@ import { Switch } from "@/components/ui/switch";
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
-const typeColorMap: Record<MediaType, string> = {
-  Movie: "bg-amber/15 text-amber",
-  Series: "bg-teal/15 text-teal",
-  Book: "bg-purple-400/15 text-purple-400",
-};
 
 export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState("");
