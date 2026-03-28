@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet.markercluster";
+import "leaflet.markercluster/dist/MarkerCluster.css";
 import type { MediaType } from "@/lib/mockData";
 import { useTheme } from "@/hooks/use-theme";
 
@@ -65,6 +67,7 @@ export default function LeafletMap({
   const leafletMap = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
+  const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -98,24 +101,48 @@ export default function LeafletMap({
     tileLayerRef.current.setUrl(isDark ? DARK_TILES : LIGHT_TILES);
   }, [isDark]);
 
-  // Render markers
+  // Render markers with clustering
   useEffect(() => {
     const map = leafletMap.current;
     if (!map) return;
 
-    map.eachLayer((layer) => {
-      if (layer instanceof L.Marker) map.removeLayer(layer);
+    // Remove previous cluster group
+    if (clusterRef.current) {
+      map.removeLayer(clusterRef.current);
+      clusterRef.current = null;
+    }
+
+    const clusterGroup = L.markerClusterGroup({
+      maxClusterRadius: 50,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      iconCreateFunction: (cluster) => {
+        const count = cluster.getChildCount();
+        const size = count < 10 ? 36 : count < 50 ? 42 : 48;
+        const bg = isDark ? "hsl(0,0%,8%)" : "hsl(0,0%,100%)";
+        const border = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
+        return L.divIcon({
+          className: "custom-cluster-icon",
+          html: `<div style="display:flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:${size / 2}px;background:${bg};border:2px solid ${border};box-shadow:0 0 20px hsla(38,80%,56%,0.35),0 4px 12px rgba(0,0,0,0.3);color:hsl(38,80%,56%);font-weight:700;font-size:${size < 42 ? 13 : 15}px;font-family:Inter,sans-serif;">${count}</div>`,
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+        });
+      },
     });
 
     pins.forEach((pin) => {
       const marker = L.marker([pin.lat, pin.lng], {
         icon: createCategoryIcon(pin.type, isDark),
-      }).addTo(map);
-
+      });
       if (onPinClick) {
         marker.on("click", () => onPinClick(pin));
       }
+      clusterGroup.addLayer(marker);
     });
+
+    map.addLayer(clusterGroup);
+    clusterRef.current = clusterGroup;
   }, [pins, isDark, onPinClick]);
 
   // Path mode polyline

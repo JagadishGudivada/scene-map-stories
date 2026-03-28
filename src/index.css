@@ -273,3 +273,19 @@
     background: hsl(var(--muted)) !important;
   }
 }
+
+/* Override default leaflet.markercluster styles */
+.marker-cluster-small,
+.marker-cluster-medium,
+.marker-cluster-large {
+  background: transparent !important;
+}
+.marker-cluster-small div,
+.marker-cluster-medium div,
+.marker-cluster-large div {
+  background: transparent !important;
+}
+.custom-cluster-icon {
+  background: transparent !important;
+  border: none !important;
+}
