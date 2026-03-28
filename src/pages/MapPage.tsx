@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, ExternalLink } from "lucide-react";
+import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route } from "lucide-react";
 import LeafletMap, { type MapPin as MapPinType } from "@/components/LeafletMap";
+import MapSidePanel from "@/components/MapSidePanel";
 import { allMapPins } from "@/lib/mapData";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
