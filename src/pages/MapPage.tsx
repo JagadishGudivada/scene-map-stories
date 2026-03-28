@@ -1,7 +1,8 @@
 import { useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, ExternalLink } from "lucide-react";
+import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route } from "lucide-react";
 import LeafletMap, { type MapPin as MapPinType } from "@/components/LeafletMap";
+import MapSidePanel from "@/components/MapSidePanel";
 import { allMapPins } from "@/lib/mapData";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
@@ -9,11 +10,6 @@ import { Switch } from "@/components/ui/switch";
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
-const typeColorMap: Record<MediaType, string> = {
-  Movie: "bg-amber/15 text-amber",
-  Series: "bg-teal/15 text-teal",
-  Book: "bg-purple-400/15 text-purple-400",
-};
 
 export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -181,74 +177,12 @@ export default function MapPage() {
         {/* Sliding side panel */}
         <AnimatePresence>
           {selectedPin && (
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="absolute top-0 right-0 bottom-0 w-full sm:w-96 z-[1100] glass border-l border-border shadow-float flex flex-col"
-            >
-              {/* Close button */}
-              <button
-                onClick={() => setSelectedPin(null)}
-                className="absolute top-4 right-4 z-10 p-2 rounded-xl glass border border-border hover:bg-muted/50 transition-colors"
-              >
-                <X className="w-5 h-5 text-foreground" />
-              </button>
-
-              {/* Location image */}
-              <div className="relative h-56 sm:h-64 shrink-0 overflow-hidden">
-                <img
-                  src={selectedPin.image || `https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop`}
-                  alt={selectedPin.label}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-                {/* Type badge */}
-                <div className="absolute bottom-4 left-4">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-medium ${typeColorMap[selectedPin.type]}`}>
-                    {selectedPin.type === "Movie" && <Film className="w-3 h-3" />}
-                    {selectedPin.type === "Series" && <Tv className="w-3 h-3" />}
-                    {selectedPin.type === "Book" && <BookOpen className="w-3 h-3" />}
-                    {selectedPin.type}
-                  </span>
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="flex-1 overflow-y-auto no-scrollbar p-6 space-y-5">
-                <div>
-                  <h2 className="font-serif text-2xl text-foreground">{selectedPin.label}</h2>
-                  {selectedPin.title && (
-                    <p className="text-sm text-muted-foreground mt-1">Featured in <span className="text-amber font-medium">{selectedPin.title}</span></p>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-sm">
-                    <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
-                    <span className="text-muted-foreground">{selectedPin.lat.toFixed(4)}°N, {selectedPin.lng.toFixed(4)}°E</span>
-                  </div>
-                </div>
-
-                <div className="pt-2 border-t border-border">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Discover this iconic filming location from <span className="text-foreground font-medium">{selectedPin.title}</span>.
-                    Visit the real-world spot and capture your own cinematic moment.
-                  </p>
-                </div>
-
-                <a
-                  href={`https://www.google.com/maps/@${selectedPin.lat},${selectedPin.lng},15z`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-amber text-background font-medium text-sm hover:bg-amber/90 transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open in Google Maps
-                </a>
-              </div>
-            </motion.div>
+            <MapSidePanel
+              pin={selectedPin}
+              allPins={filteredPins}
+              onClose={() => setSelectedPin(null)}
+              onSelectPin={handlePinClick}
+            />
           )}
         </AnimatePresence>
       </div>
