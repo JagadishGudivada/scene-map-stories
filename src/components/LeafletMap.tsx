@@ -10,6 +10,7 @@ export interface MapPin {
   label: string;
   title?: string;
   type: MediaType;
+  image?: string;
 }
 
 const typeColors: Record<MediaType, string> = {
@@ -18,14 +19,23 @@ const typeColors: Record<MediaType, string> = {
   Book: "hsl(270, 60%, 70%)",
 };
 
-function createPinIcon(type: MediaType, isDark: boolean) {
+const typeSvgPaths: Record<MediaType, string> = {
+  Movie: `<path d="M7 4v16l6-4 6 4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="6" width="2" height="2" rx=".5" fill="currentColor"/><rect x="13" y="6" width="2" height="2" rx=".5" fill="currentColor"/><rect x="9" y="10" width="2" height="2" rx=".5" fill="currentColor"/><rect x="13" y="10" width="2" height="2" rx=".5" fill="currentColor"/>`,
+  Series: `<rect x="2" y="7" width="20" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><polyline points="17 2 12 7 7 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+  Book: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+};
+
+function createCategoryIcon(type: MediaType, isDark: boolean) {
   const color = typeColors[type];
-  const border = isDark ? "hsl(0,0%,5%)" : "hsl(0,0%,100%)";
+  const bg = isDark ? "hsl(0,0%,8%)" : "hsl(0,0%,100%)";
+  const border = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
   return L.divIcon({
-    className: "custom-map-pin",
-    html: `<div style="width:16px;height:16px;border-radius:50%;background:${color};border:3px solid ${border};box-shadow:0 0 12px ${color}80;"></div>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    className: "custom-category-pin",
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:${bg};border:2px solid ${border};box-shadow:0 0 16px ${color}40, 0 4px 12px rgba(0,0,0,0.3);cursor:pointer;transition:transform 0.2s;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="color:${color};">${typeSvgPaths[type]}</svg>
+    </div>`,
+    iconSize: [36, 36],
+    iconAnchor: [18, 18],
   });
 }
 
@@ -34,6 +44,9 @@ interface LeafletMapProps {
   className?: string;
   zoom?: number;
   center?: [number, number];
+  onPinClick?: (pin: MapPin) => void;
+  pathMode?: boolean;
+  pathPins?: MapPin[];
 }
 
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
@@ -44,10 +57,14 @@ export default function LeafletMap({
   className = "",
   zoom = 2,
   center = [30, 10],
+  onPinClick,
+  pathMode = false,
+  pathPins,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const polylineRef = useRef<L.Polyline | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -81,6 +98,7 @@ export default function LeafletMap({
     tileLayerRef.current.setUrl(isDark ? DARK_TILES : LIGHT_TILES);
   }, [isDark]);
 
+  // Render markers
   useEffect(() => {
     const map = leafletMap.current;
     if (!map) return;
@@ -89,29 +107,37 @@ export default function LeafletMap({
       if (layer instanceof L.Marker) map.removeLayer(layer);
     });
 
-    const popupBg = isDark ? "hsl(0,0%,8%)" : "hsl(0,0%,100%)";
-    const popupText = isDark ? "#F5F0E8" : "#1a1a1a";
-    const popupBorder = isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)";
-    const popupMuted = isDark ? "hsl(40,10%,58%)" : "hsl(220,8%,46%)";
-
     pins.forEach((pin) => {
       const marker = L.marker([pin.lat, pin.lng], {
-        icon: createPinIcon(pin.type, isDark),
+        icon: createCategoryIcon(pin.type, isDark),
       }).addTo(map);
 
-      marker.bindPopup(
-        `<div style="font-family:Inter,sans-serif;font-size:13px;color:${popupText};background:${popupBg};padding:8px 12px;border-radius:8px;border:1px solid ${popupBorder};min-width:120px;">
-          <strong>${pin.label}</strong>
-          ${pin.title ? `<br/><span style="color:${popupMuted};font-size:11px;">${pin.title}</span>` : ""}
-          <br/><span style="font-size:10px;color:${typeColors[pin.type]};">${pin.type}</span>
-        </div>`,
-        {
-          className: "sarevista-popup",
-          closeButton: false,
-        }
-      );
+      if (onPinClick) {
+        marker.on("click", () => onPinClick(pin));
+      }
     });
-  }, [pins, isDark]);
+  }, [pins, isDark, onPinClick]);
+
+  // Path mode polyline
+  useEffect(() => {
+    const map = leafletMap.current;
+    if (!map) return;
+
+    if (polylineRef.current) {
+      map.removeLayer(polylineRef.current);
+      polylineRef.current = null;
+    }
+
+    if (pathMode && pathPins && pathPins.length > 1) {
+      const latlngs: L.LatLngExpression[] = pathPins.map((p) => [p.lat, p.lng]);
+      polylineRef.current = L.polyline(latlngs, {
+        color: typeColors.Movie,
+        weight: 2,
+        dashArray: "8, 8",
+        opacity: 0.7,
+      }).addTo(map);
+    }
+  }, [pathMode, pathPins, isDark]);
 
   return (
     <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`}>
