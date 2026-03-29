@@ -212,7 +212,7 @@ export default function MapPage() {
 
         {/* Location sidebar list (desktop) */}
         {!selectedPin && (
-          <div className="hidden lg:block absolute top-4 right-4 bottom-8 w-80 z-[1000]">
+          <div className="hidden lg:block absolute top-20 right-4 bottom-8 w-80 z-[1000]">
             <div className="glass rounded-2xl border border-border shadow-card h-full flex flex-col overflow-hidden">
               <div className="px-4 py-3 border-b border-border">
                 <h2 className="font-serif text-lg text-foreground">Locations</h2>
