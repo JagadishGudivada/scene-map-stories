@@ -1,63 +1,30 @@
 
 
-# Add Authentication Page to Sarevista
+# Add Search-as-you-type with Fly-to on Map Page
 
 ## What
-Create a polished `/auth` page with email+password sign-up/sign-in and Google OAuth, matching the existing Sarevista dark cinematic design system. This requires connecting an external Supabase project first.
+Enhance the existing search bar on `/map` so that as the user types, a dropdown appears below the search input showing matching locations. Clicking a result flies the map to that marker and opens the side panel.
 
-## Prerequisites
-- Connect an external Supabase project to enable authentication
-- Enable Google OAuth provider in the Supabase dashboard
+## How
 
-## Implementation
+### 1. Expose map instance from LeafletMap
+- Add an optional `onMapReady` callback prop to `LeafletMap` that passes the `L.Map` instance to the parent
+- Call it after map initialization so `MapPage` can trigger `flyTo`
 
-### 1. Connect Supabase
-Set up the Supabase client integration (`src/integrations/supabase/client.ts`) and environment variables.
+### 2. Build search dropdown in MapPage
+- When `searchQuery` has 2+ characters, show a dropdown below the search bar listing matching pins (max ~8 results)
+- Each result shows the pin's label, title, and a colored type badge
+- Animate with Framer Motion (fade in/out)
+- Click a result → call `map.flyTo([pin.lat, pin.lng], 14)` and open the side panel via `setSelectedPin(pin)`
 
-### 2. Create Auth page (`src/pages/Auth.tsx`)
-A single page handling both sign-in and sign-up modes with a toggle.
+### 3. Highlight matched marker
+- Pass a `highlightedPin` prop to `LeafletMap`
+- When set, add a pulsing ring effect around that marker using a second `L.circleMarker` overlay with CSS animation
+- Clear on panel close or new search
 
-**Layout:**
-- Full-viewport split: left panel = cinematic hero image with grain overlay, tagline, and branding; right panel = auth form
-- Mobile: form only, hero hidden
-- Glassmorphism form card matching existing card style
-
-**Form features:**
-- Email + password fields with validation (zod)
-- Toggle between "Sign In" and "Create Account" modes
-- Google OAuth button (outlined, with Google icon)
-- "Forgot password?" link → triggers `resetPasswordForEmail`
-- Amber primary CTA button with `shimmer-sweep` animation
-- Error/success toasts via existing toast system
-- Loading states on buttons
-
-**Typography & colors:** Instrument Serif heading, Inter body, all existing CSS tokens (amber CTA, glass cards, grain texture)
-
-### 3. Create Reset Password page (`src/pages/ResetPassword.tsx`)
-- Simple centered form to set a new password
-- Checks for `type=recovery` in URL hash
-- Calls `supabase.auth.updateUser({ password })`
-
-### 4. Create Auth context (`src/hooks/useAuth.tsx`)
-- `AuthProvider` wrapping the app with `onAuthStateChange` listener (set up BEFORE `getSession()`)
-- Exposes `user`, `session`, `signOut`, `loading`
-- Used by Navigation to show avatar/login button conditionally
-
-### 5. Update routing (`src/App.tsx`)
-- Add `/auth` and `/reset-password` routes (public, no nav)
-- Wrap app with `AuthProvider`
-- Conditionally hide nav on auth pages
-
-### 6. Update Navigation
-- Replace static avatar with conditional: logged in → avatar + sign out; logged out → "Sign In" amber button linking to `/auth`
-
-## Files Changed
-| File | Action |
+### Files Changed
+| File | Change |
 |---|---|
-| `src/integrations/supabase/client.ts` | Create — Supabase client init |
-| `src/pages/Auth.tsx` | Create — Auth page |
-| `src/pages/ResetPassword.tsx` | Create — Password reset page |
-| `src/hooks/useAuth.tsx` | Create — Auth context/provider |
-| `src/App.tsx` | Edit — Add routes, wrap with AuthProvider |
-| `src/components/Navigation.tsx` | Edit — Conditional auth UI |
+| `src/components/LeafletMap.tsx` | Add `onMapReady` callback prop, add `highlightedPin` prop with pulsing circle overlay |
+| `src/pages/MapPage.tsx` | Store map ref, render search dropdown, fly-to on click, pass `highlightedPin` |
 
