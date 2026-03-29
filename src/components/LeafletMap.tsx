@@ -92,6 +92,7 @@ export default function LeafletMap({
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
     leafletMap.current = map;
+    onMapReady?.(map);
 
     return () => {
       map.remove();
