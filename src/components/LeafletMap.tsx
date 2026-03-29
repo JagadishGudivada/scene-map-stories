@@ -64,6 +64,8 @@ export default function LeafletMap({
   onPinClick,
   pathMode = false,
   pathPins,
+  onMapReady,
+  highlightedPin,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
