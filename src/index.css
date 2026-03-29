@@ -289,3 +289,12 @@
   background: transparent !important;
   border: none !important;
 }
+
+/* Highlight pulse ring for search fly-to */
+@keyframes highlight-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.4); opacity: 0.2; }
+}
+.highlight-pulse-ring {
+  animation: highlight-pulse 1.5s ease-in-out infinite;
+}
