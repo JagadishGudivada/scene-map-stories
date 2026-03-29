@@ -75,7 +75,7 @@ export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: Map
       animate={{ x: 0 }}
       exit={{ x: "100%" }}
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      className="absolute top-0 right-0 bottom-0 w-full sm:w-[420px] z-[1100] glass border-l border-border shadow-float flex flex-col"
+      className="absolute top-0 right-0 bottom-0 w-full sm:w-[420px] z-[1100] pt-16 flex flex-col"
     >
       {/* Close button */}
       <button
