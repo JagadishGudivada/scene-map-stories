@@ -72,6 +72,7 @@ export default function LeafletMap({
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const highlightRef = useRef<L.CircleMarker | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
