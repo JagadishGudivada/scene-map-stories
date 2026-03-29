@@ -206,6 +206,7 @@ export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: Map
           Open in Google Maps
         </a>
       </div>
+      </div>
     </motion.div>
   );
 }
