@@ -1,6 +1,7 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route } from "lucide-react";
+import L from "leaflet";
 import LeafletMap, { type MapPin as MapPinType } from "@/components/LeafletMap";
 import MapSidePanel from "@/components/MapSidePanel";
 import { allMapPins } from "@/lib/mapData";
@@ -10,6 +11,11 @@ import { Switch } from "@/components/ui/switch";
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
+const typeBadgeClasses: Record<MediaType, string> = {
+  Movie: "badge-movie",
+  Series: "badge-series",
+  Book: "badge-book",
+};
 
 export default function MapPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,6 +23,8 @@ export default function MapPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
   const [pathMode, setPathMode] = useState(false);
+  const [highlightedPin, setHighlightedPin] = useState<MapPinType | null>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
 
   const filteredPins = useMemo(() => {
     return allMapPins.filter((pin) => {
@@ -29,6 +37,14 @@ export default function MapPage() {
     });
   }, [searchQuery, selectedType]);
 
+  const searchResults = useMemo(() => {
+    if (searchQuery.length < 2) return [];
+    const q = searchQuery.toLowerCase();
+    return allMapPins
+      .filter((pin) => pin.label.toLowerCase().includes(q) || pin.title?.toLowerCase().includes(q))
+      .slice(0, 8);
+  }, [searchQuery]);
+
   const center: [number, number] = filteredPins.length
     ? [
         filteredPins.reduce((s, p) => s + p.lat, 0) / filteredPins.length,
@@ -38,11 +54,27 @@ export default function MapPage() {
 
   const handlePinClick = useCallback((pin: MapPinType) => {
     setSelectedPin(pin);
+    setHighlightedPin(pin);
+  }, []);
+
+  const handleSearchResultClick = useCallback((pin: MapPinType) => {
+    setSearchQuery("");
+    setSelectedPin(pin);
+    setHighlightedPin(pin);
+    mapInstanceRef.current?.flyTo([pin.lat, pin.lng], 14, { duration: 1.5 });
+  }, []);
+
+  const handleClosePanel = useCallback(() => {
+    setSelectedPin(null);
+    setHighlightedPin(null);
+  }, []);
+
+  const handleMapReady = useCallback((map: L.Map) => {
+    mapInstanceRef.current = map;
   }, []);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Full-height map with overlay controls */}
       <div className="fixed inset-0 pt-16">
         <LeafletMap
           pins={filteredPins}
@@ -52,6 +84,8 @@ export default function MapPage() {
           onPinClick={handlePinClick}
           pathMode={pathMode}
           pathPins={filteredPins}
+          onMapReady={handleMapReady}
+          highlightedPin={highlightedPin}
         />
 
         {/* Floating search & filter bar */}
@@ -117,12 +151,47 @@ export default function MapPage() {
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Search dropdown */}
+            <AnimatePresence>
+              {searchResults.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="mt-2 glass rounded-xl border border-border shadow-card overflow-hidden"
+                >
+                  <div className="max-h-80 overflow-y-auto no-scrollbar">
+                    {searchResults.map((pin, i) => (
+                      <button
+                        key={`${pin.lat}-${pin.lng}-${i}`}
+                        onClick={() => handleSearchResultClick(pin)}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left border-b border-border/50 last:border-b-0"
+                      >
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${typeBadgeClasses[pin.type]}`}>
+                          <MapPin className="w-3 h-3" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{pin.label}</p>
+                          {pin.title && (
+                            <p className="text-xs text-muted-foreground truncate">{pin.title}</p>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider shrink-0">
+                          {pin.type}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         </div>
 
-        {/* Path Mode + Pin count — bottom left */}
+        {/* Path Mode + Pin count */}
         <div className="absolute bottom-24 md:bottom-8 left-4 z-[1000] flex flex-col gap-2">
-          {/* Path Mode toggle */}
           <div className="glass rounded-xl px-4 py-2.5 border border-border shadow-card">
             <div className="flex items-center gap-3">
               <Route className="w-4 h-4 text-amber" />
@@ -130,7 +199,6 @@ export default function MapPage() {
               <Switch checked={pathMode} onCheckedChange={setPathMode} />
             </div>
           </div>
-          {/* Pin count badge */}
           <div className="glass rounded-xl px-4 py-2.5 border border-border shadow-card">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-amber" />
@@ -140,7 +208,7 @@ export default function MapPage() {
           </div>
         </div>
 
-        {/* Location sidebar list (desktop) — hidden when side panel is open */}
+        {/* Location sidebar list (desktop) */}
         {!selectedPin && (
           <div className="hidden lg:block absolute top-4 right-4 bottom-8 w-80 z-[1000]">
             <div className="glass rounded-2xl border border-border shadow-card h-full flex flex-col overflow-hidden">
@@ -155,10 +223,10 @@ export default function MapPage() {
                     initial={{ opacity: 0, x: 10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    onClick={() => setSelectedPin(pin)}
+                    onClick={() => handleSearchResultClick(pin)}
                     className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors group"
                   >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 badge-${pin.type.toLowerCase()}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${typeBadgeClasses[pin.type]}`}>
                       <MapPin className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0">
@@ -180,7 +248,7 @@ export default function MapPage() {
             <MapSidePanel
               pin={selectedPin}
               allPins={filteredPins}
-              onClose={() => setSelectedPin(null)}
+              onClose={handleClosePanel}
               onSelectPin={handlePinClick}
             />
           )}

@@ -49,6 +49,8 @@ interface LeafletMapProps {
   onPinClick?: (pin: MapPin) => void;
   pathMode?: boolean;
   pathPins?: MapPin[];
+  onMapReady?: (map: L.Map) => void;
+  highlightedPin?: MapPin | null;
 }
 
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
@@ -62,12 +64,15 @@ export default function LeafletMap({
   onPinClick,
   pathMode = false,
   pathPins,
+  onMapReady,
+  highlightedPin,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const polylineRef = useRef<L.Polyline | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const highlightRef = useRef<L.CircleMarker | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -87,6 +92,7 @@ export default function LeafletMap({
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
     leafletMap.current = map;
+    onMapReady?.(map);
 
     return () => {
       map.remove();
@@ -165,6 +171,30 @@ export default function LeafletMap({
       }).addTo(map);
     }
   }, [pathMode, pathPins, isDark]);
+
+  // Highlighted pin pulsing ring
+  useEffect(() => {
+    const map = leafletMap.current;
+    if (!map) return;
+
+    if (highlightRef.current) {
+      map.removeLayer(highlightRef.current);
+      highlightRef.current = null;
+    }
+
+    if (highlightedPin) {
+      const color = typeColors[highlightedPin.type];
+      highlightRef.current = L.circleMarker([highlightedPin.lat, highlightedPin.lng], {
+        radius: 22,
+        color,
+        weight: 2,
+        opacity: 0.8,
+        fillColor: color,
+        fillOpacity: 0.15,
+        className: "highlight-pulse-ring",
+      }).addTo(map);
+    }
+  }, [highlightedPin]);
 
   return (
     <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`}>
