@@ -172,6 +172,30 @@ export default function LeafletMap({
     }
   }, [pathMode, pathPins, isDark]);
 
+  // Highlighted pin pulsing ring
+  useEffect(() => {
+    const map = leafletMap.current;
+    if (!map) return;
+
+    if (highlightRef.current) {
+      map.removeLayer(highlightRef.current);
+      highlightRef.current = null;
+    }
+
+    if (highlightedPin) {
+      const color = typeColors[highlightedPin.type];
+      highlightRef.current = L.circleMarker([highlightedPin.lat, highlightedPin.lng], {
+        radius: 22,
+        color,
+        weight: 2,
+        opacity: 0.8,
+        fillColor: color,
+        fillOpacity: 0.15,
+        className: "highlight-pulse-ring",
+      }).addTo(map);
+    }
+  }, [highlightedPin]);
+
   return (
     <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`}>
       <div ref={mapRef} className="w-full h-full" />
