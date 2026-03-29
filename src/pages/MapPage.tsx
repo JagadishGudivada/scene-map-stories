@@ -54,7 +54,7 @@ export default function MapPage() {
 
   const handlePinClick = useCallback((pin: MapPinType) => {
     setSelectedPin(pin);
-    setHighlightedPin(pin);
+    setHighlightedPin(null);
   }, []);
 
   const handleSearchResultClick = useCallback((pin: MapPinType) => {
@@ -62,6 +62,8 @@ export default function MapPage() {
     setSelectedPin(pin);
     setHighlightedPin(pin);
     mapInstanceRef.current?.flyTo([pin.lat, pin.lng], 14, { duration: 1.5 });
+    // Auto-clear highlight after fly-to completes
+    setTimeout(() => setHighlightedPin(null), 2500);
   }, []);
 
   const handleClosePanel = useCallback(() => {
