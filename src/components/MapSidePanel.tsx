@@ -77,13 +77,15 @@ export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: Map
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
       className="absolute top-0 right-0 bottom-0 w-full sm:w-[420px] z-[1100] pt-16 flex flex-col"
     >
-      {/* Close button */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 p-2 rounded-xl glass border border-border hover:bg-muted/50 transition-colors"
-      >
-        <X className="w-5 h-5 text-foreground" />
-      </button>
+      {/* Inner panel with glass background below nav */}
+      <div className="flex-1 flex flex-col glass border-l border-border shadow-float overflow-hidden relative">
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 p-2 rounded-xl bg-background/80 backdrop-blur-sm border border-border hover:bg-muted/50 transition-colors"
+        >
+          <X className="w-5 h-5 text-foreground" />
+        </button>
 
       {/* Location image */}
       <div className="relative h-56 sm:h-60 shrink-0 overflow-hidden">
