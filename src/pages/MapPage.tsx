@@ -54,7 +54,7 @@ export default function MapPage() {
 
   const handlePinClick = useCallback((pin: MapPinType) => {
     setSelectedPin(pin);
-    setHighlightedPin(pin);
+    setHighlightedPin(null);
   }, []);
 
   const handleSearchResultClick = useCallback((pin: MapPinType) => {
