@@ -156,13 +156,13 @@ export default function LeafletMap({
     const map = leafletMap.current;
     if (!map) return;
 
-    // Remove old lines
+    // Remove old lines and zoom listener
+    if ((polylineRef as any)._zoomCleanup) {
+      (polylineRef as any)._zoomCleanup();
+      (polylineRef as any)._zoomCleanup = null;
+    }
     if (polylineRef.current) {
-      if (Array.isArray(polylineRef.current)) {
-        polylineRef.current.forEach((l) => map.removeLayer(l));
-      } else {
-        map.removeLayer(polylineRef.current);
-      }
+      polylineRef.current.forEach((l) => map.removeLayer(l));
       polylineRef.current = null;
     }
 
