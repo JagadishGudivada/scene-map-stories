@@ -70,7 +70,7 @@ export default function LeafletMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const polylineRef = useRef<L.Polyline | null>(null);
+  const polylineRef = useRef<L.Polyline[] | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightRef = useRef<L.CircleMarker | null>(null);
   const { theme } = useTheme();
@@ -151,24 +151,47 @@ export default function LeafletMap({
     clusterRef.current = clusterGroup;
   }, [pins, isDark, onPinClick]);
 
-  // Path mode polyline
+  // Path mode polyline — only connect pins within 10km
   useEffect(() => {
     const map = leafletMap.current;
     if (!map) return;
 
+    // Remove old lines
     if (polylineRef.current) {
-      map.removeLayer(polylineRef.current);
+      if (Array.isArray(polylineRef.current)) {
+        polylineRef.current.forEach((l) => map.removeLayer(l));
+      } else {
+        map.removeLayer(polylineRef.current);
+      }
       polylineRef.current = null;
     }
 
     if (pathMode && pathPins && pathPins.length > 1) {
-      const latlngs: L.LatLngExpression[] = pathPins.map((p) => [p.lat, p.lng]);
-      polylineRef.current = L.polyline(latlngs, {
-        color: typeColors.Movie,
-        weight: 2,
-        dashArray: "8, 8",
-        opacity: 0.7,
-      }).addTo(map);
+      const toRad = (n: number) => (n * Math.PI) / 180;
+      const haversine = (a: MapPin, b: MapPin) => {
+        const R = 6371;
+        const dLat = toRad(b.lat - a.lat);
+        const dLng = toRad(b.lng - a.lng);
+        const s =
+          Math.sin(dLat / 2) ** 2 +
+          Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+        return 2 * R * Math.asin(Math.sqrt(s));
+      };
+
+      const lines: L.Polyline[] = [];
+      for (let i = 0; i < pathPins.length; i++) {
+        for (let j = i + 1; j < pathPins.length; j++) {
+          if (haversine(pathPins[i], pathPins[j]) <= 10) {
+            lines.push(
+              L.polyline(
+                [[pathPins[i].lat, pathPins[i].lng], [pathPins[j].lat, pathPins[j].lng]],
+                { color: typeColors.Movie, weight: 2, dashArray: "8, 8", opacity: 0.7 }
+              ).addTo(map)
+            );
+          }
+        }
+      }
+      polylineRef.current = lines.length ? lines : null;
     }
   }, [pathMode, pathPins, isDark]);
 
