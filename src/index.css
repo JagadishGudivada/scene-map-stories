@@ -298,3 +298,22 @@
 .highlight-pulse-ring {
   animation: highlight-pulse 1.5s ease-in-out infinite;
 }
+
+/* Path mode distance labels */
+.path-distance-label {
+  background: none !important;
+  border: none !important;
+}
+.path-distance-label span {
+  display: inline-block;
+  background: hsl(var(--background) / 0.85);
+  backdrop-filter: blur(8px);
+  color: hsl(var(--amber));
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid hsl(var(--amber) / 0.3);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
