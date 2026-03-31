@@ -70,7 +70,7 @@ export default function LeafletMap({
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const tileLayerRef = useRef<L.TileLayer | null>(null);
-  const polylineRef = useRef<L.Polyline | null>(null);
+  const polylineRef = useRef<L.Polyline[] | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightRef = useRef<L.CircleMarker | null>(null);
   const { theme } = useTheme();
