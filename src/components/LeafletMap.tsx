@@ -178,20 +178,33 @@ export default function LeafletMap({
         return 2 * R * Math.asin(Math.sqrt(s));
       };
 
-      const lines: L.Polyline[] = [];
+      const layers: (L.Polyline | L.Marker)[] = [];
       for (let i = 0; i < pathPins.length; i++) {
         for (let j = i + 1; j < pathPins.length; j++) {
-          if (haversine(pathPins[i], pathPins[j]) <= 10) {
-            lines.push(
+          const dist = haversine(pathPins[i], pathPins[j]);
+          if (dist <= 10) {
+            layers.push(
               L.polyline(
                 [[pathPins[i].lat, pathPins[i].lng], [pathPins[j].lat, pathPins[j].lng]],
                 { color: typeColors.Movie, weight: 2, dashArray: "8, 8", opacity: 0.7 }
               ).addTo(map)
             );
+            const midLat = (pathPins[i].lat + pathPins[j].lat) / 2;
+            const midLng = (pathPins[i].lng + pathPins[j].lng) / 2;
+            const label = L.marker([midLat, midLng], {
+              interactive: false,
+              icon: L.divIcon({
+                className: "path-distance-label",
+                html: `<span>${dist.toFixed(1)} km</span>`,
+                iconSize: [60, 20],
+                iconAnchor: [30, 10],
+              }),
+            }).addTo(map);
+            layers.push(label);
           }
         }
       }
-      polylineRef.current = lines.length ? lines : null;
+      polylineRef.current = layers.length ? layers : null;
     }
   }, [pathMode, pathPins, isDark]);
 
