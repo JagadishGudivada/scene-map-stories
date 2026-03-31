@@ -156,13 +156,13 @@ export default function LeafletMap({
     const map = leafletMap.current;
     if (!map) return;
 
-    // Remove old lines
+    // Remove old lines and zoom listener
+    if ((polylineRef as any)._zoomCleanup) {
+      (polylineRef as any)._zoomCleanup();
+      (polylineRef as any)._zoomCleanup = null;
+    }
     if (polylineRef.current) {
-      if (Array.isArray(polylineRef.current)) {
-        polylineRef.current.forEach((l) => map.removeLayer(l));
-      } else {
-        map.removeLayer(polylineRef.current);
-      }
+      polylineRef.current.forEach((l) => map.removeLayer(l));
       polylineRef.current = null;
     }
 
@@ -178,12 +178,14 @@ export default function LeafletMap({
         return 2 * R * Math.asin(Math.sqrt(s));
       };
 
-      const layers: (L.Polyline | L.Marker)[] = [];
+      const polylines: L.Polyline[] = [];
+      const labels: L.Marker[] = [];
+
       for (let i = 0; i < pathPins.length; i++) {
         for (let j = i + 1; j < pathPins.length; j++) {
           const dist = haversine(pathPins[i], pathPins[j]);
           if (dist <= 10) {
-            layers.push(
+            polylines.push(
               L.polyline(
                 [[pathPins[i].lat, pathPins[i].lng], [pathPins[j].lat, pathPins[j].lng]],
                 { color: typeColors.Movie, weight: 2, dashArray: "8, 8", opacity: 0.7 }
@@ -199,12 +201,31 @@ export default function LeafletMap({
                 iconSize: [60, 20],
                 iconAnchor: [30, 10],
               }),
-            }).addTo(map);
-            layers.push(label);
+            });
+            labels.push(label);
           }
         }
       }
-      polylineRef.current = layers.length ? layers : null;
+
+      // Show/hide labels based on zoom level
+      const MIN_LABEL_ZOOM = 10;
+      const updateLabels = () => {
+        const z = map.getZoom();
+        labels.forEach((lbl) => {
+          if (z >= MIN_LABEL_ZOOM) {
+            if (!map.hasLayer(lbl)) map.addLayer(lbl);
+          } else {
+            if (map.hasLayer(lbl)) map.removeLayer(lbl);
+          }
+        });
+      };
+      updateLabels();
+      map.on("zoomend", updateLabels);
+
+      const allLayers = [...polylines, ...labels];
+      polylineRef.current = allLayers.length ? allLayers : null;
+      // Store cleanup for zoom listener
+      (polylineRef as any)._zoomCleanup = () => map.off("zoomend", updateLabels);
     }
   }, [pathMode, pathPins, isDark]);
 
