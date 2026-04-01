@@ -275,7 +275,7 @@ export default function Auth() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-12 rounded-xl bg-gradient-amber text-charcoal font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-amber shimmer-sweep disabled:opacity-50"
+                  className="w-full h-12 rounded-xl bg-gradient-amber font-semibold flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-amber shimmer-sweep disabled:opacity-50 text-amber"
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
