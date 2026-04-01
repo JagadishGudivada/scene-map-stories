@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Film, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2 } from "lucide-react";
+import { Film, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -136,19 +136,33 @@ export default function Auth() {
       {/* Right Form */}
       <div className="flex-1 flex items-center justify-center p-6 sm:p-12 bg-background relative">
         <div className="grain absolute inset-0 pointer-events-none" />
+
+        {/* Top bar: logo + close */}
+        <div className="absolute top-6 left-6 right-6 flex items-center justify-between z-20">
+          <button
+            onClick={() => navigate("/")}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-8 h-8 rounded-lg bg-gradient-amber flex items-center justify-center">
+              <Film className="w-4 h-4 text-charcoal" strokeWidth={2.5} />
+            </div>
+            <span className="font-serif text-xl text-foreground tracking-tight">Sarevista</span>
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="w-9 h-9 rounded-xl glass border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="w-full max-w-md relative z-10"
         >
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-lg bg-gradient-amber flex items-center justify-center">
-              <Film className="w-4 h-4 text-charcoal" strokeWidth={2.5} />
-            </div>
-            <span className="font-serif text-xl text-foreground tracking-tight">Sarevista</span>
-          </div>
 
           <AnimatePresence mode="wait">
             <motion.div
