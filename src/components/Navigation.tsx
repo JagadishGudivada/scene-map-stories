@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, Plus, MapPin, User, X, Bell, Film, Sun, Moon, LogOut } from "lucide-react";
+import { Search, Compass, Plus, MapPin, User, X, Film, Sun, Moon, LogOut } from "lucide-react";
+import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -107,11 +108,7 @@ export default function Navigation() {
                 {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
 
-              {/* Notifications */}
-              <button className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all relative">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-amber border-2 border-background" />
-              </button>
+              <NotificationsDropdown />
 
               {/* Add button */}
               {user && (
