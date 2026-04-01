@@ -153,7 +153,7 @@ export default function Auth() {
             className="w-9 h-9 rounded-xl glass border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <XIcon className="w-4 h-4" />
           </button>
         </div>
 
