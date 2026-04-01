@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Film, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, X } from "lucide-react";
+import { Film, Mail, Lock, Eye, EyeOff, ArrowRight, Loader2, XIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -153,7 +153,7 @@ export default function Auth() {
             className="w-9 h-9 rounded-xl glass border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Close"
           >
-            <X className="w-4 h-4" />
+            <XIcon className="w-4 h-4" />
           </button>
         </div>
 
