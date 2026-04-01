@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, Plus, MapPin, User, X, Bell, Film, Sun, Moon, LogOut } from "lucide-react";
+import { Search, Compass, Plus, MapPin, User, X, Film, Sun, Moon, LogOut } from "lucide-react";
+import NotificationsDropdown from "@/components/NotificationsDropdown";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/useAuth";
 
