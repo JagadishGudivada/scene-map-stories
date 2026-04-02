@@ -30,7 +30,7 @@ function AppRoutes() {
       {!hideNav && <Navigation />}
       <Routes>
         <Route path="/" element={<Index />} />
-        <Route path="/explore" element={<Explore />} />
+        <Route path="/explore" element={<Navigate to="/" replace />} />
         <Route path="/title/:slug" element={<TitleDetail />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/add" element={<ProtectedRoute><AddTitle /></ProtectedRoute>} />
