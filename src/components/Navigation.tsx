@@ -7,13 +7,11 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/useAuth";
 
 const navLinks = [
-  { label: "Explore", href: "/explore", icon: Compass },
   { label: "Map", href: "/map", icon: MapPin },
 ];
 
 const mobileLinks = [
   { label: "Home", href: "/", icon: Film },
-  { label: "Explore", href: "/explore", icon: Compass },
   { label: "Map", href: "/map", icon: MapPin },
   { label: "Profile", href: "/u/elenarossi", icon: User },
 ];
