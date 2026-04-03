@@ -95,7 +95,7 @@ export default function Index() {
     setSelectedGenre("All");
     setSelectedType("All");
     setSelectedEra("All");
-    setSearchQuery("");
+    handleClearSearch();
   };
 
   return (
