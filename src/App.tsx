@@ -15,6 +15,7 @@ import MapPage from "./pages/MapPage";
 import AddTitle from "./pages/AddTitle";
 import SceneMode from "./pages/SceneMode";
 import LocationDetail from "./pages/LocationDetail";
+import FilmingSpots from "./pages/FilmingSpots";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
@@ -36,6 +37,7 @@ function AppRoutes() {
         <Route path="/add" element={<ProtectedRoute><AddTitle /></ProtectedRoute>} />
         <Route path="/scene-mode/:slug" element={<SceneMode />} />
         <Route path="/location/:slug" element={<LocationDetail />} />
+        <Route path="/location/:slug/filming-spots" element={<FilmingSpots />} />
         <Route path="/u/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />

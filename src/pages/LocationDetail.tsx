@@ -369,7 +369,9 @@ export default function LocationDetail() {
           {/* Spots list */}
           <div className="lg:w-[45%] flex flex-col">
             <div className="flex items-center gap-3 mb-4">
-              <h3 className="text-base font-semibold text-foreground">Filming Spots</h3>
+              <Link to={`/location/${slug}/filming-spots`} className="text-base font-semibold text-foreground hover:text-amber transition-colors">
+                Filming Spots
+              </Link>
               <span className="text-xs font-semibold text-charcoal bg-amber rounded-full px-2 py-0.5">
                 {romeData.totalLocations}
               </span>
