@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import L from "leaflet";
 import LeafletMap, { type MapPin as MapPinType } from "@/components/LeafletMap";
 import MapSidePanel from "@/components/MapSidePanel";
