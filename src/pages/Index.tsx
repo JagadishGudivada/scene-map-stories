@@ -122,15 +122,22 @@ export default function Index() {
           className="relative -mt-7 z-20 mb-10"
         >
           <div
+            ref={searchContainerRef}
             className={`relative transition-all duration-300 rounded-2xl shadow-float ${
               searchFocused ? "ring-2 ring-amber/40" : ""
             }`}
           >
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+            {isAISearching && (
+              <Loader2 className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-amber z-20 animate-spin" />
+            )}
             <input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => {
+                setSearchFocused(true);
+                if (aiResults.length > 0 && searchQuery.trim().length >= 3) setShowAIDropdown(true);
+              }}
               onBlur={() => setSearchFocused(false)}
               placeholder="Search titles, locations, genres..."
               className="w-full h-14 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm border border-border outline-none placeholder:text-muted-foreground transition-all"
