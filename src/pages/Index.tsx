@@ -38,6 +38,7 @@ const trendingTags = [
 ];
 
 export default function Index() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -45,6 +46,33 @@ export default function Index() {
   const [selectedType, setSelectedType] = useState<"All" | MediaType>("All");
   const [selectedEra, setSelectedEra] = useState("All");
   const [activeSection, setActiveSection] = useState<"discover" | "community">("discover");
+  const [showAIDropdown, setShowAIDropdown] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  const { aiResults, isSearching: isAISearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowAIDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    searchLocations(value);
+    setShowAIDropdown(value.trim().length >= 3);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    clearResults();
+    setShowAIDropdown(false);
+  };
 
   const filteredTitles = useMemo(() => {
     return mockTitles.filter((t) => {
