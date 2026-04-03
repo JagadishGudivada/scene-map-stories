@@ -148,7 +148,6 @@ export default function Index() {
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
-              )}
               <button
                 onClick={() => setShowFilters(!showFilters)}
                 className={`p-2.5 rounded-xl transition-all ${
