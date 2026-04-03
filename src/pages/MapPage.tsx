@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2 } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import L from "leaflet";
 import LeafletMap, { type MapPin as MapPinType } from "@/components/LeafletMap";
 import MapSidePanel from "@/components/MapSidePanel";
@@ -19,6 +20,7 @@ const typeBadgeClasses: Record<MediaType, string> = {
 };
 
 export default function MapPage() {
+  const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<"All" | MediaType>("All");
   const [showFilters, setShowFilters] = useState(false);
@@ -26,7 +28,42 @@ export default function MapPage() {
   const [pathMode, setPathMode] = useState(false);
   const [highlightedPin, setHighlightedPin] = useState<MapPinType | null>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+
+  // Handle URL search params from homepage
+  useEffect(() => {
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    const urlSearch = searchParams.get("search");
+    const urlLat = searchParams.get("lat");
+    const urlLng = searchParams.get("lng");
+
+    if (urlSearch) {
+      setSearchQuery(urlSearch);
+      searchLocations(urlSearch);
+    } else if (urlLat && urlLng) {
+      const lat = parseFloat(urlLat);
+      const lng = parseFloat(urlLng);
+      if (!isNaN(lat) && !isNaN(lng) && mapInstanceRef.current) {
+        mapInstanceRef.current.flyTo([lat, lng], 14, { duration: 1.5 });
+      }
+    }
+  }, [searchParams, searchLocations]);
+
+  // Fly to URL coordinates once map is ready
+  useEffect(() => {
+    const urlLat = searchParams.get("lat");
+    const urlLng = searchParams.get("lng");
+    if (urlLat && urlLng && mapInstanceRef.current) {
+      const lat = parseFloat(urlLat);
+      const lng = parseFloat(urlLng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        mapInstanceRef.current.flyTo([lat, lng], 14, { duration: 1.5 });
+      }
+    }
+  }, [searchParams]);
 
   // Trigger AI search when query changes
   useEffect(() => {

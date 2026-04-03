@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import HeroBanner from "@/components/HeroBanner";
 import CinemaCard from "@/components/CinemaCard";
 import TrendingRow from "@/components/TrendingRow";
 import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
+import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { mockTitles, mockPosts, type MediaType } from "@/lib/mockData";
 import {
   Sparkles,
@@ -18,6 +19,7 @@ import {
   MapPin,
   Film,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 
 const genres = ["All", "Drama", "Romance", "Crime", "Mystery", "Musical", "Fantasy", "Self-help"];
@@ -36,6 +38,7 @@ const trendingTags = [
 ];
 
 export default function Index() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -43,6 +46,33 @@ export default function Index() {
   const [selectedType, setSelectedType] = useState<"All" | MediaType>("All");
   const [selectedEra, setSelectedEra] = useState("All");
   const [activeSection, setActiveSection] = useState<"discover" | "community">("discover");
+  const [showAIDropdown, setShowAIDropdown] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  const { aiResults, isSearching: isAISearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setShowAIDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    searchLocations(value);
+    setShowAIDropdown(value.trim().length >= 3);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    clearResults();
+    setShowAIDropdown(false);
+  };
 
   const filteredTitles = useMemo(() => {
     return mockTitles.filter((t) => {
@@ -65,7 +95,7 @@ export default function Index() {
     setSelectedGenre("All");
     setSelectedType("All");
     setSelectedEra("All");
-    setSearchQuery("");
+    handleClearSearch();
   };
 
   return (
@@ -92,22 +122,29 @@ export default function Index() {
           className="relative -mt-7 z-20 mb-10"
         >
           <div
+            ref={searchContainerRef}
             className={`relative transition-all duration-300 rounded-2xl shadow-float ${
               searchFocused ? "ring-2 ring-amber/40" : ""
             }`}
           >
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
+            {isAISearching && (
+              <Loader2 className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-amber z-20 animate-spin" />
+            )}
             <input
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
+              onChange={(e) => handleSearchChange(e.target.value)}
+              onFocus={() => {
+                setSearchFocused(true);
+                if (aiResults.length > 0 && searchQuery.trim().length >= 3) setShowAIDropdown(true);
+              }}
               onBlur={() => setSearchFocused(false)}
               placeholder="Search titles, locations, genres..."
               className="w-full h-14 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm border border-border outline-none placeholder:text-muted-foreground transition-all"
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="p-1.5 rounded-lg hover:bg-muted/50">
+                <button onClick={handleClearSearch} className="p-1.5 rounded-lg hover:bg-muted/50">
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
@@ -143,6 +180,55 @@ export default function Index() {
                     </button>
                   )}
                 </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* AI Location Results Dropdown */}
+          <AnimatePresence>
+            {showAIDropdown && aiResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="absolute left-0 right-0 mt-2 rounded-2xl glass border border-border shadow-float overflow-hidden z-30"
+              >
+                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
+                  <Sparkles className="w-3.5 h-3.5 text-amber" />
+                  <span className="text-xs font-medium text-amber">AI-powered results</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{aiResults.length} locations</span>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {aiResults.map((loc, i) => (
+                    <button
+                      key={`${loc.lat}-${loc.lng}-${i}`}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
+                      onClick={() => {
+                        setShowAIDropdown(false);
+                        navigate(`/map?lat=${loc.lat}&lng=${loc.lng}&label=${encodeURIComponent(loc.label)}`);
+                      }}
+                    >
+                      <MapPin className="w-4 h-4 text-amber shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-sm text-foreground truncate">{loc.label}</p>
+                        <p className="text-xs text-muted-foreground truncate">{loc.title}</p>
+                      </div>
+                      <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground font-medium shrink-0">
+                        {loc.type}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAIDropdown(false);
+                    navigate(`/map?search=${encodeURIComponent(searchQuery)}`);
+                  }}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-t border-border text-sm text-amber hover:bg-muted/50 transition-colors"
+                >
+                  View all on Map
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </motion.div>
             )}
           </AnimatePresence>
