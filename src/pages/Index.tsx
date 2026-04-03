@@ -144,9 +144,10 @@ export default function Index() {
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="p-1.5 rounded-lg hover:bg-muted/50">
+                <button onClick={handleClearSearch} className="p-1.5 rounded-lg hover:bg-muted/50">
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
+              )}
               )}
               <button
                 onClick={() => setShowFilters(!showFilters)}
