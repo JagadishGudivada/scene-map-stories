@@ -16,6 +16,7 @@ import AddTitle from "./pages/AddTitle";
 import SceneMode from "./pages/SceneMode";
 import LocationDetail from "./pages/LocationDetail";
 import FilmingSpots from "./pages/FilmingSpots";
+import FilmingSpotDetail from "./pages/FilmingSpotDetail";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
