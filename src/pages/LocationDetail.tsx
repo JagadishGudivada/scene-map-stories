@@ -51,6 +51,7 @@ const romeTitles: LocationTitle[] = [
 interface FilmingSpot {
   id: number;
   name: string;
+  slug: string;
   lat: number;
   lng: number;
   titles: string[];
