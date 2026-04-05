@@ -397,35 +397,39 @@ export default function LocationDetail() {
             {/* Spot rows */}
             <div className="flex-1 overflow-y-auto no-scrollbar space-y-1">
               {filteredSpots.map((spot) => (
-                <motion.div
+                <Link
                   key={spot.id}
-                  onMouseEnter={() => setActiveSpot(spot.id)}
-                  onMouseLeave={() => setActiveSpot(null)}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 group ${
-                    activeSpot === spot.id
-                      ? "bg-amber/[0.06] border-l-2 border-amber"
-                      : "hover:bg-amber/[0.03] border-l-2 border-transparent"
-                  }`}
+                  to={`/spot/${spot.slug}`}
                 >
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                  <motion.div
+                    onMouseEnter={() => setActiveSpot(spot.id)}
+                    onMouseLeave={() => setActiveSpot(null)}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 group ${
                       activeSpot === spot.id
-                        ? "bg-amber text-charcoal"
-                        : "glass text-foreground"
+                        ? "bg-amber/[0.06] border-l-2 border-amber"
+                        : "hover:bg-amber/[0.03] border-l-2 border-transparent"
                     }`}
                   >
-                    {spot.id}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">{spot.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{spot.titles.join(", ")}</div>
-                  </div>
-                  <ArrowRight
-                    className={`w-4 h-4 shrink-0 transition-colors ${
-                      activeSpot === spot.id ? "text-amber" : "text-muted-foreground/40 group-hover:text-amber"
-                    }`}
-                  />
-                </motion.div>
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        activeSpot === spot.id
+                          ? "bg-amber text-charcoal"
+                          : "glass text-foreground"
+                      }`}
+                    >
+                      {spot.id}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">{spot.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{spot.titles.join(", ")}</div>
+                    </div>
+                    <ArrowRight
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        activeSpot === spot.id ? "text-amber" : "text-muted-foreground/40 group-hover:text-amber"
+                      }`}
+                    />
+                  </motion.div>
+                </Link>
               ))}
             </div>
 
