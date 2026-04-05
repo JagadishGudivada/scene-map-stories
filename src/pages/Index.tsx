@@ -119,7 +119,7 @@ export default function Index() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative -mt-7 z-20 mb-10"
+          className="relative mt-6 z-20 mb-10"
         >
           <div
             ref={searchContainerRef}
