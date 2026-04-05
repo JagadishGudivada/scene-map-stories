@@ -58,13 +58,13 @@ interface FilmingSpot {
 }
 
 const filmingSpots: FilmingSpot[] = [
-  { id: 1, name: "The Colosseum", lat: 41.8902, lng: 12.4922, titles: ["Gladiator", "Roman Holiday"] },
-  { id: 2, name: "Trevi Fountain", lat: 41.9009, lng: 12.4833, titles: ["Roman Holiday", "To Rome with Love"] },
-  { id: 3, name: "Pantheon", lat: 41.8986, lng: 12.4769, titles: ["Angels & Demons"] },
-  { id: 4, name: "Villa Borghese", lat: 41.9142, lng: 12.4921, titles: ["The Great Beauty"] },
-  { id: 5, name: "Spanish Steps", lat: 41.9060, lng: 12.4828, titles: ["Roman Holiday"] },
-  { id: 6, name: "Vatican City", lat: 41.9029, lng: 12.4534, titles: ["Angels & Demons"] },
-  { id: 7, name: "Piazza Navona", lat: 41.8992, lng: 12.4731, titles: ["Roman Holiday", "To Rome with Love"] },
+  { id: 1, slug: "the-colosseum", name: "The Colosseum", lat: 41.8902, lng: 12.4922, titles: ["Gladiator", "Roman Holiday"] },
+  { id: 2, slug: "trevi-fountain", name: "Trevi Fountain", lat: 41.9009, lng: 12.4833, titles: ["Roman Holiday", "To Rome with Love"] },
+  { id: 3, slug: "pantheon", name: "Pantheon", lat: 41.8986, lng: 12.4769, titles: ["Angels & Demons"] },
+  { id: 4, slug: "villa-borghese", name: "Villa Borghese", lat: 41.9142, lng: 12.4921, titles: ["The Great Beauty"] },
+  { id: 5, slug: "spanish-steps", name: "Spanish Steps", lat: 41.9060, lng: 12.4828, titles: ["Roman Holiday"] },
+  { id: 6, slug: "vatican-city", name: "Vatican City", lat: 41.9029, lng: 12.4534, titles: ["Angels & Demons"] },
+  { id: 7, slug: "piazza-navona", name: "Piazza Navona", lat: 41.8992, lng: 12.4731, titles: ["Roman Holiday", "To Rome with Love"] },
 ];
 
 const communityPhotos = [
