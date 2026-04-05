@@ -51,19 +51,20 @@ const romeTitles: LocationTitle[] = [
 interface FilmingSpot {
   id: number;
   name: string;
+  slug: string;
   lat: number;
   lng: number;
   titles: string[];
 }
 
 const filmingSpots: FilmingSpot[] = [
-  { id: 1, name: "The Colosseum", lat: 41.8902, lng: 12.4922, titles: ["Gladiator", "Roman Holiday"] },
-  { id: 2, name: "Trevi Fountain", lat: 41.9009, lng: 12.4833, titles: ["Roman Holiday", "To Rome with Love"] },
-  { id: 3, name: "Pantheon", lat: 41.8986, lng: 12.4769, titles: ["Angels & Demons"] },
-  { id: 4, name: "Villa Borghese", lat: 41.9142, lng: 12.4921, titles: ["The Great Beauty"] },
-  { id: 5, name: "Spanish Steps", lat: 41.9060, lng: 12.4828, titles: ["Roman Holiday"] },
-  { id: 6, name: "Vatican City", lat: 41.9029, lng: 12.4534, titles: ["Angels & Demons"] },
-  { id: 7, name: "Piazza Navona", lat: 41.8992, lng: 12.4731, titles: ["Roman Holiday", "To Rome with Love"] },
+  { id: 1, slug: "the-colosseum", name: "The Colosseum", lat: 41.8902, lng: 12.4922, titles: ["Gladiator", "Roman Holiday"] },
+  { id: 2, slug: "trevi-fountain", name: "Trevi Fountain", lat: 41.9009, lng: 12.4833, titles: ["Roman Holiday", "To Rome with Love"] },
+  { id: 3, slug: "pantheon", name: "Pantheon", lat: 41.8986, lng: 12.4769, titles: ["Angels & Demons"] },
+  { id: 4, slug: "villa-borghese", name: "Villa Borghese", lat: 41.9142, lng: 12.4921, titles: ["The Great Beauty"] },
+  { id: 5, slug: "spanish-steps", name: "Spanish Steps", lat: 41.9060, lng: 12.4828, titles: ["Roman Holiday"] },
+  { id: 6, slug: "vatican-city", name: "Vatican City", lat: 41.9029, lng: 12.4534, titles: ["Angels & Demons"] },
+  { id: 7, slug: "piazza-navona", name: "Piazza Navona", lat: 41.8992, lng: 12.4731, titles: ["Roman Holiday", "To Rome with Love"] },
 ];
 
 const communityPhotos = [
@@ -396,35 +397,39 @@ export default function LocationDetail() {
             {/* Spot rows */}
             <div className="flex-1 overflow-y-auto no-scrollbar space-y-1">
               {filteredSpots.map((spot) => (
-                <motion.div
+                <Link
                   key={spot.id}
-                  onMouseEnter={() => setActiveSpot(spot.id)}
-                  onMouseLeave={() => setActiveSpot(null)}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 group ${
-                    activeSpot === spot.id
-                      ? "bg-amber/[0.06] border-l-2 border-amber"
-                      : "hover:bg-amber/[0.03] border-l-2 border-transparent"
-                  }`}
+                  to={`/spot/${spot.slug}`}
                 >
-                  <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                  <motion.div
+                    onMouseEnter={() => setActiveSpot(spot.id)}
+                    onMouseLeave={() => setActiveSpot(null)}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all duration-200 group ${
                       activeSpot === spot.id
-                        ? "bg-amber text-charcoal"
-                        : "glass text-foreground"
+                        ? "bg-amber/[0.06] border-l-2 border-amber"
+                        : "hover:bg-amber/[0.03] border-l-2 border-transparent"
                     }`}
                   >
-                    {spot.id}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">{spot.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{spot.titles.join(", ")}</div>
-                  </div>
-                  <ArrowRight
-                    className={`w-4 h-4 shrink-0 transition-colors ${
-                      activeSpot === spot.id ? "text-amber" : "text-muted-foreground/40 group-hover:text-amber"
-                    }`}
-                  />
-                </motion.div>
+                    <div
+                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        activeSpot === spot.id
+                          ? "bg-amber text-charcoal"
+                          : "glass text-foreground"
+                      }`}
+                    >
+                      {spot.id}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">{spot.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">{spot.titles.join(", ")}</div>
+                    </div>
+                    <ArrowRight
+                      className={`w-4 h-4 shrink-0 transition-colors ${
+                        activeSpot === spot.id ? "text-amber" : "text-muted-foreground/40 group-hover:text-amber"
+                      }`}
+                    />
+                  </motion.div>
+                </Link>
               ))}
             </div>
 

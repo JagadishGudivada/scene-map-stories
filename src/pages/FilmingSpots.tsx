@@ -9,71 +9,7 @@ import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-
-/* ── Mock data per city (extend as needed) ── */
-interface FilmingSpot {
-  id: number;
-  name: string;
-  lat: number;
-  lng: number;
-  titles: string[];
-  description?: string;
-  type: "Movie" | "Series" | "Book";
-  image?: string;
-}
-
-interface CityData {
-  name: string;
-  country: string;
-  flag: string;
-  coords: [number, number];
-  spots: FilmingSpot[];
-}
-
-const citiesData: Record<string, CityData> = {
-  rome: {
-    name: "Rome",
-    country: "Italy",
-    flag: "🇮🇹",
-    coords: [41.9028, 12.4964],
-    spots: [
-      { id: 1, name: "The Colosseum", lat: 41.8902, lng: 12.4922, titles: ["Gladiator", "Roman Holiday"], type: "Movie", description: "The iconic amphitheatre featured in countless films, most notably the climactic arena scenes in Gladiator." },
-      { id: 2, name: "Trevi Fountain", lat: 41.9009, lng: 12.4833, titles: ["Roman Holiday", "To Rome with Love"], type: "Movie", description: "Made famous by Anita Ekberg's midnight dip in La Dolce Vita and the coin-tossing scene in Roman Holiday." },
-      { id: 3, name: "Pantheon", lat: 41.8986, lng: 12.4769, titles: ["Angels & Demons"], type: "Movie", description: "The ancient temple plays a pivotal role in Angels & Demons as a key clue in the Illuminati mystery." },
-      { id: 4, name: "Villa Borghese", lat: 41.9142, lng: 12.4921, titles: ["The Great Beauty"], type: "Movie", description: "The beautiful gardens serve as the backdrop for Jep Gambardella's reflections on Rome." },
-      { id: 5, name: "Spanish Steps", lat: 41.9060, lng: 12.4828, titles: ["Roman Holiday"], type: "Movie", description: "Where Audrey Hepburn's princess enjoys gelato in one of cinema's most beloved scenes." },
-      { id: 6, name: "Vatican City", lat: 41.9029, lng: 12.4534, titles: ["Angels & Demons"], type: "Movie", description: "St. Peter's Basilica and the Vatican Archives feature heavily in Dan Brown's thriller adaptation." },
-      { id: 7, name: "Piazza Navona", lat: 41.8992, lng: 12.4731, titles: ["Roman Holiday", "To Rome with Love"], type: "Movie", description: "This baroque masterpiece has served as a romantic backdrop in numerous Italian and Hollywood films." },
-    ],
-  },
-  paris: {
-    name: "Paris",
-    country: "France",
-    flag: "🇫🇷",
-    coords: [48.8566, 2.3522],
-    spots: [
-      { id: 1, name: "Eiffel Tower", lat: 48.8584, lng: 2.2945, titles: ["Midnight in Paris", "A View to a Kill"], type: "Movie", description: "Perhaps the most filmed landmark in the world, the Iron Lady stars in countless productions." },
-      { id: 2, name: "Pont des Arts", lat: 48.8583, lng: 2.3376, titles: ["Midnight in Paris"], type: "Movie", description: "The romantic bridge where Gil Pender wanders through Paris in Woody Allen's love letter to the city." },
-      { id: 3, name: "Sacré-Cœur", lat: 48.8867, lng: 2.3431, titles: ["Amélie"], type: "Movie", description: "The hilltop basilica overlooks Montmartre, Amélie Poulain's whimsical neighbourhood." },
-      { id: 4, name: "Café des 2 Moulins", lat: 48.8845, lng: 2.3338, titles: ["Amélie"], type: "Movie", description: "The real café where Amélie works as a waitress, still operating and welcoming fans." },
-      { id: 5, name: "Louvre Museum", lat: 48.8606, lng: 2.3376, titles: ["The Da Vinci Code", "Wonder Woman"], type: "Movie", description: "From Da Vinci Code's opening murder to Wonder Woman's Diana Prince working among masterpieces." },
-      { id: 6, name: "Notre-Dame", lat: 48.8530, lng: 2.3499, titles: ["The Hunchback of Notre Dame", "Before Sunset"], type: "Movie", description: "The gothic cathedral has inspired stories for centuries, from Victor Hugo to animated classics." },
-    ],
-  },
-  london: {
-    name: "London",
-    country: "United Kingdom",
-    flag: "🇬🇧",
-    coords: [51.5074, -0.1278],
-    spots: [
-      { id: 1, name: "Baker Street", lat: 51.5238, lng: -0.1585, titles: ["Sherlock"], type: "Series", description: "221B Baker Street, the iconic address of the world's most famous consulting detective." },
-      { id: 2, name: "Greenwich", lat: 51.4769, lng: -0.0005, titles: ["Sherlock", "Thor: The Dark World"], type: "Series", description: "The Old Royal Naval College has doubled for countless locations in film and television." },
-      { id: 3, name: "King's Cross Station", lat: 51.5320, lng: -0.1240, titles: ["Harry Potter"], type: "Movie", description: "Home of Platform 9¾, the magical gateway to Hogwarts Express." },
-      { id: 4, name: "Millennium Bridge", lat: 51.5095, lng: -0.0985, titles: ["Harry Potter"], type: "Movie", description: "Dramatically destroyed by Death Eaters in Harry Potter and the Half-Blood Prince." },
-      { id: 5, name: "Tower Bridge", lat: 51.5055, lng: -0.0754, titles: ["Bridget Jones's Diary", "Spider-Man: Far From Home"], type: "Movie", description: "London's most recognizable bridge, featured in action sequences and romantic finales alike." },
-    ],
-  },
-};
+import { citiesFilmingData, type FilmingSpotData } from "@/lib/filmingSpotsData";
 
 const typeIcons: Record<string, React.ElementType> = {
   Movie: Film,
@@ -83,11 +19,11 @@ const typeIcons: Record<string, React.ElementType> = {
 
 export default function FilmingSpots() {
   const { slug } = useParams<{ slug: string }>();
-  const city = citiesData[slug || ""] || citiesData.rome;
+  const city = citiesFilmingData[slug || ""] || citiesFilmingData.rome;
 
   const [spotSearch, setSpotSearch] = useState("");
   const [activeSpot, setActiveSpot] = useState<number | null>(null);
-  const [selectedSpot, setSelectedSpot] = useState<FilmingSpot | null>(null);
+  const [selectedSpot, setSelectedSpot] = useState<FilmingSpotData | null>(null);
   const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
 
   const filteredSpots = useMemo(() => {
@@ -119,7 +55,7 @@ export default function FilmingSpots() {
     return { lat: spot.lat, lng: spot.lng, label: spot.name, type: spot.type } as MapPinType;
   }, [activeSpot, selectedSpot, city.spots]);
 
-  function handleSpotClick(spot: FilmingSpot) {
+  function handleSpotClick(spot: FilmingSpotData) {
     setSelectedSpot(spot);
     setActiveSpot(spot.id);
     mapInstance?.flyTo([spot.lat, spot.lng], 16, { duration: 1.2 });
@@ -250,11 +186,13 @@ export default function FilmingSpots() {
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                      <ArrowRight
-                        className={`w-4 h-4 transition-all ${
-                          isActive ? "text-amber translate-x-0.5" : "text-muted-foreground opacity-0 group-hover:opacity-100"
-                        }`}
-                      />
+                      <Link to={`/spot/${spot.slug}`} onClick={(e) => e.stopPropagation()}>
+                        <ArrowRight
+                          className={`w-4 h-4 transition-all ${
+                            isActive ? "text-amber translate-x-0.5" : "text-muted-foreground opacity-0 group-hover:opacity-100"
+                          }`}
+                        />
+                      </Link>
                     </div>
                   </motion.div>
                 );
@@ -280,7 +218,9 @@ export default function FilmingSpots() {
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <MapPin className="w-4 h-4 text-amber" />
-                  <h3 className="text-lg font-bold text-foreground">{selectedSpot.name}</h3>
+                  <Link to={`/spot/${selectedSpot.slug}`} className="text-lg font-bold text-foreground hover:text-amber transition-colors">
+                    {selectedSpot.name}
+                  </Link>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {selectedSpot.lat.toFixed(4)}°N, {selectedSpot.lng.toFixed(4)}°E
@@ -322,10 +262,10 @@ export default function FilmingSpots() {
                 Open in Google Maps
               </a>
               <span className="text-border">·</span>
-              <button className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground">
+              <Link to={`/spot/${selectedSpot.slug}`} className="flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground">
                 <Camera className="w-3.5 h-3.5" />
-                View Photos
-              </button>
+                View Details
+              </Link>
             </div>
           </motion.div>
         )}
