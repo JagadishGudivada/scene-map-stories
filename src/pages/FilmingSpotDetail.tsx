@@ -5,6 +5,7 @@ import {
   Lightbulb, Info, Clock, ArrowRight,
 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
+import ShareMenu from "@/components/ShareMenu";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import {
