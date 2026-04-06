@@ -67,6 +67,7 @@ export default function LeafletMap({
   pathPins,
   onMapReady,
   highlightedPin,
+  showCoordinates = false,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -74,6 +75,7 @@ export default function LeafletMap({
   const polylineRef = useRef<(L.Polyline | L.Marker)[] | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightRef = useRef<L.CircleMarker | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
