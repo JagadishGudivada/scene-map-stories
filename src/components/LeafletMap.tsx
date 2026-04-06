@@ -95,9 +95,19 @@ export default function LeafletMap({
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
     leafletMap.current = map;
+
+    // Track coordinates for overlay
+    const updateCoords = () => {
+      const c = map.getCenter();
+      setCoords({ lat: c.lat, lng: c.lng });
+    };
+    updateCoords();
+    map.on("moveend", updateCoords);
+
     onMapReady?.(map);
 
     return () => {
+      map.off("moveend", updateCoords);
       map.remove();
       leafletMap.current = null;
       tileLayerRef.current = null;
