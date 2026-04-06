@@ -269,6 +269,14 @@ export default function LeafletMap({
   return (
     <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`}>
       <div ref={mapRef} className="w-full h-full" />
+      {/* Coordinates overlay */}
+      {showCoordinates && coords && (
+        <div className="absolute bottom-4 left-4 z-[1000] glass rounded-lg px-3 py-1.5 border border-border">
+          <p className="text-[10px] font-mono text-muted-foreground tracking-wider">
+            LAT {coords.lat.toFixed(4)} &nbsp; LNG {coords.lng.toFixed(4)}
+          </p>
+        </div>
+      )}
       {/* Legend overlay */}
       <div className="absolute top-4 right-4 z-[1000] glass rounded-xl px-3 py-2 border border-border">
         <div className="flex flex-col gap-1.5">
