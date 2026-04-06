@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster";
@@ -51,7 +51,6 @@ interface LeafletMapProps {
   pathPins?: MapPin[];
   onMapReady?: (map: L.Map) => void;
   highlightedPin?: MapPin | null;
-  showCoordinates?: boolean;
 }
 
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
@@ -67,7 +66,6 @@ export default function LeafletMap({
   pathPins,
   onMapReady,
   highlightedPin,
-  showCoordinates = false,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -75,7 +73,6 @@ export default function LeafletMap({
   const polylineRef = useRef<(L.Polyline | L.Marker)[] | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const highlightRef = useRef<L.CircleMarker | null>(null);
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -95,19 +92,9 @@ export default function LeafletMap({
 
     L.control.zoom({ position: "bottomright" }).addTo(map);
     leafletMap.current = map;
-
-    // Track coordinates for overlay
-    const updateCoords = () => {
-      const c = map.getCenter();
-      setCoords({ lat: c.lat, lng: c.lng });
-    };
-    updateCoords();
-    map.on("moveend", updateCoords);
-
     onMapReady?.(map);
 
     return () => {
-      map.off("moveend", updateCoords);
       map.remove();
       leafletMap.current = null;
       tileLayerRef.current = null;
@@ -269,14 +256,6 @@ export default function LeafletMap({
   return (
     <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`}>
       <div ref={mapRef} className="w-full h-full" />
-      {/* Coordinates overlay */}
-      {showCoordinates && coords && (
-        <div className="absolute bottom-4 left-4 z-[1000] glass rounded-lg px-3 py-1.5 border border-border">
-          <p className="text-[10px] font-mono text-muted-foreground tracking-wider">
-            LAT {coords.lat.toFixed(4)} &nbsp; LNG {coords.lng.toFixed(4)}
-          </p>
-        </div>
-      )}
       {/* Legend overlay */}
       <div className="absolute top-4 right-4 z-[1000] glass rounded-xl px-3 py-2 border border-border">
         <div className="flex flex-col gap-1.5">

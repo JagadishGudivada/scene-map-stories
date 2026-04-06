@@ -1,15 +1,13 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { MapPin, Star, Bookmark, Clock, Film, Tv, BookOpen, ArrowLeft, Camera, CheckCircle2 } from "lucide-react";
 import { mockTitles, mockPosts } from "@/lib/mockData";
-import { titleLocationPins, type EnrichedMapPin } from "@/lib/mapData";
-import LeafletMap, { type MapPin as MapPinType } from "@/components/LeafletMap";
+import { titleLocationPins } from "@/lib/mapData";
+import LeafletMap from "@/components/LeafletMap";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import L from "leaflet";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
@@ -19,9 +17,6 @@ function slugify(title: string, year: number) {
 
 export default function TitleDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
-  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const title = useMemo(
     () => mockTitles.find((t) => slugify(t.title, t.year) === slug),
@@ -40,7 +35,7 @@ export default function TitleDetail() {
   }
 
   const TypeIcon = typeIcons[title.type];
-  const pins: EnrichedMapPin[] = titleLocationPins[slugify(title.title, title.year)] || [];
+  const pins = titleLocationPins[slugify(title.title, title.year)] || [];
   const mapCenter: [number, number] = pins.length
     ? [pins.reduce((s, p) => s + p.lat, 0) / pins.length, pins.reduce((s, p) => s + p.lng, 0) / pins.length]
     : [30, 10];
@@ -49,165 +44,109 @@ export default function TitleDetail() {
   const relatedTitles = mockTitles.filter((t) => t.id !== title.id).slice(0, 4);
   const communityPosts = mockPosts.slice(0, 2);
 
-  const highlightedPin = activeIndex !== null ? pins[activeIndex] : null;
-
-  const handlePinClick = (pin: MapPinType) => {
-    const idx = pins.findIndex((p) => p.lat === pin.lat && p.lng === pin.lng);
-    if (idx !== -1) {
-      setActiveIndex(idx);
-      cardRefs.current[idx]?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }
-  };
-
-  const handleCardClick = (pin: EnrichedMapPin, index: number) => {
-    setActiveIndex(index);
-    if (mapInstance) {
-      mapInstance.flyTo([pin.lat, pin.lng], 14, { duration: 1.2 });
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-0">
-      {/* Split layout: map + sidebar */}
-      <div className="flex flex-col md:flex-row" style={{ height: "calc(100vh - 4rem)" }}>
-        {/* Left: Full-height map */}
-        <div className="relative w-full md:w-[65%] lg:w-[70%] h-[50vh] md:h-full">
-          {/* Back button */}
-          <Link
-            to="/"
-            className="absolute top-4 left-4 z-[1001] glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
+    <div className="min-h-screen bg-background pb-24 md:pb-8">
+      {/* Full-bleed Hero */}
+      <div className="relative h-[55vh] min-h-[400px] w-full overflow-hidden">
+        <img src={title.coverImage} alt={title.title} className="w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/60 via-transparent to-transparent" />
 
-          <LeafletMap
-            pins={pins}
-            center={mapCenter}
-            zoom={mapZoom}
-            className="h-full rounded-none border-0"
-            onPinClick={handlePinClick}
-            highlightedPin={highlightedPin}
-            showCoordinates
-            pathMode
-            pathPins={pins}
-            onMapReady={setMapInstance}
-          />
-        </div>
+        {/* Back button */}
+        <Link
+          to="/"
+          className="absolute top-20 left-4 sm:left-8 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Link>
 
-        {/* Right: Sidebar */}
-        <div className="w-full md:w-[35%] lg:w-[30%] border-l border-border bg-background flex flex-col overflow-hidden">
-          {/* Sidebar header */}
-          <div className="p-5 border-b border-border shrink-0">
-            <div className="flex items-center gap-2 mb-2">
-              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold badge-${title.type.toLowerCase()}`}>
+        {/* Hero Content */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10">
+          <div className="max-w-5xl mx-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+              {/* Type badge */}
+              <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3 badge-${title.type.toLowerCase()}`}>
                 <TypeIcon className="w-3 h-3" />
                 {title.type}
               </div>
-            </div>
 
-            <h1 className="font-serif text-2xl md:text-3xl text-foreground leading-tight mb-1">{title.title}</h1>
+              <h1 className="font-serif text-4xl sm:text-6xl text-foreground mb-2 leading-tight">{title.title}</h1>
 
-            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-4">
-              <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" /> {title.year}
-              </span>
-              <span className="flex items-center gap-1">
-                <Star className="w-3.5 h-3.5 text-amber" /> {title.rating}
-              </span>
-              <span className="flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-teal" /> {pins.length} locations
-              </span>
-            </div>
-
-            {/* Genre tags */}
-            <div className="flex flex-wrap gap-1.5 mb-4">
-              {title.genres.map((g) => (
-                <span key={g} className="glass rounded-full px-2.5 py-0.5 text-[10px] text-foreground border border-border">
-                  {g}
+              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-5">
+                <span className="flex items-center gap-1.5">
+                  <Clock className="w-4 h-4" /> {title.year}
                 </span>
-              ))}
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-2">
-              <button className="h-9 px-4 rounded-xl bg-gradient-amber text-amber font-semibold text-xs hover:opacity-90 transition-opacity shadow-amber flex items-center gap-1.5">
-                <Bookmark className="w-3.5 h-3.5" /> Save
-              </button>
-              <button className="h-9 px-4 rounded-xl glass border border-border text-foreground font-medium text-xs hover:bg-muted/50 transition-all flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Visited
-              </button>
-              <ShareMenu
-                title={title.title}
-                text={`Explore filming locations from ${title.title} (${title.year})`}
-              />
-            </div>
-          </div>
-
-          {/* Location cards */}
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-3">
-              <div className="flex items-center gap-2 mb-1">
-                <MapPin className="w-4 h-4 text-amber" />
-                <h2 className="text-sm font-semibold text-foreground uppercase tracking-wider">Filming Locations</h2>
+                <span className="flex items-center gap-1.5">
+                  <Star className="w-4 h-4 text-amber" /> {title.rating}
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-teal" /> {title.locationCount} locations
+                </span>
               </div>
 
-              {pins.map((pin, i) => (
-                <motion.div
-                  key={i}
-                  ref={(el) => { cardRefs.current[i] = el; }}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                  onClick={() => handleCardClick(pin, i)}
-                  className={`glass rounded-xl border cursor-pointer transition-all overflow-hidden group ${
-                    activeIndex === i
-                      ? "border-amber/50 ring-1 ring-amber/30"
-                      : "border-border hover:border-amber/20"
-                  }`}
-                >
-                  {/* Thumbnail */}
-                  {pin.image && (
-                    <div className="relative h-32 overflow-hidden">
-                      <img
-                        src={pin.image}
-                        alt={pin.label}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-                      {/* Documented badge */}
-                      <div className="absolute top-2 right-2 bg-teal/90 text-foreground text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full">
-                        Documented
-                      </div>
-                    </div>
-                  )}
+              {/* Genre tags */}
+              <div className="flex flex-wrap gap-2 mb-5">
+                {title.genres.map((g) => (
+                  <span key={g} className="glass rounded-full px-3 py-1 text-xs text-foreground border border-border">
+                    {g}
+                  </span>
+                ))}
+              </div>
 
-                  <div className="p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-serif text-base text-foreground">{pin.label}</h3>
-                    </div>
-                    {pin.city && (
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                        {pin.city}
-                      </span>
-                    )}
-                    {pin.description && (
-                      <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed italic">
-                        "{pin.description}"
-                      </p>
-                    )}
-                    <p className="text-[10px] text-muted-foreground/60 font-mono mt-2">
-                      {pin.lat.toFixed(4)}, {pin.lng.toFixed(4)}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </ScrollArea>
+              {/* Action buttons */}
+              <div className="flex items-center gap-3">
+                <button className="h-11 px-6 rounded-xl bg-gradient-amber text-charcoal font-bold text-sm hover:opacity-90 transition-opacity shadow-amber flex items-center gap-2">
+                  <Bookmark className="w-4 h-4" /> Save to Map
+                </button>
+                <button className="h-11 px-6 rounded-xl glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> I've Been Here
+                </button>
+                <ShareMenu
+                  title={title.title}
+                  text={`Explore ${title.locationCount} filming locations from ${title.title} (${title.year})`}
+                />
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
 
-      {/* Below-fold sections */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 mt-10">
+        {/* Filming Locations Section */}
+        <section className="mb-12">
+          <div className="flex items-center gap-3 mb-5">
+            <MapPin className="w-5 h-5 text-amber" />
+            <h2 className="font-serif text-2xl text-foreground">Filming Locations</h2>
+            <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-border">
+              {pins.length} pinned
+            </span>
+          </div>
+
+          {/* Interactive Map */}
+          <LeafletMap pins={pins} center={mapCenter} zoom={mapZoom} className="h-80 mb-6" />
+
+          {/* Location List */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {(pins.length ? pins : title.locations.map((l, i) => ({ label: l, lat: 0, lng: 0, type: title.type, title: title.title }))).map((loc, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="glass rounded-xl p-4 border border-border flex items-center gap-3 group cursor-pointer hover:border-amber/20 transition-all"
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center badge-${title.type.toLowerCase()}`}>
+                  <MapPin className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">{loc.label}</p>
+                  <p className="text-xs text-muted-foreground">View on map →</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
         {/* Community Photos */}
         <section className="mb-12">
           <div className="flex items-center gap-3 mb-5">
