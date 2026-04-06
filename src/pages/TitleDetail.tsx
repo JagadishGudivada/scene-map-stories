@@ -7,6 +7,7 @@ import { titleLocationPins } from "@/lib/mapData";
 import LeafletMap from "@/components/LeafletMap";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
+import ShareMenu from "@/components/ShareMenu";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
@@ -100,6 +101,10 @@ export default function TitleDetail() {
                 <button className="h-11 px-6 rounded-xl glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4" /> I've Been Here
                 </button>
+                <ShareMenu
+                  title={title.title}
+                  text={`Explore ${title.locationCount} filming locations from ${title.title} (${title.year})`}
+                />
               </div>
             </motion.div>
           </div>

@@ -5,6 +5,7 @@ import {
   Lightbulb, Info, Clock, ArrowRight,
 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
+import ShareMenu from "@/components/ShareMenu";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import {
@@ -218,6 +219,11 @@ export default function FilmingSpotDetail() {
                 <Camera className="w-4 h-4" />
                 Upload a Photo
               </button>
+              <ShareMenu
+                title={spot.name}
+                text={`Visit ${spot.name} in ${spot.city} — a real filming location from ${spot.titles.join(", ")}`}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass text-foreground font-medium text-sm hover:border-amber/40 transition-all"
+              />
             </motion.div>
 
             {/* Visit Tips */}

@@ -6,6 +6,7 @@ import {
   Train, ArrowRight, Bell, Sparkles, ChevronRight, Search, X
 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
+import ShareMenu from "@/components/ShareMenu";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import heroRomeImg from "@/assets/hero-rome-location.jpg";
 import heroRomeAlt from "@/assets/hero-rome.jpg";
@@ -278,6 +279,11 @@ export default function LocationDetail() {
               <Bell className="w-4 h-4 inline mr-1.5" />
               Get New Title Alerts
             </button>
+            <ShareMenu
+              title={`${romeData.name} Filming Locations`}
+              text={`Discover ${romeData.totalLocations} filming locations in ${romeData.name}, ${romeData.country}`}
+              className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all flex items-center gap-1.5"
+            />
           </motion.div>
         </div>
 
