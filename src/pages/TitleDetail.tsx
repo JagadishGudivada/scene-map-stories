@@ -7,6 +7,7 @@ import { titleLocationPins } from "@/lib/mapData";
 import LeafletMap from "@/components/LeafletMap";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
+import ShareMenu from "@/components/ShareMenu";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
