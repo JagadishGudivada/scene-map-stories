@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MapPin, Star, Bookmark, Clock, Film, Tv, BookOpen, ArrowLeft, Camera, CheckCircle2 } from "lucide-react";
+import { MapPin, Star, Bookmark, BookmarkCheck, Clock, Film, Tv, BookOpen, ArrowLeft, Camera, CheckCircle2 } from "lucide-react";
 import { mockTitles, mockPosts } from "@/lib/mockData";
 import { titleLocationPins } from "@/lib/mapData";
 import LeafletMap from "@/components/LeafletMap";
@@ -9,6 +9,7 @@ import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSavedTitle } from "@/hooks/useSaved";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
