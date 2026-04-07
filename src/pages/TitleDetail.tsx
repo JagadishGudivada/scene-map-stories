@@ -8,6 +8,7 @@ import LeafletMap from "@/components/LeafletMap";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
@@ -36,6 +37,9 @@ export default function TitleDetail() {
 
   const TypeIcon = typeIcons[title.type];
   const pins = titleLocationPins[slugify(title.title, title.year)] || [];
+  const locationItems = pins.length
+    ? pins
+    : title.locations.map((l) => ({ label: l, lat: 0, lng: 0, type: title.type, title: title.title }));
   const mapCenter: [number, number] = pins.length
     ? [pins.reduce((s, p) => s + p.lat, 0) / pins.length, pins.reduce((s, p) => s + p.lng, 0) / pins.length]
     : [30, 10];
@@ -118,32 +122,41 @@ export default function TitleDetail() {
             <MapPin className="w-5 h-5 text-amber" />
             <h2 className="font-serif text-2xl text-foreground">Filming Locations</h2>
             <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-border">
-              {pins.length} pinned
+              {locationItems.length} pinned
             </span>
           </div>
 
-          {/* Interactive Map */}
-          <LeafletMap pins={pins} center={mapCenter} zoom={mapZoom} className="h-80 mb-6" />
+          {/* Map + Location List Side by Side */}
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Interactive Map */}
+            <div className="flex-1 min-w-0">
+              <LeafletMap pins={locationItems} center={mapCenter} zoom={mapZoom} className="h-[420px] rounded-xl" />
+            </div>
 
-          {/* Location List */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {(pins.length ? pins : title.locations.map((l, i) => ({ label: l, lat: 0, lng: 0, type: title.type, title: title.title }))).map((loc, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06 }}
-                className="glass rounded-xl p-4 border border-border flex items-center gap-3 group cursor-pointer hover:border-amber/20 transition-all"
-              >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center badge-${title.type.toLowerCase()}`}>
-                  <MapPin className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">{loc.label}</p>
-                  <p className="text-xs text-muted-foreground">View on map →</p>
-                </div>
-              </motion.div>
-            ))}
+            {/* Scrollable Location List */}
+            <ScrollArea className="lg:w-80 h-[420px] glass rounded-xl border border-border">
+              <div className="p-3 space-y-2">
+                {locationItems.map((loc, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: 12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04 }}
+                    className="rounded-lg p-3 border border-border flex items-center gap-3 cursor-pointer hover:border-amber/20 hover:bg-muted/30 transition-all"
+                  >
+                    <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center badge-${title.type.toLowerCase()}`}>
+                      <MapPin className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{loc.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {loc.lat !== 0 ? `${loc.lat.toFixed(2)}°, ${loc.lng.toFixed(2)}°` : "View on map →"}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
         </section>
 
