@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Bookmark, Heart, Grid3X3, List, Users, Settings, Share2 } from "lucide-react";
+import { MapPin, Bookmark, Heart, Grid3X3, List, Users, Settings, Share2, X } from "lucide-react";
 import { mockUser, mockTitles, mockPosts } from "@/lib/mockData";
 import { allMapPins } from "@/lib/mapData";
 import CinemaCard from "@/components/CinemaCard";
 import PostCard from "@/components/PostCard";
 import LeafletMap from "@/components/LeafletMap";
+import { useAllSavedTitles, useAllSavedLocations } from "@/hooks/useSaved";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import coverImg from "@/assets/cover-paris.jpg";
 
 type Tab = "map" | "saved" | "posts" | "lists";
