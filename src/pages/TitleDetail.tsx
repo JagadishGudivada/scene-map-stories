@@ -8,6 +8,7 @@ import LeafletMap from "@/components/LeafletMap";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
