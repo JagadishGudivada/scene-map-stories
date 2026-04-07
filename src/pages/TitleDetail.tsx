@@ -102,8 +102,17 @@ export default function TitleDetail() {
 
               {/* Action buttons */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-gradient-amber text-charcoal font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity shadow-amber flex items-center gap-1.5 sm:gap-2">
-                  <Bookmark className="w-4 h-4" /> <span className="hidden xs:inline">Save to</span> Map
+                <button
+                  onClick={toggleSave}
+                  disabled={saveLoading}
+                  className={`h-10 sm:h-11 px-4 sm:px-6 rounded-xl font-bold text-xs sm:text-sm transition-opacity flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 ${
+                    saved
+                      ? "glass border border-amber/40 text-amber hover:bg-muted/50"
+                      : "bg-gradient-amber text-charcoal hover:opacity-90 shadow-amber"
+                  }`}
+                >
+                  {saved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                  <span className="hidden xs:inline">{saved ? "Saved" : "Save to"}</span> {saved ? "" : "Map"}
                 </button>
                 <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2">
                   <CheckCircle2 className="w-4 h-4" /> <span className="hidden xs:inline">I've</span> Been Here
