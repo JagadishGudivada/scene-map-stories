@@ -2,9 +2,10 @@ import { useState, useRef, useMemo } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, useInView } from "framer-motion";
 import {
-  MapPin, Star, Bookmark, Camera, ChevronDown, Grid3X3, List,
+  MapPin, Star, Bookmark, BookmarkCheck, Camera, ChevronDown, Grid3X3, List,
   Train, ArrowRight, Bell, Sparkles, ChevronRight, Search, X
 } from "lucide-react";
+import { useSavedLocation } from "@/hooks/useSaved";
 import LeafletMap from "@/components/LeafletMap";
 import ShareMenu from "@/components/ShareMenu";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
