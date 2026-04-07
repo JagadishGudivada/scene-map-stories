@@ -37,6 +37,9 @@ export default function TitleDetail() {
 
   const TypeIcon = typeIcons[title.type];
   const pins = titleLocationPins[slugify(title.title, title.year)] || [];
+  const locationItems = pins.length
+    ? pins
+    : title.locations.map((l) => ({ label: l, lat: 0, lng: 0, type: title.type, title: title.title }));
   const mapCenter: [number, number] = pins.length
     ? [pins.reduce((s, p) => s + p.lat, 0) / pins.length, pins.reduce((s, p) => s + p.lng, 0) / pins.length]
     : [30, 10];
