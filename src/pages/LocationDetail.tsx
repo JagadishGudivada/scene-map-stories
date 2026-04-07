@@ -113,6 +113,7 @@ const filterOptions = ["All", "Movies", "Series", "Books", "Classics (pre-1980)"
 
 export default function LocationDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const { saved: locationSaved, toggle: toggleLocationSave, loading: locationSaveLoading } = useSavedLocation(slug || "rome");
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSpot, setActiveSpot] = useState<number | null>(null);
   const [spotSearch, setSpotSearch] = useState("");
@@ -272,9 +273,17 @@ export default function LocationDetail() {
             >
               Explore All Locations on Map
             </Link>
-            <button className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all">
-              <Bookmark className="w-4 h-4 inline mr-1.5" />
-              Save City to My List
+            <button
+              onClick={toggleLocationSave}
+              disabled={locationSaveLoading}
+              className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
+                locationSaved
+                  ? "border border-amber/40 text-amber bg-amber/10 hover:bg-amber/20"
+                  : "border border-border/40 text-foreground hover:border-amber hover:text-amber"
+              }`}
+            >
+              {locationSaved ? <BookmarkCheck className="w-4 h-4 inline mr-1.5" /> : <Bookmark className="w-4 h-4 inline mr-1.5" />}
+              {locationSaved ? "City Saved" : "Save City to My List"}
             </button>
             <button className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all">
               <Bell className="w-4 h-4 inline mr-1.5" />
