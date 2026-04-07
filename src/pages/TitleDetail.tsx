@@ -37,7 +37,9 @@ export default function TitleDetail() {
   }
 
   const TypeIcon = typeIcons[title.type];
-  const pins = titleLocationPins[slugify(title.title, title.year)] || [];
+  const titleSlug = slugify(title.title, title.year);
+  const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
+  const pins = titleLocationPins[titleSlug] || [];
   const locationItems = pins.length
     ? pins
     : title.locations.map((l) => ({ label: l, lat: 0, lng: 0, type: title.type, title: title.title }));
