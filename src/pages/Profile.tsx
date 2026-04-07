@@ -33,6 +33,30 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("map");
   const [following, setFollowing] = useState(false);
   const user = mockUser;
+  const { user: authUser } = useAuth();
+  const { toast } = useToast();
+  const { slugs: savedTitleSlugs, loading: savedTitlesLoading, refresh: refreshTitles } = useAllSavedTitles();
+  const { slugs: savedLocationSlugs, loading: savedLocationsLoading, refresh: refreshLocations } = useAllSavedLocations();
+
+  function slugify(title: string, year: number) {
+    return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
+  }
+
+  const savedTitlesData = mockTitles.filter((t) => savedTitleSlugs.includes(slugify(t.title, t.year)));
+
+  const handleUnsaveTitle = async (titleSlug: string) => {
+    if (!authUser) return;
+    await supabase.from("saved_titles").delete().eq("user_id", authUser.id).eq("title_slug", titleSlug);
+    toast({ title: "Removed", description: "Title removed from saved list." });
+    refreshTitles();
+  };
+
+  const handleUnsaveLocation = async (locationSlug: string) => {
+    if (!authUser) return;
+    await supabase.from("saved_locations").delete().eq("user_id", authUser.id).eq("location_slug", locationSlug);
+    toast({ title: "Removed", description: "Location removed from saved list." });
+    refreshLocations();
+  };
 
   const formatNum = (n: number) => {
     if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
