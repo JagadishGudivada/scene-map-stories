@@ -98,12 +98,12 @@ export default function TitleDetail() {
               </div>
 
               {/* Action buttons */}
-              <div className="flex items-center gap-3">
-                <button className="h-11 px-6 rounded-xl bg-gradient-amber text-charcoal font-bold text-sm hover:opacity-90 transition-opacity shadow-amber flex items-center gap-2">
-                  <Bookmark className="w-4 h-4" /> Save to Map
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-gradient-amber text-charcoal font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity shadow-amber flex items-center gap-1.5 sm:gap-2">
+                  <Bookmark className="w-4 h-4" /> <span className="hidden xs:inline">Save to</span> Map
                 </button>
-                <button className="h-11 px-6 rounded-xl glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4" /> I've Been Here
+                <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> <span className="hidden xs:inline">I've</span> Been Here
                 </button>
                 <ShareMenu
                   title={title.title}
