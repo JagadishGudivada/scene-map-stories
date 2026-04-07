@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { MapPin, Star, Bookmark, Clock, Film, Tv, BookOpen, ArrowLeft, Camera, CheckCircle2 } from "lucide-react";
+import { MapPin, Star, Bookmark, BookmarkCheck, Clock, Film, Tv, BookOpen, ArrowLeft, Camera, CheckCircle2 } from "lucide-react";
 import { mockTitles, mockPosts } from "@/lib/mockData";
 import { titleLocationPins } from "@/lib/mapData";
 import LeafletMap from "@/components/LeafletMap";
@@ -9,6 +9,7 @@ import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSavedTitle } from "@/hooks/useSaved";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
@@ -36,7 +37,9 @@ export default function TitleDetail() {
   }
 
   const TypeIcon = typeIcons[title.type];
-  const pins = titleLocationPins[slugify(title.title, title.year)] || [];
+  const titleSlug = slugify(title.title, title.year);
+  const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
+  const pins = titleLocationPins[titleSlug] || [];
   const locationItems = pins.length
     ? pins
     : title.locations.map((l) => ({ label: l, lat: 0, lng: 0, type: title.type, title: title.title }));
@@ -99,8 +102,17 @@ export default function TitleDetail() {
 
               {/* Action buttons */}
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-                <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl bg-gradient-amber text-charcoal font-bold text-xs sm:text-sm hover:opacity-90 transition-opacity shadow-amber flex items-center gap-1.5 sm:gap-2">
-                  <Bookmark className="w-4 h-4" /> <span className="hidden xs:inline">Save to</span> Map
+                <button
+                  onClick={toggleSave}
+                  disabled={saveLoading}
+                  className={`h-10 sm:h-11 px-4 sm:px-6 rounded-xl font-bold text-xs sm:text-sm transition-opacity flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 ${
+                    saved
+                      ? "glass border border-amber/40 text-amber hover:bg-muted/50"
+                      : "bg-gradient-amber text-charcoal hover:opacity-90 shadow-amber"
+                  }`}
+                >
+                  {saved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                  <span className="hidden xs:inline">{saved ? "Saved" : "Save to"}</span> {saved ? "" : "Map"}
                 </button>
                 <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2">
                   <CheckCircle2 className="w-4 h-4" /> <span className="hidden xs:inline">I've</span> Been Here

@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Bookmark, Heart, Grid3X3, List, Users, Settings, Share2 } from "lucide-react";
+import { MapPin, Bookmark, Heart, Grid3X3, List, Users, Settings, Share2, X } from "lucide-react";
 import { mockUser, mockTitles, mockPosts } from "@/lib/mockData";
 import { allMapPins } from "@/lib/mapData";
 import CinemaCard from "@/components/CinemaCard";
 import PostCard from "@/components/PostCard";
 import LeafletMap from "@/components/LeafletMap";
+import { useAllSavedTitles, useAllSavedLocations } from "@/hooks/useSaved";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import coverImg from "@/assets/cover-paris.jpg";
 
 type Tab = "map" | "saved" | "posts" | "lists";
@@ -29,6 +33,30 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("map");
   const [following, setFollowing] = useState(false);
   const user = mockUser;
+  const { user: authUser } = useAuth();
+  const { toast } = useToast();
+  const { slugs: savedTitleSlugs, loading: savedTitlesLoading, refresh: refreshTitles } = useAllSavedTitles();
+  const { slugs: savedLocationSlugs, loading: savedLocationsLoading, refresh: refreshLocations } = useAllSavedLocations();
+
+  function slugify(title: string, year: number) {
+    return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
+  }
+
+  const savedTitlesData = mockTitles.filter((t) => savedTitleSlugs.includes(slugify(t.title, t.year)));
+
+  const handleUnsaveTitle = async (titleSlug: string) => {
+    if (!authUser) return;
+    await supabase.from("saved_titles").delete().eq("user_id", authUser.id).eq("title_slug", titleSlug);
+    toast({ title: "Removed", description: "Title removed from saved list." });
+    refreshTitles();
+  };
+
+  const handleUnsaveLocation = async (locationSlug: string) => {
+    if (!authUser) return;
+    await supabase.from("saved_locations").delete().eq("user_id", authUser.id).eq("location_slug", locationSlug);
+    toast({ title: "Removed", description: "Location removed from saved list." });
+    refreshLocations();
+  };
 
   const formatNum = (n: number) => {
     if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -161,10 +189,73 @@ export default function Profile() {
             )}
 
             {activeTab === "saved" && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {mockTitles.map((title, i) => (
-                  <CinemaCard key={title.id} title={title} size="md" delay={i * 0.06} />
-                ))}
+              <div>
+                {/* Saved Titles */}
+                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2">
+                  <Bookmark className="w-4 h-4 text-amber" /> Saved Titles
+                </h3>
+                {savedTitlesLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading…</p>
+                ) : savedTitlesData.length === 0 ? (
+                  <div className="glass rounded-2xl border border-border p-8 text-center mb-6">
+                    <Bookmark className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No saved titles yet. Browse titles and tap "Save to Map".</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+                    {savedTitlesData.map((title, i) => (
+                      <div key={title.id} className="relative group">
+                        <CinemaCard title={title} size="md" delay={i * 0.06} />
+                        <button
+                          onClick={() => handleUnsaveTitle(slugify(title.title, title.year))}
+                          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-background/80 border border-border flex items-center justify-center text-muted-foreground hover:text-red-400 hover:border-red-400/40 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Remove from saved"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Saved Locations */}
+                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
+                  <MapPin className="w-4 h-4 text-teal" /> Saved Locations
+                </h3>
+                {savedLocationsLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading…</p>
+                ) : savedLocationSlugs.length === 0 ? (
+                  <div className="glass rounded-2xl border border-border p-8 text-center">
+                    <MapPin className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No saved locations yet. Visit a location page and tap "Save City".</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {savedLocationSlugs.map((slug, i) => (
+                      <motion.div
+                        key={slug}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-teal" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground capitalize truncate">{slug.replace(/-/g, " ")}</span>
+                        </div>
+                        <button
+                          onClick={() => handleUnsaveLocation(slug)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Remove from saved"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
