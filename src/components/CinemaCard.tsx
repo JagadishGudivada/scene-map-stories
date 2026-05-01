@@ -12,6 +12,10 @@ interface CinemaCardProps {
   title: Title;
   size?: "sm" | "md" | "lg";
   delay?: number;
+  /** Show the AI confidence badge overlay on the image. */
+  showAiBadge?: boolean;
+  /** Confidence percentage 0-100. Defaults to a stable random value 88-97. */
+  aiConfidence?: number;
 }
 
 const typeBadgeClass: Record<string, string> = {
@@ -20,8 +24,22 @@ const typeBadgeClass: Record<string, string> = {
   Book: "badge-book",
 };
 
-export default function CinemaCard({ title, size = "md", delay = 0 }: CinemaCardProps) {
+// Stable per-instance fallback so the badge value doesn't change between renders.
+function defaultConfidence(seed: string) {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  return 88 + (h % 10); // 88..97
+}
+
+export default function CinemaCard({
+  title,
+  size = "md",
+  delay = 0,
+  showAiBadge = false,
+  aiConfidence,
+}: CinemaCardProps) {
   const [saved, setSaved] = useState(false);
+  const confidence = aiConfidence ?? defaultConfidence(`${title.title}-${title.year}`);
 
   const heights: Record<string, string> = {
     sm: "h-52",
