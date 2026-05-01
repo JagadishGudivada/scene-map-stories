@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
 import ShareMenu from "@/components/ShareMenu";
+import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import {
@@ -215,6 +216,15 @@ export default function FilmingSpotDetail() {
                 <Navigation2 className="w-4 h-4" />
                 Open in Google Maps
               </a>
+              <PlanYourTripDialog
+                locationName={spot.city}
+                trigger={
+                  <button className="relative overflow-hidden w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:brightness-110 transition-all shadow-amber">
+                    <span className="relative z-10">Plan Your Trip 🗺️</span>
+                    <div className="absolute inset-0 shimmer-sweep pointer-events-none" />
+                  </button>
+                }
+              />
               <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass text-foreground font-medium text-sm hover:border-amber/40 transition-all">
                 <Camera className="w-4 h-4" />
                 Upload a Photo
