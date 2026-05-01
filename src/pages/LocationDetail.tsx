@@ -8,6 +8,8 @@ import {
 import { useSavedLocation } from "@/hooks/useSaved";
 import LeafletMap from "@/components/LeafletMap";
 import ShareMenu from "@/components/ShareMenu";
+import PlanYourTripDialog from "@/components/PlanYourTripDialog";
+import VerificationAccordion from "@/components/VerificationAccordion";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import heroRomeImg from "@/assets/hero-rome-location.jpg";
 import heroRomeAlt from "@/assets/hero-rome.jpg";
@@ -368,6 +370,10 @@ export default function LocationDetail() {
 
       {/* SECTION 3: MAP + SPOTS LIST */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
+        {/* Verification accordion */}
+        <div className="mb-6">
+          <VerificationAccordion aiConfidence={94} />
+        </div>
         <div className="flex flex-col lg:flex-row gap-6" style={{ minHeight: 600 }}>
           {/* Map */}
           <div className="lg:w-[55%] h-[300px] lg:h-auto relative">
@@ -797,10 +803,7 @@ export default function LocationDetail() {
             Let our Film Concierge AI build you a personalised Rome cinema itinerary.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
-            <button className="relative overflow-hidden px-8 py-4 rounded-full bg-gradient-amber text-charcoal font-bold hover:brightness-110 hover:scale-[1.02] transition-all shadow-amber">
-              <span className="relative z-10">🤖 Build My Rome Itinerary</span>
-              <div className="absolute inset-0 shimmer-sweep" />
-            </button>
+            <PlanYourTripDialog locationName={romeData.name} />
             <button className="px-8 py-4 rounded-full border border-border/40 text-foreground font-medium hover:border-amber hover:text-amber transition-all">
               📥 Download Location Guide
             </button>
