@@ -90,6 +90,22 @@ export default function CinemaCard({
         </button>
       </div>
 
+      {/* AI confidence badge */}
+      {showAiBadge && (
+        <div
+          className="absolute bottom-3 right-3 z-10 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur border border-amber/30 text-amber"
+          style={{
+            fontFamily:
+              "'JetBrains Mono', ui-monospace, SFMono-Regular, monospace",
+            fontSize: "11px",
+            lineHeight: 1,
+          }}
+        >
+          <span aria-hidden>✨</span>
+          <span>AI: {confidence}%</span>
+        </div>
+      )}
+
       {/* Bottom content */}
       <div className="absolute bottom-0 left-0 right-0 p-4">
         {/* Rating */}
