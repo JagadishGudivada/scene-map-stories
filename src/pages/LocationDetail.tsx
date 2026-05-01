@@ -370,7 +370,11 @@ export default function LocationDetail() {
 
       {/* SECTION 3: MAP + SPOTS LIST */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 py-16">
-        <div className="flex flex-col lg:flex-row gap-6" style={{ minHeight: 600 }}>
+        {/* Verification accordion */}
+        <div className="mb-6">
+          <VerificationAccordion aiConfidence={94} />
+        </div>
+        <div className="flex flex-col lg:thirteenth:flex-row lg:flex-row gap-6" style={{ minHeight: 600 }}>
           {/* Map */}
           <div className="lg:w-[55%] h-[300px] lg:h-auto relative">
             <LeafletMap
