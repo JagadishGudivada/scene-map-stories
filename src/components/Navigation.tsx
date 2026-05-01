@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, Compass, Plus, MapPin, User, X, Film, Sun, Moon, LogOut } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
+import Logo from "@/components/Logo";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -31,13 +32,8 @@ export default function Navigation() {
         <div className="glass border-b border-border/50 h-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
             {/* Logo */}
-            <Link to="/" className="flex items-center gap-2 shrink-0">
-              <div className="w-7 h-7 rounded-lg bg-gradient-amber flex items-center justify-center">
-                <Film className="w-4 h-4 text-charcoal" strokeWidth={2.5} />
-              </div>
-              <span className="font-serif text-xl text-foreground tracking-tight hidden sm:block">
-                Sarevista
-              </span>
+            <Link to="/" className="flex items-center shrink-0 text-foreground">
+              <Logo size="md" variant="full" showBeta={true} />
             </Link>
 
             {/* Nav Links */}
