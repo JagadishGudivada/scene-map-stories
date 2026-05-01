@@ -374,7 +374,7 @@ export default function LocationDetail() {
         <div className="mb-6">
           <VerificationAccordion aiConfidence={94} />
         </div>
-        <div className="flex flex-col lg:thirteenth:flex-row lg:flex-row gap-6" style={{ minHeight: 600 }}>
+        <div className="flex flex-col lg:flex-row gap-6" style={{ minHeight: 600 }}>
           {/* Map */}
           <div className="lg:w-[55%] h-[300px] lg:h-auto relative">
             <LeafletMap
