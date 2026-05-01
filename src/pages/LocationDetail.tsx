@@ -8,6 +8,8 @@ import {
 import { useSavedLocation } from "@/hooks/useSaved";
 import LeafletMap from "@/components/LeafletMap";
 import ShareMenu from "@/components/ShareMenu";
+import PlanYourTripDialog from "@/components/PlanYourTripDialog";
+import VerificationAccordion from "@/components/VerificationAccordion";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import heroRomeImg from "@/assets/hero-rome-location.jpg";
 import heroRomeAlt from "@/assets/hero-rome.jpg";
