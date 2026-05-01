@@ -123,7 +123,7 @@ export default function FilmingSpotDetail() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="relative rounded-2xl overflow-hidden h-[300px] lg:h-[400px]"
+              className="relative rounded-2xl overflow-hidden h-[300px] lg:h-[400px] isolate z-0"
             >
               <LeafletMap
                 pins={[mainPin, ...nearbyPins]}
