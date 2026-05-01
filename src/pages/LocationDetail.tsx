@@ -803,10 +803,7 @@ export default function LocationDetail() {
             Let our Film Concierge AI build you a personalised Rome cinema itinerary.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
-            <button className="relative overflow-hidden px-8 py-4 rounded-full bg-gradient-amber text-charcoal font-bold hover:brightness-110 hover:scale-[1.02] transition-all shadow-amber">
-              <span className="relative z-10">🤖 Build My Rome Itinerary</span>
-              <div className="absolute inset-0 shimmer-sweep" />
-            </button>
+            <PlanYourTripDialog locationName={romeData.name} />
             <button className="px-8 py-4 rounded-full border border-border/40 text-foreground font-medium hover:border-amber hover:text-amber transition-all">
               📥 Download Location Guide
             </button>
