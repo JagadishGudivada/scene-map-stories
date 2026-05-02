@@ -1,16 +1,9 @@
 import { useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-
-export type TitleResult = {
-  title: string;
-  year: number;
-  type: "Movie" | "Series" | "Book";
-  creator?: string;
-  description?: string;
-};
+import type { MapPin } from "@/components/LeafletMap";
 
 export function useAILocationSearch() {
-  const [aiResults, setAiResults] = useState<TitleResult[]>([]);
+  const [aiResults, setAiResults] = useState<MapPin[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -19,7 +12,7 @@ export function useAILocationSearch() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setAiError(null);
 
-    if (query.trim().length < 2) {
+    if (query.trim().length < 3) {
       setAiResults([]);
       setIsSearching(false);
       return;
@@ -46,15 +39,16 @@ export function useAILocationSearch() {
           return;
         }
 
-        const titles: TitleResult[] = (data?.titles || []).map((t: any) => ({
-          title: String(t.title),
-          year: Number(t.year),
-          type: t.type === "Series" || t.type === "Book" ? t.type : "Movie",
-          creator: t.creator || undefined,
-          description: t.description || undefined,
+        const locations: MapPin[] = (data?.locations || []).map((loc: any) => ({
+          lat: loc.lat,
+          lng: loc.lng,
+          label: loc.label,
+          title: loc.title,
+          type: loc.type === "Movie" || loc.type === "Series" || loc.type === "Book" ? loc.type : "Movie",
+          image: loc.image || undefined,
         }));
 
-        setAiResults(titles);
+        setAiResults(locations);
       } catch (err) {
         console.error("AI search error:", err);
         setAiError("Search failed");
@@ -62,7 +56,7 @@ export function useAILocationSearch() {
       } finally {
         setIsSearching(false);
       }
-    }, 500);
+    }, 600);
   }, []);
 
   const clearResults = useCallback(() => {

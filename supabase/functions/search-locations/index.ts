@@ -14,7 +14,7 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
     if (!query || typeof query !== "string" || query.trim().length < 2) {
-      return new Response(JSON.stringify({ titles: [] }), {
+      return new Response(JSON.stringify({ locations: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -35,45 +35,46 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a movies, TV series, and books expert. When given a search query, return matching real titles (movies, TV series, or books) as a list. Match by title prefix/substring/fuzzy match. Return up to 8 most relevant, popular results. Respond ONLY via the return_titles tool.`,
+            content: `You are a filming locations expert. When given a search query about movies, TV series, books, or real-world locations, return famous filming/setting locations as JSON via the return_locations tool. Return up to 8 locations. Use real coordinates. type must be exactly "Movie", "Series", or "Book".`,
           },
           {
             role: "user",
-            content: `Search titles matching: "${query.trim()}"`,
+            content: `Find filming or setting locations for: "${query.trim()}"`,
           },
         ],
         tools: [
           {
             type: "function",
             function: {
-              name: "return_titles",
-              description: "Return a list of matching movie, series, or book titles",
+              name: "return_locations",
+              description: "Return a list of filming/setting locations",
               parameters: {
                 type: "object",
                 properties: {
-                  titles: {
+                  locations: {
                     type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        title: { type: "string", description: "Exact title name" },
-                        year: { type: "number", description: "Release/publication year" },
+                        lat: { type: "number" },
+                        lng: { type: "number" },
+                        label: { type: "string" },
+                        title: { type: "string" },
                         type: { type: "string", enum: ["Movie", "Series", "Book"] },
-                        creator: { type: "string", description: "Director or author" },
-                        description: { type: "string", description: "Short 1-line description" },
+                        image: { type: "string" },
                       },
-                      required: ["title", "year", "type"],
+                      required: ["lat", "lng", "label", "title", "type"],
                       additionalProperties: false,
                     },
                   },
                 },
-                required: ["titles"],
+                required: ["locations"],
                 additionalProperties: false,
               },
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "return_titles" } },
+        tool_choice: { type: "function", function: { name: "return_locations" } },
       }),
     });
 
@@ -99,19 +100,18 @@ serve(async (req) => {
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify({ titles: parsed.titles || [] }), {
+      return new Response(JSON.stringify({ locations: parsed.locations || [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-
     const content = data.choices?.[0]?.message?.content || "";
     try {
       const parsed = JSON.parse(content);
-      return new Response(JSON.stringify({ titles: parsed.titles || [] }), {
+      return new Response(JSON.stringify({ locations: parsed.locations || [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch {
-      return new Response(JSON.stringify({ titles: [] }), {
+      return new Response(JSON.stringify({ locations: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
