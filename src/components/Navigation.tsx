@@ -25,6 +25,44 @@ export default function Navigation() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
+  const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Trigger AI search as user types
+  useEffect(() => {
+    if (searchOpen) searchLocations(searchQuery);
+  }, [searchQuery, searchOpen, searchLocations]);
+
+  const closeSearch = () => {
+    setSearchOpen(false);
+    setSearchQuery("");
+    clearResults();
+  };
+
+  const handleResultClick = (lat: number, lng: number, label: string) => {
+    closeSearch();
+    navigate(`/map?search=${encodeURIComponent(label)}&lat=${lat}&lng=${lng}`);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+    const q = searchQuery.trim();
+    closeSearch();
+    navigate(`/map?search=${encodeURIComponent(q)}`);
+  };
+
+  // Close on outside click
+  useEffect(() => {
+    if (!searchOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        closeSearch();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [searchOpen]);
 
   return (
     <>
