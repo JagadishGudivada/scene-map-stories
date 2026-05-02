@@ -14,15 +14,13 @@ serve(async (req) => {
   try {
     const { query } = await req.json();
     if (!query || typeof query !== "string" || query.trim().length < 2) {
-      return new Response(JSON.stringify({ locations: [] }), {
+      return new Response(JSON.stringify({ titles: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -35,64 +33,56 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a filming locations expert. When given a search query about movies, TV series, books, or real-world locations, return famous filming/setting locations as JSON via the return_locations tool. Return up to 8 locations. Use real coordinates. type must be exactly "Movie", "Series", or "Book".`,
+            content: `You are a movies, TV series, and books expert. Given a query, return up to 8 real, popular matching titles (Movie / Series / Book) ordered by relevance. Use prefix and fuzzy matching. Respond ONLY via the return_titles tool.`,
           },
-          {
-            role: "user",
-            content: `Find filming or setting locations for: "${query.trim()}"`,
-          },
+          { role: "user", content: `Search titles matching: "${query.trim()}"` },
         ],
         tools: [
           {
             type: "function",
             function: {
-              name: "return_locations",
-              description: "Return a list of filming/setting locations",
+              name: "return_titles",
+              description: "Return matching movie, series, or book titles",
               parameters: {
                 type: "object",
                 properties: {
-                  locations: {
+                  titles: {
                     type: "array",
                     items: {
                       type: "object",
                       properties: {
-                        lat: { type: "number" },
-                        lng: { type: "number" },
-                        label: { type: "string" },
                         title: { type: "string" },
+                        year: { type: "number" },
                         type: { type: "string", enum: ["Movie", "Series", "Book"] },
-                        image: { type: "string" },
+                        creator: { type: "string", description: "Director or author" },
                       },
-                      required: ["lat", "lng", "label", "title", "type"],
+                      required: ["title", "year", "type"],
                       additionalProperties: false,
                     },
                   },
                 },
-                required: ["locations"],
+                required: ["titles"],
                 additionalProperties: false,
               },
             },
           },
         ],
-        tool_choice: { type: "function", function: { name: "return_locations" } },
+        tool_choice: { type: "function", function: { name: "return_titles" } },
       }),
     });
 
     if (!response.ok) {
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited, please try again shortly." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
+      console.error("AI gateway error:", response.status, await response.text());
       throw new Error("AI gateway error");
     }
 
@@ -100,23 +90,15 @@ serve(async (req) => {
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify({ locations: parsed.locations || [] }), {
+      return new Response(JSON.stringify({ titles: parsed.titles || [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const content = data.choices?.[0]?.message?.content || "";
-    try {
-      const parsed = JSON.parse(content);
-      return new Response(JSON.stringify({ locations: parsed.locations || [] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch {
-      return new Response(JSON.stringify({ locations: [] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    return new Response(JSON.stringify({ titles: [] }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
-    console.error("search-locations error:", e);
+    console.error("search-titles error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
