@@ -96,41 +96,106 @@ export default function Navigation() {
             {/* Right Actions */}
             <div className="flex items-center gap-2 ml-auto">
               {/* Search */}
-              <AnimatePresence>
-                {searchOpen ? (
-                  <motion.div
-                    initial={{ width: 40, opacity: 0 }}
-                    animate={{ width: 260, opacity: 1 }}
-                    exit={{ width: 40, opacity: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    className="relative"
-                  >
-                    <input
-                      autoFocus
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search titles, locations, users..."
-                      className="w-full h-9 pl-9 pr-9 rounded-lg bg-muted text-sm text-foreground placeholder:text-muted-foreground border border-border outline-none focus:border-amber/50 transition-colors"
-                    />
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <button
-                      onClick={() => { setSearchOpen(false); setSearchQuery(""); }}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2"
+              <div ref={searchContainerRef} className="relative">
+                <AnimatePresence>
+                  {searchOpen ? (
+                    <motion.form
+                      key="search-form"
+                      onSubmit={handleSubmit}
+                      initial={{ width: 40, opacity: 0 }}
+                      animate={{ width: 280, opacity: 1 }}
+                      exit={{ width: 40, opacity: 0 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                      className="relative"
                     >
-                      <X className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.button
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    onClick={() => setSearchOpen(true)}
-                    className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
-                  >
-                    <Search className="w-4 h-4" />
-                  </motion.button>
-                )}
-              </AnimatePresence>
+                      <input
+                        autoFocus
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search a movie, series, or book..."
+                        className="w-full h-9 pl-9 pr-9 rounded-lg bg-muted text-sm text-foreground placeholder:text-muted-foreground border border-border outline-none focus:border-amber/50 transition-colors"
+                      />
+                      {isSearching ? (
+                        <Loader2 className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-amber animate-spin" />
+                      ) : (
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={closeSearch}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2"
+                      >
+                        <X className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                      </button>
+                    </motion.form>
+                  ) : (
+                    <motion.button
+                      key="search-btn"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      onClick={() => setSearchOpen(true)}
+                      className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
+                    >
+                      <Search className="w-4 h-4" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+
+                {/* AI search dropdown */}
+                <AnimatePresence>
+                  {searchOpen && searchQuery.trim().length >= 2 && (aiResults.length > 0 || isSearching || aiError) && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute top-11 right-0 w-[320px] glass rounded-xl border border-border shadow-card overflow-hidden z-50"
+                    >
+                      <div className="px-3 py-2 border-b border-border/50 flex items-center gap-2">
+                        <Sparkles className="w-3.5 h-3.5 text-amber" />
+                        <span className="text-[11px] font-medium text-amber">
+                          {isSearching ? "Searching with AI..." : `${aiResults.length} AI-powered result${aiResults.length === 1 ? "" : "s"}`}
+                        </span>
+                      </div>
+                      {aiError && (
+                        <div className="px-3 py-2 text-xs text-destructive">{aiError}</div>
+                      )}
+                      <div className="max-h-80 overflow-y-auto">
+                        {aiResults.map((pin, i) => (
+                          <button
+                            key={`${pin.lat}-${pin.lng}-${i}`}
+                            type="button"
+                            onClick={() => handleResultClick(pin.lat, pin.lng, pin.label)}
+                            className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left border-b border-border/50 last:border-b-0"
+                          >
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-amber/10 text-amber border border-amber/20">
+                              <MapPin className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground truncate">{pin.label}</p>
+                              {pin.title && (
+                                <p className="text-xs text-muted-foreground truncate">{pin.title}</p>
+                              )}
+                            </div>
+                            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider shrink-0 mt-1">
+                              {pin.type}
+                            </span>
+                          </button>
+                        ))}
+                        {!isSearching && aiResults.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleSubmit as any}
+                            className="w-full px-3 py-2 text-xs font-medium text-amber hover:bg-amber/5 transition-colors"
+                          >
+                            View all on map →
+                          </button>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
 
               {/* Theme Toggle */}
               <button
