@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, Plus, MapPin, User, X, Film, Sun, Moon, LogOut, Sparkles, Loader2 } from "lucide-react";
+import { Search, Compass, Plus, MapPin, User, X, Film, Tv, BookOpen, Sun, Moon, LogOut, Sparkles, Loader2 } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import Logo from "@/components/Logo";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/useAuth";
-import { useAILocationSearch } from "@/hooks/useAILocationSearch";
+import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
+
+const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen } as const;
 
 const navLinks = [
   { label: "Map", href: "/map", icon: MapPin },
@@ -25,13 +27,13 @@ export default function Navigation() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
-  const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+  const { results: aiResults, isSearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Trigger AI search as user types
+  // Trigger AI title search as user types
   useEffect(() => {
-    if (searchOpen) searchLocations(searchQuery);
-  }, [searchQuery, searchOpen, searchLocations]);
+    if (searchOpen) searchTitles(searchQuery);
+  }, [searchQuery, searchOpen, searchTitles]);
 
   const closeSearch = () => {
     setSearchOpen(false);
@@ -39,17 +41,19 @@ export default function Navigation() {
     clearResults();
   };
 
-  const handleResultClick = (lat: number, lng: number, label: string) => {
+  const handleTitleClick = (title: string, year: number) => {
     closeSearch();
-    navigate(`/map?search=${encodeURIComponent(label)}&lat=${lat}&lng=${lng}`);
+    navigate(`/title/${slugifyTitle(title, year)}`);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
-    const q = searchQuery.trim();
-    closeSearch();
-    navigate(`/map?search=${encodeURIComponent(q)}`);
+    // If we have results, jump to the top one; else just close.
+    if (aiResults.length > 0) {
+      const top = aiResults[0];
+      handleTitleClick(top.title, top.year);
+    }
   };
 
   // Close on outside click
