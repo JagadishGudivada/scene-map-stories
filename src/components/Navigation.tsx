@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, Plus, MapPin, User, X, Film, Sun, Moon, LogOut } from "lucide-react";
+import { Search, Compass, Plus, MapPin, User, X, Film, Sun, Moon, LogOut, Sparkles, Loader2 } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import Logo from "@/components/Logo";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/useAuth";
+import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 
 const navLinks = [
   { label: "Map", href: "/map", icon: MapPin },
