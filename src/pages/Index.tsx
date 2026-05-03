@@ -222,7 +222,10 @@ export default function Index() {
                 <button
                   onClick={() => {
                     setShowAIDropdown(false);
-                    if (aiResults[0]) navigate(`/title/${slugifyTitle(aiResults[0].title, aiResults[0].year)}`);
+                    if (aiResults[0]) {
+                      const t = aiResults[0];
+                      navigate(`/title/${slugifyTitle(t.title, t.year)}`, { state: { title: t.title, year: t.year, type: t.type, creator: t.creator } });
+                    }
                   }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border-t border-border text-sm text-amber hover:bg-muted/50 transition-colors"
                 >
