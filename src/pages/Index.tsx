@@ -49,7 +49,7 @@ export default function Index() {
   const [showAIDropdown, setShowAIDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const { aiResults, isSearching: isAISearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+  const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -64,8 +64,8 @@ export default function Index() {
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    searchLocations(value);
-    setShowAIDropdown(value.trim().length >= 3);
+    searchTitles(value);
+    setShowAIDropdown(value.trim().length >= 2);
   };
 
   const handleClearSearch = () => {
