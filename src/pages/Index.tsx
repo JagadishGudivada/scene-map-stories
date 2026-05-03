@@ -6,7 +6,7 @@ import CinemaCard from "@/components/CinemaCard";
 import TrendingRow from "@/components/TrendingRow";
 import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
-import { useAILocationSearch } from "@/hooks/useAILocationSearch";
+import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { mockTitles, mockPosts, type MediaType } from "@/lib/mockData";
 import {
   Sparkles,
@@ -49,7 +49,7 @@ export default function Index() {
   const [showAIDropdown, setShowAIDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  const { aiResults, isSearching: isAISearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+  const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -64,8 +64,8 @@ export default function Index() {
 
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
-    searchLocations(value);
-    setShowAIDropdown(value.trim().length >= 3);
+    searchTitles(value);
+    setShowAIDropdown(value.trim().length >= 2);
   };
 
   const handleClearSearch = () => {
@@ -195,26 +195,26 @@ export default function Index() {
               >
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
                   <Sparkles className="w-3.5 h-3.5 text-amber" />
-                  <span className="text-xs font-medium text-amber">AI-powered results</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{aiResults.length} locations</span>
+                  <span className="text-xs font-medium text-amber">AI-powered titles</span>
+                  <span className="ml-auto text-xs text-muted-foreground">{aiResults.length} title{aiResults.length === 1 ? "" : "s"}</span>
                 </div>
                 <div className="max-h-72 overflow-y-auto">
-                  {aiResults.map((loc, i) => (
+                  {aiResults.map((t, i) => (
                     <button
-                      key={`${loc.lat}-${loc.lng}-${i}`}
+                      key={`${t.title}-${t.year}-${i}`}
                       className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
                       onClick={() => {
                         setShowAIDropdown(false);
-                        navigate(`/map?lat=${loc.lat}&lng=${loc.lng}&label=${encodeURIComponent(loc.label)}`);
+                        navigate(`/title/${slugifyTitle(t.title, t.year)}`);
                       }}
                     >
-                      <MapPin className="w-4 h-4 text-amber shrink-0" />
+                      <Film className="w-4 h-4 text-amber shrink-0" />
                       <div className="min-w-0">
-                        <p className="text-sm text-foreground truncate">{loc.label}</p>
-                        <p className="text-xs text-muted-foreground truncate">{loc.title}</p>
+                        <p className="text-sm text-foreground truncate">{t.title} <span className="text-muted-foreground">({t.year})</span></p>
+                        {t.creator && <p className="text-xs text-muted-foreground truncate">{t.creator}</p>}
                       </div>
                       <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground font-medium shrink-0">
-                        {loc.type}
+                        {t.type}
                       </span>
                     </button>
                   ))}
@@ -222,11 +222,11 @@ export default function Index() {
                 <button
                   onClick={() => {
                     setShowAIDropdown(false);
-                    navigate(`/map?search=${encodeURIComponent(searchQuery)}`);
+                    if (aiResults[0]) navigate(`/title/${slugifyTitle(aiResults[0].title, aiResults[0].year)}`);
                   }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border-t border-border text-sm text-amber hover:bg-muted/50 transition-colors"
                 >
-                  View all on Map
+                  Open top result
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </motion.div>
