@@ -41,9 +41,9 @@ export default function Navigation() {
     clearResults();
   };
 
-  const handleTitleClick = (title: string, year: number) => {
+  const handleTitleClick = (title: string, year: number, type?: string, creator?: string) => {
     closeSearch();
-    navigate(`/title/${slugifyTitle(title, year)}`);
+    navigate(`/title/${slugifyTitle(title, year)}`, { state: { title, year, type, creator } });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
