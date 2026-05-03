@@ -41,9 +41,9 @@ export default function Navigation() {
     clearResults();
   };
 
-  const handleTitleClick = (title: string, year: number) => {
+  const handleTitleClick = (title: string, year: number, type?: string, creator?: string) => {
     closeSearch();
-    navigate(`/title/${slugifyTitle(title, year)}`);
+    navigate(`/title/${slugifyTitle(title, year)}`, { state: { title, year, type, creator } });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -171,7 +171,7 @@ export default function Navigation() {
                             <button
                               key={`${t.title}-${t.year}-${i}`}
                               type="button"
-                              onClick={() => handleTitleClick(t.title, t.year)}
+                              onClick={() => handleTitleClick(t.title, t.year, t.type, t.creator)}
                               className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left border-b border-border/50 last:border-b-0"
                             >
                               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-amber/10 text-amber border border-amber/20">
