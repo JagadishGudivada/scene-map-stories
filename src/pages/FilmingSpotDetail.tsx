@@ -1,14 +1,16 @@
-import { Link, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MapPin, ChevronRight, Film, Tv, BookOpen, Navigation2, Camera,
-  Lightbulb, Info, Clock, ArrowRight,
+  Lightbulb, Info, Clock, ArrowRight, Loader2, Sparkles,
 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
 import ShareMenu from "@/components/ShareMenu";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
@@ -21,15 +23,146 @@ const typeIcons: Record<string, React.ElementType> = {
 
 export default function FilmingSpotDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const spot = getSpotBySlug(slug || "");
+  const routeState = useLocation().state as {
+    label?: string;
+    lat?: number;
+    lng?: number;
+    titleHint?: string;
+    type?: "Movie" | "Series" | "Book";
+    description?: string;
+  } | null;
+  const staticSpot = useMemo(() => getSpotBySlug(slug || ""), [slug]);
+  const [aiSpot, setAiSpot] = useState<{
+    name: string;
+    lat: number;
+    lng: number;
+    city: string;
+    country: string;
+    flag?: string;
+    address?: string;
+    description: string;
+    type: "Movie" | "Series" | "Book";
+    titles: string[];
+    funFacts?: string[];
+    visitTips?: string[];
+  } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!slug || staticSpot) {
+      setAiSpot(null);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+
+    (async () => {
+      try {
+        const { data, error: fnError } = await supabase.functions.invoke("spot-details", {
+          body: {
+            slug,
+            label: routeState?.label,
+            titleHint: routeState?.titleHint,
+            lat: routeState?.lat,
+            lng: routeState?.lng,
+            type: routeState?.type,
+          },
+        });
+
+        if (cancelled) return;
+
+        if (fnError) {
+          setError(fnError.message || "Failed to load location details");
+          return;
+        }
+
+        if (data?.error) {
+          setError(data.error);
+          return;
+        }
+
+        setAiSpot(data);
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load location details");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [slug, staticSpot, routeState?.label, routeState?.titleHint, routeState?.lat, routeState?.lng, routeState?.type]);
+
+  const spot = useMemo(() => {
+    if (staticSpot) return staticSpot;
+    if (!slug || !aiSpot) return null;
+
+    const city = aiSpot.city || "Unknown City";
+    const normalizedType = aiSpot.type || routeState?.type || "Movie";
+    const titles = aiSpot.titles?.length
+      ? aiSpot.titles
+      : routeState?.titleHint
+        ? [routeState.titleHint]
+        : [];
+
+    return {
+      id: 0,
+      slug,
+      name: aiSpot.name || routeState?.label || slug,
+      lat: aiSpot.lat ?? routeState?.lat ?? 0,
+      lng: aiSpot.lng ?? routeState?.lng ?? 0,
+      titles,
+      description: aiSpot.description || routeState?.description || "No description available yet.",
+      type: normalizedType,
+      city,
+      citySlug: city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+      country: aiSpot.country || "Unknown Country",
+      flag: aiSpot.flag || "📍",
+      funFacts: aiSpot.funFacts || [],
+      visitTips: aiSpot.visitTips || [],
+      address: aiSpot.address,
+    };
+  }, [aiSpot, routeState?.description, routeState?.label, routeState?.lat, routeState?.lng, routeState?.titleHint, routeState?.type, slug, staticSpot]);
+
+  const citySpots = staticSpot ? getSpotsByCity(staticSpot.citySlug).filter((s) => s.slug !== staticSpot.slug) : [];
+
+  if (!staticSpot && loading) {
+    return (
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center pt-20">
+        <div className="text-center px-6 max-w-md">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-amber/30 text-amber text-xs mb-4">
+            <Sparkles className="w-3.5 h-3.5" /> AI is loading this location
+          </div>
+          <Loader2 className="w-8 h-8 text-amber animate-spin mx-auto mb-3" />
+          <h1 className="text-2xl font-serif font-bold mb-2">Fetching spot details</h1>
+          <p className="text-muted-foreground text-sm">
+            We’re gathering filming location details for this title.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!spot) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center pt-20">
         <div className="text-center">
           <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-serif font-bold mb-2">Spot Not Found</h1>
-          <p className="text-muted-foreground mb-6">We couldn't find this filming location.</p>
+          <h1 className="text-2xl font-serif font-bold mb-2">Location details unavailable</h1>
+          <p className="text-muted-foreground mb-2">
+            {error || "We couldn't load this filming location right now."}
+          </p>
+          <p className="text-muted-foreground mb-6 text-sm">
+            Try opening the spot again from the title page.
+          </p>
           <Link to="/" className="text-amber hover:underline text-sm">← Back to Home</Link>
         </div>
       </div>
@@ -37,8 +170,6 @@ export default function FilmingSpotDetail() {
   }
 
   const Icon = typeIcons[spot.type] || Film;
-  const citySpots = getSpotsByCity(spot.citySlug).filter((s) => s.slug !== spot.slug);
-
   const mainPin: MapPinType = {
     lat: spot.lat,
     lng: spot.lng,
@@ -99,13 +230,19 @@ export default function FilmingSpotDetail() {
               <Icon className="w-3 h-3" />
               {spot.type}
             </span>
+            {!staticSpot && (
+              <span className="glass rounded-full px-2.5 py-1 text-[11px] font-medium text-amber border border-amber/30 flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3" />
+                AI generated
+              </span>
+            )}
           </div>
           <h1 className="text-3xl md:text-4xl font-bold text-foreground font-serif mb-2">{spot.name}</h1>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <MapPin className="w-3.5 h-3.5 text-amber" />
             <span>{spot.city}, {spot.country}</span>
             <span className="text-border">·</span>
-            <span className="font-mono text-xs">{spot.lat.toFixed(4)}°N, {spot.lng.toFixed(4)}°E</span>
+            <span className="font-mono text-xs">{spot.lat.toFixed(4)}, {spot.lng.toFixed(4)}</span>
           </div>
           {spot.address && (
             <p className="text-xs text-muted-foreground mt-1">{spot.address}</p>
