@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link, useLocation } from "react-router-dom";
+import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MapPin, Star, Bookmark, BookmarkCheck, Clock, Film, Tv, BookOpen,
@@ -34,8 +34,17 @@ type AIDetails = {
   locations: AILocation[];
 };
 
+function slugifySpot(label: string) {
+  return label
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+/, "")
+    .replace(/-+$/, "");
+}
+
 export default function TitleDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const navState = useLocation().state as
     | { title?: string; year?: number; type?: string; creator?: string }
     | null;
@@ -297,6 +306,18 @@ export default function TitleDetail() {
                     initial={{ opacity: 0, x: 12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
+                    onClick={() =>
+                      navigate(`/spot/${slugifySpot(loc.label)}`, {
+                        state: {
+                          label: loc.label,
+                          lat: loc.lat,
+                          lng: loc.lng,
+                          titleHint: view.title,
+                          type: view.type,
+                          description: loc.description,
+                        },
+                      })
+                    }
                     className="rounded-lg p-3 border border-border flex items-start gap-3 cursor-pointer hover:border-amber/20 hover:bg-muted/30 transition-all"
                   >
                     <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center badge-${view.type.toLowerCase()}`}>
