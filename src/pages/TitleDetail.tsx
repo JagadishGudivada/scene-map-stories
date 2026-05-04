@@ -121,6 +121,10 @@ export default function TitleDetail() {
     return null;
   }, [mockTitle, aiDetails]);
 
+  // titleSlug and saved state must be computed before any conditional returns (Rules of Hooks)
+  const titleSlug = view ? slugify(view.title, view.year) : "";
+  const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
+
   // Loading state
   if (!mockTitle && loading) {
     return (
@@ -152,8 +156,6 @@ export default function TitleDetail() {
   }
 
   const TypeIcon = typeIcons[view.type];
-  const titleSlug = slugify(view.title, view.year);
-  const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
 
   const validPins = view.locations.filter((l) => l.lat !== 0 || l.lng !== 0);
   const mapCenter: [number, number] = validPins.length
