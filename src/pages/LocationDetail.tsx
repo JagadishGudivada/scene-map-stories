@@ -243,8 +243,9 @@ export default function LocationDetail() {
       {/* SECTION 1: HERO */}
       <div ref={heroRef} className="relative h-screen w-full overflow-hidden grain">
         <img
-          src={heroRomeImg}
+          src={cityData.coverImage || heroRomeImg}
           alt={cityData.name}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = heroRomeImg; }}
           className="absolute inset-0 w-full h-full object-cover"
         />
         {/* Gradient overlay */}
