@@ -5,10 +5,8 @@ import {
   MapPin, ChevronRight, Film, Tv, BookOpen, Navigation2, Camera,
   Lightbulb, Info, Clock, ArrowRight, Loader2, Sparkles,
 } from "lucide-react";
-import LeafletMap from "@/components/LeafletMap";
 import ShareMenu from "@/components/ShareMenu";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
-import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
 import {
