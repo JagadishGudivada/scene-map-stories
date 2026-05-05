@@ -116,6 +116,11 @@ serve(async (req) => {
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
+
+      // Fetch a hero image from Wikipedia based on title
+      const coverImage = await fetchWikipediaImage(parsed.title, parsed.year, parsed.type);
+      if (coverImage) parsed.coverImage = coverImage;
+
       return new Response(JSON.stringify(parsed), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
