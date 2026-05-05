@@ -32,6 +32,7 @@ type AIDetails = {
   creator?: string;
   genres: string[];
   locations: AILocation[];
+  coverImage?: string;
 };
 
 function slugifySpot(label: string) {
@@ -122,7 +123,7 @@ export default function TitleDetail() {
         synopsis: aiDetails.synopsis,
         creator: aiDetails.creator,
         genres: aiDetails.genres || [],
-        coverImage: heroRomeImg,
+        coverImage: aiDetails.coverImage || heroRomeImg,
         locations: aiDetails.locations || [],
         locationCount: (aiDetails.locations || []).length,
       };
