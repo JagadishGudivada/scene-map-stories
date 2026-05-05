@@ -120,6 +120,40 @@ serve(async (req) => {
       const parsed = JSON.parse(toolCall.function.arguments);
       // ensure type fallback
       if (!parsed.type && type) parsed.type = type;
+
+      // Try to fetch a representative image of the place from Wikipedia
+      const imageQueries = [
+        parsed.name && parsed.city ? `${parsed.name} ${parsed.city}` : null,
+        parsed.name,
+        placeName,
+      ].filter(Boolean) as string[];
+      for (const q of imageQueries) {
+        try {
+          const sUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(q)}&srlimit=1&origin=*`;
+          const sr = await fetch(sUrl);
+          const sj = await sr.json();
+          const pageTitle = sj?.query?.search?.[0]?.title;
+          if (!pageTitle) continue;
+          const summaryRes = await fetch(
+            `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle.replace(/ /g, "_"))}`
+          );
+          const summary = await summaryRes.json();
+          const img = summary?.originalimage?.source || summary?.thumbnail?.source;
+          if (img) {
+            parsed.image = img;
+            break;
+          }
+        } catch (e) {
+          console.error("wiki image fetch failed:", e);
+        }
+      }
+
+      // Fallback: Unsplash source by place name
+      if (!parsed.image) {
+        const q = encodeURIComponent(`${parsed.name || placeName} ${parsed.city || ""}`.trim());
+        parsed.image = `https://source.unsplash.com/1600x900/?${q}`;
+      }
+
       return new Response(JSON.stringify(parsed), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
