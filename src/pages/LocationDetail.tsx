@@ -484,7 +484,7 @@ export default function LocationDetail() {
               <input
                 value={spotSearch}
                 onChange={(e) => setSpotSearch(e.target.value)}
-                placeholder="`Search spots in ${cityData.name}...`"
+                placeholder={`Search spots in ${cityData.name}...`}
                 className="w-full h-10 pl-9 pr-9 rounded-xl glass text-sm text-foreground placeholder:text-muted-foreground border-none outline-none focus:ring-1 focus:ring-amber/50"
               />
               {spotSearch && (
