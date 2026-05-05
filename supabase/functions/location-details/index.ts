@@ -44,7 +44,7 @@ serve(async (req) => {
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
 
-    const userPrompt = `Provide detailed information about the city "${cityName}" as a famous filming location for movies, TV series, and books. Include city name, country, ISO country code, country flag emoji, precise coordinates, a one-line poetic tagline (e.g. "The Eternal City — cinema's most enduring backdrop"), approximate count of titles filmed there, approximate count of distinct filming spots/locations, 6-8 famous titles filmed there with year/type/genres/rating/spotsCount, 5-7 iconic real filming spots with name/lat/lng/titles, and 3-4 hidden gems with name/film/note. Respond ONLY via the return_location tool.`;
+    const userPrompt = `Provide detailed information about the city "${cityName}" as a famous filming location for movies, TV series, and books. Include city name, country, ISO country code, country flag emoji, precise coordinates, a one-line poetic tagline (e.g. "The Eternal City — cinema's most enduring backdrop"), approximate count of titles filmed there, approximate count of distinct filming spots/locations, 6-8 famous titles filmed there with year/type/genres/rating/spotsCount, 5-7 iconic real filming spots with name/lat/lng/titles, and 3-4 hidden gems with name/film/note. Also include a Location at a Glance payload with: bestTime (monthly crowd levels Jan-Dec using level 1-5, best months, overcrowded months, short note, report count), transit (3-4 practical tips, short note, walkable cluster count, walkable titles count), and crowdStatus (overall label, levelPercent 0-100, 3-5 key spots with status labels, updated text). Respond ONLY via the return_location tool.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -124,6 +124,62 @@ serve(async (req) => {
                       additionalProperties: false,
                     },
                   },
+                  bestTime: {
+                    type: "object",
+                    properties: {
+                      monthLevels: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            month: { type: "string" },
+                            level: { type: "number" },
+                          },
+                          required: ["month", "level"],
+                          additionalProperties: false,
+                        },
+                      },
+                      overcrowdedMonths: { type: "array", items: { type: "string" } },
+                      bestMonths: { type: "array", items: { type: "string" } },
+                      note: { type: "string" },
+                      reportCount: { type: "number" },
+                    },
+                    required: ["monthLevels", "overcrowdedMonths", "bestMonths", "note", "reportCount"],
+                    additionalProperties: false,
+                  },
+                  transit: {
+                    type: "object",
+                    properties: {
+                      tips: { type: "array", items: { type: "string" } },
+                      note: { type: "string" },
+                      walkableClusters: { type: "number" },
+                      walkableTitles: { type: "number" },
+                    },
+                    required: ["tips", "note", "walkableClusters", "walkableTitles"],
+                    additionalProperties: false,
+                  },
+                  crowdStatus: {
+                    type: "object",
+                    properties: {
+                      overall: { type: "string" },
+                      levelPercent: { type: "number" },
+                      spots: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            name: { type: "string" },
+                            status: { type: "string" },
+                          },
+                          required: ["name", "status"],
+                          additionalProperties: false,
+                        },
+                      },
+                      updatedText: { type: "string" },
+                    },
+                    required: ["overall", "levelPercent", "spots", "updatedText"],
+                    additionalProperties: false,
+                  },
                 },
                 required: [
                   "name",
@@ -138,6 +194,9 @@ serve(async (req) => {
                   "titles",
                   "spots",
                   "hiddenGems",
+                  "bestTime",
+                  "transit",
+                  "crowdStatus",
                 ],
                 additionalProperties: false,
               },
@@ -175,6 +234,31 @@ serve(async (req) => {
     }
 
     const parsed = JSON.parse(toolCall.function.arguments);
+
+    // Enrich each title with a best-effort matched image so cards reflect the returned title names.
+    if (Array.isArray(parsed.titles) && parsed.titles.length > 0) {
+      const titleImages = await Promise.all(
+        parsed.titles.map(async (t: any) => {
+          const typeHint =
+            t?.type === "Series" ? "TV series" : t?.type === "Book" ? "book" : "film";
+          const img =
+            (await fetchWikipediaImage(`${t?.title ?? ""} ${typeHint}`)) ||
+            (await fetchWikipediaImage(String(t?.title ?? "")));
+
+          return (
+            img ||
+            `https://source.unsplash.com/800x1200/?${encodeURIComponent(
+              `${String(t?.title ?? "")} cinema`
+            )}`
+          );
+        })
+      );
+
+      parsed.titles = parsed.titles.map((t: any, i: number) => ({
+        ...t,
+        image: titleImages[i],
+      }));
+    }
 
     // Fetch hero image from Wikipedia
     const img =

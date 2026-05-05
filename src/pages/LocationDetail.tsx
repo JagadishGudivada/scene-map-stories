@@ -1,8 +1,8 @@
 import { useState, useRef, useMemo, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
-import { motion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   MapPin, Star, Bookmark, BookmarkCheck, Camera, ChevronDown, Grid3X3, List,
   Train, ArrowRight, Bell, Sparkles, ChevronRight, Search, X
@@ -113,10 +113,21 @@ const hiddenGems = [
   { name: "Via Appia Antica", film: "Ben-Hur", note: "Ancient road, zero crowds" },
 ];
 
+const transitTips = [
+  "Metro Line B → Colosseo",
+  "Metro Line A → Spagna (Spanish Steps)",
+  "Tram 8 → Piazza Navona area",
+];
+
 const filterOptions = ["All", "Movies", "Series", "Books", "Classics (pre-1980)", "Recent (2010+)"];
+
+function slugifyTitle(title: string, year: number) {
+  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "")}-${year}`;
+}
 
 export default function LocationDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const navigate = useNavigate();
   const { saved: locationSaved, toggle: toggleLocationSave, loading: locationSaveLoading } = useSavedLocation(slug || "rome");
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSpot, setActiveSpot] = useState<number | null>(null);
@@ -127,14 +138,13 @@ export default function LocationDetail() {
   const [aiError, setAiError] = useState<string | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const titleGridRef = useRef<HTMLDivElement>(null);
-  const communityRef = useRef<HTMLDivElement>(null);
-  const isCommunityInView = useInView(communityRef, { once: true, margin: "-100px" });
 
   useEffect(() => {
     if (!slug) return;
     let active = true;
     setAiLoading(true);
     setAiError(null);
+    setAiData(null);
     supabase.functions
       .invoke("location-details", { body: { slug } })
       .then(({ data, error }) => {
@@ -153,21 +163,22 @@ export default function LocationDetail() {
   }, [slug]);
 
   const cityData = useMemo(() => {
+    const baseCityData = romeData;
     if (aiData) {
       return {
-        name: aiData.name ?? cityData.name,
-        country: aiData.country ?? cityData.country,
-        countryCode: aiData.countryCode ?? cityData.countryCode,
-        flag: aiData.flag ?? cityData.flag,
-        totalTitles: aiData.totalTitles ?? (aiData.titles?.length || cityData.totalTitles),
-        totalLocations: aiData.totalLocations ?? (aiData.spots?.length || cityData.totalLocations),
-        explorers: cityData.explorers,
-        coords: { lat: aiData.lat ?? cityData.coords.lat, lng: aiData.lng ?? cityData.coords.lng },
-        tagline: aiData.tagline ?? cityData.tagline,
+        name: aiData.name ?? baseCityData.name,
+        country: aiData.country ?? baseCityData.country,
+        countryCode: aiData.countryCode ?? baseCityData.countryCode,
+        flag: aiData.flag ?? baseCityData.flag,
+        totalTitles: aiData.totalTitles ?? (aiData.titles?.length || baseCityData.totalTitles),
+        totalLocations: aiData.totalLocations ?? (aiData.spots?.length || baseCityData.totalLocations),
+        explorers: baseCityData.explorers,
+        coords: { lat: aiData.lat ?? baseCityData.coords.lat, lng: aiData.lng ?? baseCityData.coords.lng },
+        tagline: aiData.tagline ?? baseCityData.tagline,
         coverImage: aiData.coverImage as string | undefined,
       };
     }
-    return { ...romeData, coverImage: undefined as string | undefined };
+    return { ...baseCityData, coverImage: undefined as string | undefined };
   }, [aiData]);
 
   const titlesData: LocationTitle[] = useMemo(() => {
@@ -181,10 +192,10 @@ export default function LocationDetail() {
         spots: t.spots,
         genres: t.genres || [],
         rating: t.rating,
-        image: imgs[i % imgs.length],
+        image: typeof t.image === "string" && t.image.length > 0 ? t.image : imgs[i % imgs.length],
       }));
     }
-    return titlesData;
+    return [];
   }, [aiData]);
 
   const spotsData: FilmingSpot[] = useMemo(() => {
@@ -202,9 +213,46 @@ export default function LocationDetail() {
   }, [aiData]);
 
   const gemsData = aiData?.hiddenGems?.length ? aiData.hiddenGems : hiddenGems;
+  const inferredTransitTips = spotsData.slice(0, 3).map((spot) => `Public transit access to ${spot.name}`);
+  const inferredCrowdSpots = spotsData.slice(0, 4).map((spot, index) => ({
+    name: spot.name,
+    status: index === 0 ? "Busy" : index === 1 ? "Moderate" : "Quiet",
+  }));
+  const bestTimeData = {
+    monthLevels: aiData?.bestTime?.monthLevels?.length
+      ? aiData.bestTime.monthLevels
+      : monthData,
+    overcrowdedMonths: aiData?.bestTime?.overcrowdedMonths?.length
+      ? aiData.bestTime.overcrowdedMonths
+      : ["Jun", "Jul", "Aug"],
+    bestMonths: aiData?.bestTime?.bestMonths?.length
+      ? aiData.bestTime.bestMonths
+      : ["Mar", "Apr", "Oct", "Nov"],
+    note:
+      aiData?.bestTime?.note ||
+      `Shoulder seasons are usually best for filming-spot exploration in ${cityData.name}, with easier access and lighter queues.`,
+    reportCount: Number.isFinite(aiData?.bestTime?.reportCount) ? aiData.bestTime.reportCount : 2847,
+  };
+  const transitData = {
+    tips: aiData?.transit?.tips?.length ? aiData.transit.tips : (inferredTransitTips.length ? inferredTransitTips : transitTips),
+    note: aiData?.transit?.note || "Most filming locations are walkable from the centre",
+    walkableClusters: Number.isFinite(aiData?.transit?.walkableClusters) ? aiData.transit.walkableClusters : 12,
+    walkableTitles: Number.isFinite(aiData?.transit?.walkableTitles)
+      ? aiData.transit.walkableTitles
+      : Math.max(1, titlesData.length),
+  };
+  const crowdData = {
+    overall: aiData?.crowdStatus?.overall || "Moderate",
+    levelPercent: Number.isFinite(aiData?.crowdStatus?.levelPercent) ? aiData.crowdStatus.levelPercent : 40,
+    spots: aiData?.crowdStatus?.spots?.length
+      ? aiData.crowdStatus.spots
+      : (inferredCrowdSpots.length ? inferredCrowdSpots : crowdSpots),
+    updatedText: aiData?.crowdStatus?.updatedText || "Community reports · Updated 2h ago",
+  };
+  const isInitialLoading = aiLoading && !aiData && !aiError;
 
   // Intersection observer for sticky bar
-  useState(() => {
+  useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => setShowStickyBar(!entry.isIntersecting),
       { threshold: 0 }
@@ -212,7 +260,7 @@ export default function LocationDetail() {
     const el = heroRef.current;
     if (el) observer.observe(el);
     return () => { if (el) observer.unobserve(el); };
-  });
+  }, []);
 
   const mapPins: MapPinType[] = spotsData.map((s) => ({
     lat: s.lat,
@@ -230,13 +278,35 @@ export default function LocationDetail() {
     if (activeFilter === "Classics (pre-1980)") return titlesData.filter((t) => t.year < 1980);
     if (activeFilter === "Recent (2010+)") return titlesData.filter((t) => t.year >= 2010);
     return titlesData;
-  }, [activeFilter]);
+  }, [activeFilter, titlesData]);
 
   const filteredSpots = spotsData.filter(
     (s) =>
       s.name.toLowerCase().includes(spotSearch.toLowerCase()) ||
       s.titles.some((t) => t.toLowerCase().includes(spotSearch.toLowerCase()))
   );
+  const titleCount = Number.isFinite(cityData.totalTitles) ? cityData.totalTitles : titlesData.length;
+  const communityPhotosData = Array.isArray(aiData?.communityPhotos)
+    ? aiData.communityPhotos
+        .map((photo: any, index: number) => ({
+          id: String(photo.id ?? `ai-${index + 1}`),
+          user: String(photo.user ?? `explorer_${index + 1}`),
+          match: Number.isFinite(photo.match) ? photo.match : 0,
+          likes: Number.isFinite(photo.likes) ? photo.likes : 0,
+        }))
+    : communityPhotos;
+  const hasCommunityPhotos = communityPhotosData.some((photo: { user: string }) => photo.user !== "upload");
+
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <div className="glass rounded-2xl px-6 py-5 flex items-center gap-3 text-foreground">
+          <Loader2 className="w-5 h-5 text-amber animate-spin" />
+          <span className="text-sm font-medium">Loading location details...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
@@ -551,10 +621,10 @@ export default function LocationDetail() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <h2 className="font-serif italic text-4xl text-foreground mb-1">{`Titles Filmed in ${cityData.name}`}</h2>
-            <p className="text-sm text-muted-foreground">22 movies, series and books that brought this city to screen</p>
+            <p className="text-sm text-muted-foreground">{`${titleCount} movies, series and books that brought this city to screen`}</p>
           </div>
           <button className="text-sm text-amber hover:text-amber/80 transition-colors font-medium shrink-0 mt-2">
-            View all 22 →
+            {`View all ${titleCount} →`}
           </button>
         </div>
 
@@ -583,6 +653,11 @@ export default function LocationDetail() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
+              onClick={() =>
+                navigate(`/title/${slugifyTitle(title.title, title.year)}`, {
+                  state: { title: title.title, year: title.year, type: title.type },
+                })
+              }
               className="group glass rounded-2xl overflow-hidden hover:scale-[1.02] hover:shadow-amber hover:border-amber/30 transition-all duration-300 cursor-pointer"
             >
               {/* Poster */}
@@ -633,6 +708,12 @@ export default function LocationDetail() {
           ))}
         </div>
 
+        {filteredTitles.length === 0 && (
+          <div className="glass rounded-2xl p-6 text-sm text-muted-foreground text-center mt-5">
+            No AI title data available for this location yet.
+          </div>
+        )}
+
         <div className="flex justify-center mt-8">
           <button className="px-8 py-3 rounded-full border border-amber/40 text-amber text-sm font-semibold hover:bg-amber/10 transition-all">
             Load More Titles
@@ -663,7 +744,7 @@ export default function LocationDetail() {
             <p className="text-xs text-muted-foreground mb-5">Crowd levels and weather by month</p>
 
             <div className="flex items-end gap-2 mb-4" style={{ height: 80 }}>
-              {monthData.map((m) => {
+              {bestTimeData.monthLevels.map((m: { month: string; level: number }) => {
                 const h = m.level * 16;
                 const color =
                   m.level >= 5 ? "bg-destructive" : m.level >= 4 ? "bg-amber" : m.level >= 3 ? "bg-amber/60" : "bg-teal";
@@ -680,19 +761,19 @@ export default function LocationDetail() {
               <span className="text-xs">
                 <span className="inline-block w-2 h-2 rounded-full bg-destructive mr-1.5" />
                 <span className="text-destructive font-medium">Overcrowded:</span>{" "}
-                <span className="text-muted-foreground">Jun · Jul · Aug</span>
+                <span className="text-muted-foreground">{bestTimeData.overcrowdedMonths.join(" · ")}</span>
               </span>
               <span className="text-xs">
                 <span className="inline-block w-2 h-2 rounded-full bg-teal mr-1.5" />
                 <span className="text-teal font-medium">Best:</span>{" "}
-                <span className="text-muted-foreground">Mar · Apr · Oct · Nov</span>
+                <span className="text-muted-foreground">{bestTimeData.bestMonths.join(" · ")}</span>
               </span>
             </div>
 
             <p className="text-sm text-muted-foreground italic">
-              Avoid summer peak — the Colosseum queues can be 3+ hours. March gives you soft morning light and manageable crowds.
+              {bestTimeData.note}
             </p>
-            <p className="text-xs font-mono text-muted-foreground/60 mt-3">✓ Based on 2,847 explorer reports</p>
+            <p className="text-xs font-mono text-muted-foreground/60 mt-3">✓ Based on {bestTimeData.reportCount.toLocaleString()} explorer reports</p>
           </motion.div>
 
           {/* Card B: Getting Around */}
@@ -706,12 +787,12 @@ export default function LocationDetail() {
               <Train className="w-4 h-4" /> Transit Tips
             </h3>
             <ul className="space-y-2.5 text-sm text-foreground mb-4">
-              <li>Metro Line B → <span className="text-amber">Colosseo</span></li>
-              <li>Metro Line A → <span className="text-amber">Spagna</span> (Spanish Steps)</li>
-              <li>Tram 8 → Piazza Navona area</li>
+              {transitData.tips.map((tip: string) => (
+                <li key={tip}>{tip}</li>
+              ))}
             </ul>
-            <p className="text-xs text-muted-foreground italic mb-4">Most filming locations are walkable from the centre</p>
-            <p className="text-xs text-teal">🚶 12 of 22 titles have walkable location clusters</p>
+            <p className="text-xs text-muted-foreground italic mb-4">{transitData.note}</p>
+            <p className="text-xs text-teal">🚶 {transitData.walkableClusters} of {transitData.walkableTitles} titles have walkable location clusters</p>
           </motion.div>
 
           {/* Card C: Crowd Status */}
@@ -726,26 +807,26 @@ export default function LocationDetail() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber opacity-75" />
                 <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber" />
               </span>
-              <span className="text-foreground font-semibold text-sm">Moderate</span>
+              <span className="text-foreground font-semibold text-sm">{crowdData.overall}</span>
             </div>
 
             {/* Level bar */}
             <div className="w-full h-2 rounded-full bg-muted mb-4 relative overflow-hidden">
               <div className="absolute inset-y-0 left-0 rounded-full" style={{
-                width: "40%",
+                width: `${Math.max(0, Math.min(100, crowdData.levelPercent))}%`,
                 background: "linear-gradient(90deg, hsl(var(--teal)), hsl(var(--amber)))",
               }} />
             </div>
 
             <div className="space-y-2">
-              {crowdSpots.map((s) => (
+              {crowdData.spots.map((s: { name: string; status: string; color?: string }) => (
                 <div key={s.name} className="flex items-center justify-between text-xs">
                   <span className="text-foreground">{s.name}</span>
-                  <span className={s.color + " font-medium"}>{s.status}</span>
+                  <span className={(s.color || (s.status.toLowerCase().includes("quiet") ? "text-teal" : s.status.toLowerCase().includes("busy") ? "text-amber" : "text-foreground")) + " font-medium"}>{s.status}</span>
                 </div>
               ))}
             </div>
-            <p className="text-[10px] text-muted-foreground mt-4">Community reports · Updated 2h ago</p>
+            <p className="text-[10px] text-muted-foreground mt-4">{crowdData.updatedText}</p>
           </motion.div>
 
           {/* Card D: Hidden Gems */}
@@ -777,68 +858,85 @@ export default function LocationDetail() {
       </section>
 
       {/* SECTION 6: COMMUNITY PHOTOS */}
-      <section ref={communityRef} className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
-        <h2 className="font-serif italic text-3xl text-foreground mb-1">Explorer Photos from Rome</h2>
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+        <h2 className="font-serif italic text-3xl text-foreground mb-1">Explorer Photos from {cityData.name}</h2>
         <p className="text-sm text-muted-foreground mb-8">Shot by Sarevista explorers at real filming locations</p>
 
-        <div className="columns-2 md:columns-4 gap-3 space-y-3">
-          {communityPhotos.map((photo, i) => {
-            const isUpload = photo.user === "upload";
-            const heights = [320, 400, 360, 280, 440, 340, 380, 300];
-            const h = heights[i % heights.length];
+        {hasCommunityPhotos ? (
+          <div className="columns-2 md:columns-4 gap-3 space-y-3">
+            {communityPhotosData.map((photo: { id: string; user: string; match: number; likes: number }, i: number) => {
+              const isUpload = photo.user === "upload";
+              const heights = [320, 400, 360, 280, 440, 340, 380, 300];
+              const h = heights[i % heights.length];
 
-            if (isUpload) {
+              if (isUpload) {
+                return (
+                  <motion.div
+                    key={photo.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: "-50px" }}
+                    transition={{ delay: i * 0.06 }}
+                    className="break-inside-avoid rounded-2xl border-2 border-dashed border-amber/40 flex flex-col items-center justify-center gap-3 p-6 cursor-pointer hover:border-amber hover:bg-amber/5 transition-all"
+                    style={{ height: h }}
+                  >
+                    <Camera className="w-10 h-10 text-amber" />
+                    <span className="text-sm font-medium text-foreground text-center">Share your {cityData.name} discovery</span>
+                    <button className="px-4 py-2 rounded-full border border-amber/40 text-amber text-xs font-semibold hover:bg-amber/10 transition-colors">
+                      Upload Photo
+                    </button>
+                  </motion.div>
+                );
+              }
+
               return (
                 <motion.div
                   key={photo.id}
                   initial={{ opacity: 0, y: 20 }}
-                  animate={isCommunityInView ? { opacity: 1, y: 0 } : {}}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
                   transition={{ delay: i * 0.06 }}
-                  className="break-inside-avoid rounded-2xl border-2 border-dashed border-amber/40 flex flex-col items-center justify-center gap-3 p-6 cursor-pointer hover:border-amber hover:bg-amber/5 transition-all"
+                  className="break-inside-avoid relative rounded-2xl overflow-hidden group cursor-pointer"
                   style={{ height: h }}
                 >
-                  <Camera className="w-10 h-10 text-amber" />
-                  <span className="text-sm font-medium text-foreground text-center">Share your Rome discovery</span>
-                  <button className="px-4 py-2 rounded-full border border-amber/40 text-amber text-xs font-semibold hover:bg-amber/10 transition-colors">
-                    Upload Photo
-                  </button>
+                  <img
+                    src={[heroRomeAlt, londonImg, santoriniImg, nycImg, kyotoImg, tokyoImg, heroRomeImg][i % 7]}
+                    alt={`Photo by ${photo.user}`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                  />
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <img
+                        src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${photo.user}`}
+                        alt={photo.user}
+                        className="w-6 h-6 rounded-full"
+                      />
+                      <span className="text-xs text-foreground font-medium">@{photo.user}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-amber font-semibold">🎯 {photo.match}% Match</span>
+                      <span className="text-xs text-muted-foreground">❤️ {photo.likes}</span>
+                    </div>
+                  </div>
                 </motion.div>
               );
-            }
-
-            return (
-              <motion.div
-                key={photo.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={isCommunityInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: i * 0.06 }}
-                className="break-inside-avoid relative rounded-2xl overflow-hidden group cursor-pointer"
-                style={{ height: h }}
-              >
-                <img
-                  src={[heroRomeAlt, londonImg, santoriniImg, nycImg, kyotoImg, tokyoImg, heroRomeImg][i % 7]}
-                  alt={`Photo by ${photo.user}`}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                />
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <img
-                      src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${photo.user}`}
-                      alt={photo.user}
-                      className="w-6 h-6 rounded-full"
-                    />
-                    <span className="text-xs text-foreground font-medium">@{photo.user}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-amber font-semibold">🎯 {photo.match}% Match</span>
-                    <span className="text-xs text-muted-foreground">❤️ {photo.likes}</span>
-                  </div>
-                </div>
-              </motion.div>
-            );
-          })}
-        </div>
+            })}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="glass rounded-2xl border border-amber/30 p-8 flex flex-col items-center text-center gap-4"
+          >
+            <Camera className="w-10 h-10 text-amber" />
+            <h3 className="text-xl font-semibold text-foreground">No explorer photos yet</h3>
+            <p className="text-sm text-muted-foreground">Be the first to share a shot from {cityData.name}.</p>
+            <button className="px-5 py-2.5 rounded-full border border-amber/40 text-amber text-sm font-semibold hover:bg-amber/10 transition-colors">
+              Upload Photo
+            </button>
+          </motion.div>
+        )}
       </section>
 
       {/* SECTION 7: RELATED LOCATIONS */}
@@ -881,7 +979,7 @@ export default function LocationDetail() {
             Ready to walk in their footsteps?
           </motion.h2>
           <p className="text-muted-foreground mb-8">
-            Let our Film Concierge AI build you a personalised Rome cinema itinerary.
+            Let our Film Concierge AI build you a personalised {cityData.name} cinema itinerary.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
             <PlanYourTripDialog locationName={cityData.name} />
