@@ -257,24 +257,42 @@ export default function FilmingSpotDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           {/* Left: Map + Description */}
           <div className="lg:col-span-3 space-y-6">
-            {/* Map */}
+            {/* Hero image */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="relative rounded-2xl overflow-hidden h-[300px] lg:h-[400px] isolate z-0"
+              className="relative rounded-2xl overflow-hidden h-[300px] lg:h-[400px] isolate z-0 bg-muted"
             >
-              <LeafletMap
-                pins={[mainPin, ...nearbyPins]}
-                className="w-full h-full"
-                zoom={15}
-                center={[spot.lat, spot.lng]}
-                highlightedPin={mainPin}
-              />
+              {spot.image ? (
+                <img
+                  src={spot.image}
+                  alt={spot.name}
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                  onError={(e) => {
+                    const t = e.currentTarget;
+                    const q = encodeURIComponent(`${spot.name} ${spot.city}`);
+                    if (!t.dataset.fallback) {
+                      t.dataset.fallback = "1";
+                      t.src = `https://source.unsplash.com/1600x900/?${q}`;
+                    }
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+                  <Camera className="w-6 h-6 mr-2 opacity-60" />
+                  No image available
+                </div>
+              )}
               <div
                 className="absolute inset-0 pointer-events-none rounded-2xl"
-                style={{ boxShadow: "inset 0 0 60px 20px hsl(0 0% 5% / 0.4)" }}
+                style={{ boxShadow: "inset 0 0 80px 20px hsl(0 0% 5% / 0.55)" }}
               />
+              <div className="absolute bottom-3 left-3 glass rounded-full px-2.5 py-1 text-[11px] font-medium text-foreground flex items-center gap-1.5">
+                <MapPin className="w-3 h-3 text-amber" />
+                {spot.city}, {spot.country}
+              </div>
             </motion.div>
 
             {/* Description */}
