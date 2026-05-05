@@ -155,15 +155,15 @@ export default function LocationDetail() {
   const cityData = useMemo(() => {
     if (aiData) {
       return {
-        name: aiData.name ?? romeData.name,
-        country: aiData.country ?? romeData.country,
-        countryCode: aiData.countryCode ?? romeData.countryCode,
-        flag: aiData.flag ?? romeData.flag,
-        totalTitles: aiData.totalTitles ?? (aiData.titles?.length || romeData.totalTitles),
-        totalLocations: aiData.totalLocations ?? (aiData.spots?.length || romeData.totalLocations),
-        explorers: romeData.explorers,
-        coords: { lat: aiData.lat ?? romeData.coords.lat, lng: aiData.lng ?? romeData.coords.lng },
-        tagline: aiData.tagline ?? romeData.tagline,
+        name: aiData.name ?? cityData.name,
+        country: aiData.country ?? cityData.country,
+        countryCode: aiData.countryCode ?? cityData.countryCode,
+        flag: aiData.flag ?? cityData.flag,
+        totalTitles: aiData.totalTitles ?? (aiData.titles?.length || cityData.totalTitles),
+        totalLocations: aiData.totalLocations ?? (aiData.spots?.length || cityData.totalLocations),
+        explorers: cityData.explorers,
+        coords: { lat: aiData.lat ?? cityData.coords.lat, lng: aiData.lng ?? cityData.coords.lng },
+        tagline: aiData.tagline ?? cityData.tagline,
         coverImage: aiData.coverImage as string | undefined,
       };
     }
@@ -184,7 +184,7 @@ export default function LocationDetail() {
         image: imgs[i % imgs.length],
       }));
     }
-    return romeTitles;
+    return titlesData;
   }, [aiData]);
 
   const spotsData: FilmingSpot[] = useMemo(() => {
@@ -214,7 +214,7 @@ export default function LocationDetail() {
     return () => { if (el) observer.unobserve(el); };
   });
 
-  const mapPins: MapPinType[] = filmingSpots.map((s) => ({
+  const mapPins: MapPinType[] = spotsData.map((s) => ({
     lat: s.lat,
     lng: s.lng,
     label: s.name,
@@ -223,16 +223,16 @@ export default function LocationDetail() {
   }));
 
   const filteredTitles = useMemo(() => {
-    if (activeFilter === "All") return romeTitles;
-    if (activeFilter === "Movies") return romeTitles.filter((t) => t.type === "Movie");
-    if (activeFilter === "Series") return romeTitles.filter((t) => t.type === "Series");
-    if (activeFilter === "Books") return romeTitles.filter((t) => t.type === "Book");
-    if (activeFilter === "Classics (pre-1980)") return romeTitles.filter((t) => t.year < 1980);
-    if (activeFilter === "Recent (2010+)") return romeTitles.filter((t) => t.year >= 2010);
-    return romeTitles;
+    if (activeFilter === "All") return titlesData;
+    if (activeFilter === "Movies") return titlesData.filter((t) => t.type === "Movie");
+    if (activeFilter === "Series") return titlesData.filter((t) => t.type === "Series");
+    if (activeFilter === "Books") return titlesData.filter((t) => t.type === "Book");
+    if (activeFilter === "Classics (pre-1980)") return titlesData.filter((t) => t.year < 1980);
+    if (activeFilter === "Recent (2010+)") return titlesData.filter((t) => t.year >= 2010);
+    return titlesData;
   }, [activeFilter]);
 
-  const filteredSpots = filmingSpots.filter(
+  const filteredSpots = spotsData.filter(
     (s) =>
       s.name.toLowerCase().includes(spotSearch.toLowerCase()) ||
       s.titles.some((t) => t.toLowerCase().includes(spotSearch.toLowerCase()))
@@ -244,7 +244,7 @@ export default function LocationDetail() {
       <div ref={heroRef} className="relative h-screen w-full overflow-hidden grain">
         <img
           src={heroRomeImg}
-          alt="Rome at golden hour"
+          alt={cityData.name}
           className="absolute inset-0 w-full h-full object-cover"
         />
         {/* Gradient overlay */}
@@ -270,7 +270,7 @@ export default function LocationDetail() {
               Popular Filming Locations
             </Link>
             <span className="mx-2 text-muted-foreground/50">›</span>
-            <span>{romeData.flag} {romeData.name}</span>
+            <span>{cityData.flag} {cityData.name}</span>
           </div>
         </div>
 
@@ -284,12 +284,12 @@ export default function LocationDetail() {
             className="flex items-center gap-3 mb-4"
           >
             <span className="glass rounded-full px-3 py-1.5 text-sm font-medium text-foreground">
-              {romeData.countryCode} {romeData.flag} {romeData.country}
+              {cityData.countryCode} {cityData.flag} {cityData.country}
             </span>
             <span className="flex items-center gap-1.5">
               <MapPin className="w-3 h-3 text-amber" />
               <span className="font-mono text-xs text-muted-foreground">
-                {romeData.coords.lat}°N · {romeData.coords.lng}°E
+                {cityData.coords.lat}°N · {cityData.coords.lng}°E
               </span>
             </span>
           </motion.div>
@@ -302,7 +302,7 @@ export default function LocationDetail() {
             className="font-serif italic text-foreground leading-none mb-3"
             style={{ fontSize: "clamp(56px, 10vw, 88px)", textShadow: "0 4px 40px rgba(0,0,0,0.8)" }}
           >
-            {romeData.name}
+            {cityData.name}
           </motion.h1>
 
           {/* Tagline */}
@@ -312,7 +312,7 @@ export default function LocationDetail() {
             transition={{ delay: 0.4 }}
             className="text-muted-foreground italic font-light text-lg mb-6"
           >
-            {romeData.tagline}
+            {cityData.tagline}
           </motion.p>
 
           {/* Stats pills */}
@@ -323,9 +323,9 @@ export default function LocationDetail() {
             className="flex flex-wrap gap-3 mb-6"
           >
             {[
-              { icon: "🎬", label: `${romeData.totalTitles} titles filmed here` },
-              { icon: "📍", label: `${romeData.totalLocations} filming locations` },
-              { icon: "👁️", label: `${romeData.explorers} explorers` },
+              { icon: "🎬", label: `${cityData.totalTitles} titles filmed here` },
+              { icon: "📍", label: `${cityData.totalLocations} filming locations` },
+              { icon: "👁️", label: `${cityData.explorers} explorers` },
             ].map((stat, i) => (
               <motion.span
                 key={stat.label}
@@ -370,8 +370,8 @@ export default function LocationDetail() {
               Get New Title Alerts
             </button>
             <ShareMenu
-              title={`${romeData.name} Filming Locations`}
-              text={`Discover ${romeData.totalLocations} filming locations in ${romeData.name}, ${romeData.country}`}
+              title={`${cityData.name} Filming Locations`}
+              text={`Discover ${cityData.totalLocations} filming locations in ${cityData.name}, ${cityData.country}`}
               className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all flex items-center gap-1.5"
             />
           </motion.div>
@@ -408,8 +408,8 @@ export default function LocationDetail() {
           {/* Left: city pill */}
           <div className="flex items-center gap-2 shrink-0">
             <MapPin className="w-4 h-4 text-amber" />
-            <span className="text-sm font-medium text-foreground">{romeData.name}</span>
-            <span className="text-xs text-muted-foreground">· {romeData.totalTitles} titles</span>
+            <span className="text-sm font-medium text-foreground">{cityData.name}</span>
+            <span className="text-xs text-muted-foreground">· {cityData.totalTitles} titles</span>
           </div>
 
           {/* Center: filter chips */}
@@ -474,7 +474,7 @@ export default function LocationDetail() {
                 Filming Spots
               </Link>
               <span className="text-xs font-semibold text-charcoal bg-amber rounded-full px-2 py-0.5">
-                {romeData.totalLocations}
+                {cityData.totalLocations}
               </span>
             </div>
 
@@ -484,7 +484,7 @@ export default function LocationDetail() {
               <input
                 value={spotSearch}
                 onChange={(e) => setSpotSearch(e.target.value)}
-                placeholder="Search spots in Rome..."
+                placeholder="`Search spots in ${cityData.name}...`"
                 className="w-full h-10 pl-9 pr-9 rounded-xl glass text-sm text-foreground placeholder:text-muted-foreground border-none outline-none focus:ring-1 focus:ring-amber/50"
               />
               {spotSearch && (
@@ -547,7 +547,7 @@ export default function LocationDetail() {
       <section ref={titleGridRef} className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="font-serif italic text-4xl text-foreground mb-1">Titles Filmed in Rome</h2>
+            <h2 className="font-serif italic text-4xl text-foreground mb-1">{`Titles Filmed in ${cityData.name}`}</h2>
             <p className="text-sm text-muted-foreground">22 movies, series and books that brought this city to screen</p>
           </div>
           <button className="text-sm text-amber hover:text-amber/80 transition-colors font-medium shrink-0 mt-2">
@@ -604,7 +604,7 @@ export default function LocationDetail() {
                 <h3 className="font-serif italic text-xl text-foreground mb-1">{title.title}</h3>
                 <div className="flex items-center gap-1.5 text-amber text-sm mb-2">
                   <MapPin className="w-3.5 h-3.5" />
-                  <span className="font-medium">{title.spots} filming spots in Rome</span>
+                  <span className="font-medium">{title.spots} `filming spots in ${cityData.name}`</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {title.genres.map((g) => (
@@ -645,7 +645,7 @@ export default function LocationDetail() {
           viewport={{ once: true }}
           className="font-serif italic text-3xl text-foreground mb-8"
         >
-          Rome at a Glance
+          {`${cityData.name} at a Glance`}
         </motion.h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -756,7 +756,7 @@ export default function LocationDetail() {
             <p className="text-xs text-muted-foreground mb-4">Skip the crowds. These spots are just as cinematic.</p>
 
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-              {hiddenGems.map((gem) => (
+              {gemsData.map((gem) => (
                 <div
                   key={gem.name}
                   className="shrink-0 w-48 h-36 glass rounded-xl p-4 flex flex-col justify-between hover:border-amber/30 transition-colors cursor-pointer"
@@ -881,7 +881,7 @@ export default function LocationDetail() {
             Let our Film Concierge AI build you a personalised Rome cinema itinerary.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
-            <PlanYourTripDialog locationName={romeData.name} />
+            <PlanYourTripDialog locationName={cityData.name} />
             <button className="px-8 py-4 rounded-full border border-border/40 text-foreground font-medium hover:border-amber hover:text-amber transition-all">
               📥 Download Location Guide
             </button>
