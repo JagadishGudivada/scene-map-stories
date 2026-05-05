@@ -22,7 +22,7 @@ export function useAITitleSearch() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setError(null);
 
-    if (query.trim().length < 2) {
+    if (query.trim().length < 3) {
       setResults([]);
       setIsSearching(false);
       return;
@@ -34,6 +34,18 @@ export function useAITitleSearch() {
         const { data, error: fnError } = await supabase.functions.invoke("search-titles", {
           body: { query: query.trim() },
         });
+        // Handle rate limit / credit errors gracefully without crashing
+        const msg = (fnError as any)?.message || "";
+        if (fnError && /429/.test(msg)) {
+          setError("Too many searches — please wait a moment.");
+          setResults([]);
+          return;
+        }
+        if (fnError && /402/.test(msg)) {
+          setError("AI credits exhausted.");
+          setResults([]);
+          return;
+        }
         if (fnError) {
           setError("Search failed");
           setResults([]);
@@ -58,7 +70,7 @@ export function useAITitleSearch() {
       } finally {
         setIsSearching(false);
       }
-    }, 400);
+    }, 700);
   }, []);
 
   const clear = useCallback(() => {
