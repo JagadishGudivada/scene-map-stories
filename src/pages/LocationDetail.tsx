@@ -1,5 +1,7 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import {
   MapPin, Star, Bookmark, BookmarkCheck, Camera, ChevronDown, Grid3X3, List,
