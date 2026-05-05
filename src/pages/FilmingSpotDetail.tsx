@@ -172,21 +172,6 @@ export default function FilmingSpotDetail() {
   }
 
   const Icon = typeIcons[spot.type] || Film;
-  const mainPin: MapPinType = {
-    lat: spot.lat,
-    lng: spot.lng,
-    label: spot.name,
-    title: spot.titles[0],
-    type: spot.type,
-  };
-
-  const nearbyPins: MapPinType[] = citySpots.map((s) => ({
-    lat: s.lat,
-    lng: s.lng,
-    label: s.name,
-    title: s.titles[0],
-    type: s.type,
-  }));
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-20">
