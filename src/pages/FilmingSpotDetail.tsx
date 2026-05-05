@@ -130,6 +130,7 @@ export default function FilmingSpotDetail() {
       funFacts: aiSpot.funFacts || [],
       visitTips: aiSpot.visitTips || [],
       address: aiSpot.address,
+      image: aiSpot.image,
     };
   }, [aiSpot, routeState?.description, routeState?.label, routeState?.lat, routeState?.lng, routeState?.titleHint, routeState?.type, slug, staticSpot]);
 
