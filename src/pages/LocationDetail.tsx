@@ -1,5 +1,7 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
 import { motion, useInView } from "framer-motion";
 import {
   MapPin, Star, Bookmark, BookmarkCheck, Camera, ChevronDown, Grid3X3, List,
@@ -120,10 +122,86 @@ export default function LocationDetail() {
   const [activeSpot, setActiveSpot] = useState<number | null>(null);
   const [spotSearch, setSpotSearch] = useState("");
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiData, setAiData] = useState<any>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const titleGridRef = useRef<HTMLDivElement>(null);
   const communityRef = useRef<HTMLDivElement>(null);
   const isCommunityInView = useInView(communityRef, { once: true, margin: "-100px" });
+
+  useEffect(() => {
+    if (!slug) return;
+    let active = true;
+    setAiLoading(true);
+    setAiError(null);
+    supabase.functions
+      .invoke("location-details", { body: { slug } })
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          const msg = error.message || "";
+          setAiError(msg.includes("429") ? "Too many requests, please retry shortly." : msg.includes("402") ? "AI credits exhausted." : "Failed to load location.");
+        } else if (data?.error) {
+          setAiError(data.error);
+        } else {
+          setAiData(data);
+        }
+      })
+      .finally(() => active && setAiLoading(false));
+    return () => { active = false; };
+  }, [slug]);
+
+  const cityData = useMemo(() => {
+    if (aiData) {
+      return {
+        name: aiData.name ?? cityData.name,
+        country: aiData.country ?? cityData.country,
+        countryCode: aiData.countryCode ?? cityData.countryCode,
+        flag: aiData.flag ?? cityData.flag,
+        totalTitles: aiData.totalTitles ?? (aiData.titles?.length || cityData.totalTitles),
+        totalLocations: aiData.totalLocations ?? (aiData.spots?.length || cityData.totalLocations),
+        explorers: cityData.explorers,
+        coords: { lat: aiData.lat ?? cityData.coords.lat, lng: aiData.lng ?? cityData.coords.lng },
+        tagline: aiData.tagline ?? cityData.tagline,
+        coverImage: aiData.coverImage as string | undefined,
+      };
+    }
+    return { ...romeData, coverImage: undefined as string | undefined };
+  }, [aiData]);
+
+  const titlesData: LocationTitle[] = useMemo(() => {
+    if (aiData?.titles?.length) {
+      const imgs = [heroRomeAlt, santoriniImg, londonImg, kyotoImg, nycImg, tokyoImg];
+      return aiData.titles.map((t: any, i: number) => ({
+        id: String(i + 1),
+        title: t.title,
+        year: t.year,
+        type: t.type,
+        spots: t.spots,
+        genres: t.genres || [],
+        rating: t.rating,
+        image: imgs[i % imgs.length],
+      }));
+    }
+    return titlesData;
+  }, [aiData]);
+
+  const spotsData: FilmingSpot[] = useMemo(() => {
+    if (aiData?.spots?.length) {
+      return aiData.spots.map((s: any, i: number) => ({
+        id: i + 1,
+        slug: s.slug || s.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng,
+        titles: s.titles || [],
+      }));
+    }
+    return filmingSpots;
+  }, [aiData]);
+
+  const gemsData = aiData?.hiddenGems?.length ? aiData.hiddenGems : hiddenGems;
 
   // Intersection observer for sticky bar
   useState(() => {
@@ -136,7 +214,7 @@ export default function LocationDetail() {
     return () => { if (el) observer.unobserve(el); };
   });
 
-  const mapPins: MapPinType[] = filmingSpots.map((s) => ({
+  const mapPins: MapPinType[] = spotsData.map((s) => ({
     lat: s.lat,
     lng: s.lng,
     label: s.name,
@@ -145,16 +223,16 @@ export default function LocationDetail() {
   }));
 
   const filteredTitles = useMemo(() => {
-    if (activeFilter === "All") return romeTitles;
-    if (activeFilter === "Movies") return romeTitles.filter((t) => t.type === "Movie");
-    if (activeFilter === "Series") return romeTitles.filter((t) => t.type === "Series");
-    if (activeFilter === "Books") return romeTitles.filter((t) => t.type === "Book");
-    if (activeFilter === "Classics (pre-1980)") return romeTitles.filter((t) => t.year < 1980);
-    if (activeFilter === "Recent (2010+)") return romeTitles.filter((t) => t.year >= 2010);
-    return romeTitles;
+    if (activeFilter === "All") return titlesData;
+    if (activeFilter === "Movies") return titlesData.filter((t) => t.type === "Movie");
+    if (activeFilter === "Series") return titlesData.filter((t) => t.type === "Series");
+    if (activeFilter === "Books") return titlesData.filter((t) => t.type === "Book");
+    if (activeFilter === "Classics (pre-1980)") return titlesData.filter((t) => t.year < 1980);
+    if (activeFilter === "Recent (2010+)") return titlesData.filter((t) => t.year >= 2010);
+    return titlesData;
   }, [activeFilter]);
 
-  const filteredSpots = filmingSpots.filter(
+  const filteredSpots = spotsData.filter(
     (s) =>
       s.name.toLowerCase().includes(spotSearch.toLowerCase()) ||
       s.titles.some((t) => t.toLowerCase().includes(spotSearch.toLowerCase()))
@@ -165,8 +243,9 @@ export default function LocationDetail() {
       {/* SECTION 1: HERO */}
       <div ref={heroRef} className="relative h-screen w-full overflow-hidden grain">
         <img
-          src={heroRomeImg}
-          alt="Rome at golden hour"
+          src={cityData.coverImage || heroRomeImg}
+          alt={cityData.name}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).src = heroRomeImg; }}
           className="absolute inset-0 w-full h-full object-cover"
         />
         {/* Gradient overlay */}
@@ -187,12 +266,14 @@ export default function LocationDetail() {
 
         {/* Breadcrumb */}
         <div className="absolute top-20 left-[5%] z-10">
-          <div className="text-[13px] font-sans text-muted-foreground">
+          <div className="text-[13px] font-sans text-muted-foreground flex items-center gap-2">
             <Link to="/" className="text-amber hover:text-amber/80 transition-colors">
               Popular Filming Locations
             </Link>
             <span className="mx-2 text-muted-foreground/50">›</span>
-            <span>{romeData.flag} {romeData.name}</span>
+            <span>{cityData.flag} {cityData.name}</span>
+            {aiLoading && <Loader2 className="w-3.5 h-3.5 text-amber animate-spin ml-2" />}
+            {aiError && <span className="ml-2 text-destructive text-xs">{aiError}</span>}
           </div>
         </div>
 
@@ -206,12 +287,12 @@ export default function LocationDetail() {
             className="flex items-center gap-3 mb-4"
           >
             <span className="glass rounded-full px-3 py-1.5 text-sm font-medium text-foreground">
-              {romeData.countryCode} {romeData.flag} {romeData.country}
+              {cityData.countryCode} {cityData.flag} {cityData.country}
             </span>
             <span className="flex items-center gap-1.5">
               <MapPin className="w-3 h-3 text-amber" />
               <span className="font-mono text-xs text-muted-foreground">
-                {romeData.coords.lat}°N · {romeData.coords.lng}°E
+                {cityData.coords.lat}°N · {cityData.coords.lng}°E
               </span>
             </span>
           </motion.div>
@@ -224,7 +305,7 @@ export default function LocationDetail() {
             className="font-serif italic text-foreground leading-none mb-3"
             style={{ fontSize: "clamp(56px, 10vw, 88px)", textShadow: "0 4px 40px rgba(0,0,0,0.8)" }}
           >
-            {romeData.name}
+            {cityData.name}
           </motion.h1>
 
           {/* Tagline */}
@@ -234,7 +315,7 @@ export default function LocationDetail() {
             transition={{ delay: 0.4 }}
             className="text-muted-foreground italic font-light text-lg mb-6"
           >
-            {romeData.tagline}
+            {cityData.tagline}
           </motion.p>
 
           {/* Stats pills */}
@@ -245,9 +326,9 @@ export default function LocationDetail() {
             className="flex flex-wrap gap-3 mb-6"
           >
             {[
-              { icon: "🎬", label: `${romeData.totalTitles} titles filmed here` },
-              { icon: "📍", label: `${romeData.totalLocations} filming locations` },
-              { icon: "👁️", label: `${romeData.explorers} explorers` },
+              { icon: "🎬", label: `${cityData.totalTitles} titles filmed here` },
+              { icon: "📍", label: `${cityData.totalLocations} filming locations` },
+              { icon: "👁️", label: `${cityData.explorers} explorers` },
             ].map((stat, i) => (
               <motion.span
                 key={stat.label}
@@ -292,8 +373,8 @@ export default function LocationDetail() {
               Get New Title Alerts
             </button>
             <ShareMenu
-              title={`${romeData.name} Filming Locations`}
-              text={`Discover ${romeData.totalLocations} filming locations in ${romeData.name}, ${romeData.country}`}
+              title={`${cityData.name} Filming Locations`}
+              text={`Discover ${cityData.totalLocations} filming locations in ${cityData.name}, ${cityData.country}`}
               className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all flex items-center gap-1.5"
             />
           </motion.div>
@@ -330,8 +411,8 @@ export default function LocationDetail() {
           {/* Left: city pill */}
           <div className="flex items-center gap-2 shrink-0">
             <MapPin className="w-4 h-4 text-amber" />
-            <span className="text-sm font-medium text-foreground">{romeData.name}</span>
-            <span className="text-xs text-muted-foreground">· {romeData.totalTitles} titles</span>
+            <span className="text-sm font-medium text-foreground">{cityData.name}</span>
+            <span className="text-xs text-muted-foreground">· {cityData.totalTitles} titles</span>
           </div>
 
           {/* Center: filter chips */}
@@ -381,7 +462,7 @@ export default function LocationDetail() {
               pins={mapPins}
               className="w-full h-full min-h-[300px] lg:min-h-[600px]"
               zoom={13}
-              center={[41.9028, 12.4964]}
+              center={[cityData.coords.lat, cityData.coords.lng]}
             />
             {/* Map vignette */}
             <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{
@@ -396,7 +477,7 @@ export default function LocationDetail() {
                 Filming Spots
               </Link>
               <span className="text-xs font-semibold text-charcoal bg-amber rounded-full px-2 py-0.5">
-                {romeData.totalLocations}
+                {cityData.totalLocations}
               </span>
             </div>
 
@@ -406,7 +487,7 @@ export default function LocationDetail() {
               <input
                 value={spotSearch}
                 onChange={(e) => setSpotSearch(e.target.value)}
-                placeholder="Search spots in Rome..."
+                placeholder={`Search spots in ${cityData.name}...`}
                 className="w-full h-10 pl-9 pr-9 rounded-xl glass text-sm text-foreground placeholder:text-muted-foreground border-none outline-none focus:ring-1 focus:ring-amber/50"
               />
               {spotSearch && (
@@ -469,7 +550,7 @@ export default function LocationDetail() {
       <section ref={titleGridRef} className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
         <div className="flex items-start justify-between mb-6">
           <div>
-            <h2 className="font-serif italic text-4xl text-foreground mb-1">Titles Filmed in Rome</h2>
+            <h2 className="font-serif italic text-4xl text-foreground mb-1">{`Titles Filmed in ${cityData.name}`}</h2>
             <p className="text-sm text-muted-foreground">22 movies, series and books that brought this city to screen</p>
           </div>
           <button className="text-sm text-amber hover:text-amber/80 transition-colors font-medium shrink-0 mt-2">
@@ -526,7 +607,7 @@ export default function LocationDetail() {
                 <h3 className="font-serif italic text-xl text-foreground mb-1">{title.title}</h3>
                 <div className="flex items-center gap-1.5 text-amber text-sm mb-2">
                   <MapPin className="w-3.5 h-3.5" />
-                  <span className="font-medium">{title.spots} filming spots in Rome</span>
+                  <span className="font-medium">{title.spots} filming spots in {cityData.name}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {title.genres.map((g) => (
@@ -567,7 +648,7 @@ export default function LocationDetail() {
           viewport={{ once: true }}
           className="font-serif italic text-3xl text-foreground mb-8"
         >
-          Rome at a Glance
+          {`${cityData.name} at a Glance`}
         </motion.h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -678,7 +759,7 @@ export default function LocationDetail() {
             <p className="text-xs text-muted-foreground mb-4">Skip the crowds. These spots are just as cinematic.</p>
 
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-              {hiddenGems.map((gem) => (
+              {gemsData.map((gem) => (
                 <div
                   key={gem.name}
                   className="shrink-0 w-48 h-36 glass rounded-xl p-4 flex flex-col justify-between hover:border-amber/30 transition-colors cursor-pointer"
@@ -803,7 +884,7 @@ export default function LocationDetail() {
             Let our Film Concierge AI build you a personalised Rome cinema itinerary.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
-            <PlanYourTripDialog locationName={romeData.name} />
+            <PlanYourTripDialog locationName={cityData.name} />
             <button className="px-8 py-4 rounded-full border border-border/40 text-foreground font-medium hover:border-amber hover:text-amber transition-all">
               📥 Download Location Guide
             </button>
