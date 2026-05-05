@@ -604,7 +604,7 @@ export default function LocationDetail() {
                 <h3 className="font-serif italic text-xl text-foreground mb-1">{title.title}</h3>
                 <div className="flex items-center gap-1.5 text-amber text-sm mb-2">
                   <MapPin className="w-3.5 h-3.5" />
-                  <span className="font-medium">{title.spots} `filming spots in ${cityData.name}`</span>
+                  <span className="font-medium">{title.spots} filming spots in {cityData.name}</span>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {title.genres.map((g) => (
