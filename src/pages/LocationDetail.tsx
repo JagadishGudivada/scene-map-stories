@@ -122,10 +122,86 @@ export default function LocationDetail() {
   const [activeSpot, setActiveSpot] = useState<number | null>(null);
   const [spotSearch, setSpotSearch] = useState("");
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiData, setAiData] = useState<any>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const titleGridRef = useRef<HTMLDivElement>(null);
   const communityRef = useRef<HTMLDivElement>(null);
   const isCommunityInView = useInView(communityRef, { once: true, margin: "-100px" });
+
+  useEffect(() => {
+    if (!slug) return;
+    let active = true;
+    setAiLoading(true);
+    setAiError(null);
+    supabase.functions
+      .invoke("location-details", { body: { slug } })
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          const msg = error.message || "";
+          setAiError(msg.includes("429") ? "Too many requests, please retry shortly." : msg.includes("402") ? "AI credits exhausted." : "Failed to load location.");
+        } else if (data?.error) {
+          setAiError(data.error);
+        } else {
+          setAiData(data);
+        }
+      })
+      .finally(() => active && setAiLoading(false));
+    return () => { active = false; };
+  }, [slug]);
+
+  const cityData = useMemo(() => {
+    if (aiData) {
+      return {
+        name: aiData.name ?? romeData.name,
+        country: aiData.country ?? romeData.country,
+        countryCode: aiData.countryCode ?? romeData.countryCode,
+        flag: aiData.flag ?? romeData.flag,
+        totalTitles: aiData.totalTitles ?? (aiData.titles?.length || romeData.totalTitles),
+        totalLocations: aiData.totalLocations ?? (aiData.spots?.length || romeData.totalLocations),
+        explorers: romeData.explorers,
+        coords: { lat: aiData.lat ?? romeData.coords.lat, lng: aiData.lng ?? romeData.coords.lng },
+        tagline: aiData.tagline ?? romeData.tagline,
+        coverImage: aiData.coverImage as string | undefined,
+      };
+    }
+    return { ...romeData, coverImage: undefined as string | undefined };
+  }, [aiData]);
+
+  const titlesData: LocationTitle[] = useMemo(() => {
+    if (aiData?.titles?.length) {
+      const imgs = [heroRomeAlt, santoriniImg, londonImg, kyotoImg, nycImg, tokyoImg];
+      return aiData.titles.map((t: any, i: number) => ({
+        id: String(i + 1),
+        title: t.title,
+        year: t.year,
+        type: t.type,
+        spots: t.spots,
+        genres: t.genres || [],
+        rating: t.rating,
+        image: imgs[i % imgs.length],
+      }));
+    }
+    return romeTitles;
+  }, [aiData]);
+
+  const spotsData: FilmingSpot[] = useMemo(() => {
+    if (aiData?.spots?.length) {
+      return aiData.spots.map((s: any, i: number) => ({
+        id: i + 1,
+        slug: s.slug || s.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng,
+        titles: s.titles || [],
+      }));
+    }
+    return filmingSpots;
+  }, [aiData]);
+
+  const gemsData = aiData?.hiddenGems?.length ? aiData.hiddenGems : hiddenGems;
 
   // Intersection observer for sticky bar
   useState(() => {
