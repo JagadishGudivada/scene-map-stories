@@ -266,12 +266,14 @@ export default function LocationDetail() {
 
         {/* Breadcrumb */}
         <div className="absolute top-20 left-[5%] z-10">
-          <div className="text-[13px] font-sans text-muted-foreground">
+          <div className="text-[13px] font-sans text-muted-foreground flex items-center gap-2">
             <Link to="/" className="text-amber hover:text-amber/80 transition-colors">
               Popular Filming Locations
             </Link>
             <span className="mx-2 text-muted-foreground/50">›</span>
             <span>{cityData.flag} {cityData.name}</span>
+            {aiLoading && <Loader2 className="w-3.5 h-3.5 text-amber animate-spin ml-2" />}
+            {aiError && <span className="ml-2 text-destructive text-xs">{aiError}</span>}
           </div>
         </div>
 
