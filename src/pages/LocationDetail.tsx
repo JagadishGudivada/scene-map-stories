@@ -460,7 +460,7 @@ export default function LocationDetail() {
               pins={mapPins}
               className="w-full h-full min-h-[300px] lg:min-h-[600px]"
               zoom={13}
-              center={[41.9028, 12.4964]}
+              center={[cityData.coords.lat, cityData.coords.lng]}
             />
             {/* Map vignette */}
             <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{
