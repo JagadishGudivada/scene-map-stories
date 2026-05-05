@@ -32,6 +32,7 @@ type AIDetails = {
   creator?: string;
   genres: string[];
   locations: AILocation[];
+  coverImage?: string;
 };
 
 function slugifySpot(label: string) {
