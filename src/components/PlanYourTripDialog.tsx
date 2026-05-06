@@ -1,5 +1,5 @@
-import { ReactNode, useState } from "react";
-import { Plane, Hotel, MapPin, ArrowRight } from "lucide-react";
+import { ReactNode, useEffect, useState } from "react";
+import { Plane, Hotel, MapPin, ArrowRight, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,12 @@ import {
 interface PlanYourTripDialogProps {
   /** The location/city name shown as the subtitle. */
   locationName: string;
+  /** Optional spot/landmark name for more specific search queries. */
+  spotName?: string;
+  /** Latitude of the spot — enables Google Maps directions. */
+  lat?: number;
+  /** Longitude of the spot — enables Google Maps directions. */
+  lng?: number;
   /** Optional: the trigger element. If omitted, a default amber button is rendered. */
   trigger?: ReactNode;
   /** Optional className applied to the default trigger button. */
@@ -25,34 +31,94 @@ interface ActionCard {
   href: string;
 }
 
+// Default origin when user location/airport is unknown.
+const DEFAULT_ORIGIN_AIRPORT = "LHR";
+const DEFAULT_ORIGIN_LABEL = "London (LHR)";
+
 export default function PlanYourTripDialog({
   locationName,
+  spotName,
+  lat,
+  lng,
   trigger,
   triggerClassName,
 }: PlanYourTripDialogProps) {
   const [open, setOpen] = useState(false);
+  const [originLabel, setOriginLabel] = useState<string>(DEFAULT_ORIGIN_LABEL);
+  const [originQuery, setOriginQuery] = useState<string>(DEFAULT_ORIGIN_AIRPORT);
+  const [detectingOrigin, setDetectingOrigin] = useState(false);
+
+  // Try to detect the user's nearest city via reverse geocoding once the dialog opens.
+  useEffect(() => {
+    if (!open) return;
+    if (originLabel !== DEFAULT_ORIGIN_LABEL) return;
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+
+    setDetectingOrigin(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10`,
+            { headers: { Accept: "application/json" } },
+          );
+          if (res.ok) {
+            const data = await res.json();
+            const city =
+              data?.address?.city ||
+              data?.address?.town ||
+              data?.address?.state ||
+              data?.address?.country;
+            if (city) {
+              setOriginLabel(city);
+              setOriginQuery(city);
+            }
+          }
+        } catch {
+          // ignore — keep LHR default
+        } finally {
+          setDetectingOrigin(false);
+        }
+      },
+      () => setDetectingOrigin(false),
+      { timeout: 4000, maximumAge: 1000 * 60 * 60 },
+    );
+  }, [open, originLabel]);
+
+  const destinationQuery = spotName ? `${spotName}, ${locationName}` : locationName;
+  const flightsUrl = `https://www.google.com/travel/flights?q=${encodeURIComponent(
+    `Flights from ${originQuery} to ${locationName}`,
+  )}`;
+  const hotelsUrl = `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(
+    destinationQuery,
+  )}`;
+  const directionsUrl =
+    typeof lat === "number" && typeof lng === "number"
+      ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(destinationQuery)}`;
 
   const cards: ActionCard[] = [
     {
       icon: <Plane className="w-5 h-5" />,
       emoji: "✈️",
       label: "Find Flights",
-      description: `Search flights to ${locationName}`,
-      href: "https://www.skyscanner.net",
+      description: `From ${originLabel} → ${locationName}`,
+      href: flightsUrl,
     },
     {
       icon: <Hotel className="w-5 h-5" />,
       emoji: "🏨",
       label: "Find Hotels",
-      description: "Browse hotels near the filming location",
-      href: "https://www.booking.com",
+      description: `Stays near ${spotName ?? locationName}`,
+      href: hotelsUrl,
     },
     {
       icon: <MapPin className="w-5 h-5" />,
       emoji: "📍",
       label: "Get Directions",
-      description: "Open in Google Maps",
-      href: "https://maps.google.com",
+      description: lat && lng ? "Open route in Google Maps" : "Open in Google Maps",
+      href: directionsUrl,
     },
   ];
 
@@ -79,11 +145,18 @@ export default function PlanYourTripDialog({
           >
             Plan Your Trip
           </DialogTitle>
-          <p
-            className="text-amber"
-            style={{ fontSize: "16px", fontWeight: 600 }}
-          >
-            {locationName}
+          <p className="text-amber" style={{ fontSize: "16px", fontWeight: 600 }}>
+            {spotName ? `${spotName} · ${locationName}` : locationName}
+          </p>
+          <p className="text-xs text-muted-foreground inline-flex items-center gap-1.5">
+            {detectingOrigin ? (
+              <>
+                <Loader2 className="w-3 h-3 animate-spin" />
+                Detecting your location…
+              </>
+            ) : (
+              <>Origin: {originLabel}</>
+            )}
           </p>
         </DialogHeader>
 
@@ -102,9 +175,7 @@ export default function PlanYourTripDialog({
                 </span>
                 <span className="text-amber">{card.icon}</span>
               </div>
-              <div className="text-base font-semibold text-foreground">
-                {card.label}
-              </div>
+              <div className="text-base font-semibold text-foreground">{card.label}</div>
               <div className="text-xs text-muted-foreground leading-relaxed">
                 {card.description}
               </div>
