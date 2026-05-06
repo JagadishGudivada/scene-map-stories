@@ -11,6 +11,8 @@ export interface MapPin {
   lng: number;
   label: string;
   title?: string;
+  city?: string;
+  country?: string;
   type: MediaType;
   image?: string;
 }
@@ -141,8 +143,18 @@ export default function LeafletMap({
       const marker = L.marker([pin.lat, pin.lng], {
         icon: createCategoryIcon(pin.type, isDark),
       });
+      marker.bindTooltip(pin.label, {
+        direction: "top",
+        offset: [0, -18],
+        opacity: 1,
+      });
       if (onPinClick) {
-        marker.on("click", () => onPinClick(pin));
+        marker.on("click", () => {
+          marker.openTooltip();
+          onPinClick(pin);
+        });
+      } else {
+        marker.on("click", () => marker.openTooltip());
       }
       clusterGroup.addLayer(marker);
     });

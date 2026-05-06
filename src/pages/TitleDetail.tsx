@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
+import { useParams, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MapPin, Star, Bookmark, BookmarkCheck, Clock, Film, Tv, BookOpen,
@@ -8,12 +8,14 @@ import {
 import { mockTitles, mockPosts } from "@/lib/mockData";
 import { titleLocationPins } from "@/lib/mapData";
 import LeafletMap from "@/components/LeafletMap";
+import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useSavedTitle } from "@/hooks/useSaved";
+import { useSavedTitle, useWatchedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
+import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import heroRomeImg from "@/assets/hero-rome.jpg";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
@@ -45,7 +47,6 @@ function slugifySpot(label: string) {
 
 export default function TitleDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
   const navState = useLocation().state as
     | { title?: string; year?: number; type?: string; creator?: string }
     | null;
@@ -58,6 +59,7 @@ export default function TitleDetail() {
   const [aiDetails, setAiDetails] = useState<AIDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
 
   useEffect(() => {
     if (mockTitle || !slug) return;
@@ -134,6 +136,7 @@ export default function TitleDetail() {
   // titleSlug and saved state must be computed before any conditional returns (Rules of Hooks)
   const titleSlug = view ? slugify(view.title, view.year) : "";
   const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
+  const { watched, toggle: toggleWatched, loading: watchLoading } = useWatchedTitle(titleSlug);
 
   // Loading state
   if (!mockTitle && loading) {
@@ -254,10 +257,18 @@ export default function TitleDetail() {
                   }`}
                 >
                   {saved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                  <span className="hidden xs:inline">{saved ? "Saved" : "Save to"}</span> {saved ? "" : "Map"}
+                  <span className="hidden xs:inline">{saved ? "Saved" : "Save to"}</span> {saved ? "" : "Save"}
                 </button>
-                <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2">
-                  <CheckCircle2 className="w-4 h-4" /> <span className="hidden xs:inline">I've</span> Been Here
+                <button
+                  onClick={toggleWatched}
+                  disabled={watchLoading}
+                  className={`h-10 sm:h-11 px-4 sm:px-6 rounded-xl border font-medium text-xs sm:text-sm transition-all flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 ${
+                    watched
+                      ? "bg-teal/15 border-teal/40 text-teal hover:bg-teal/20"
+                      : "glass border-border text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <CheckCircle2 className="w-4 h-4" /> <span className="hidden xs:inline">{watched ? "Watched" : "I've"}</span> {watched ? "" : "Watched"}
                 </button>
                 <ShareMenu
                   title={view.title}
@@ -302,24 +313,24 @@ export default function TitleDetail() {
             <ScrollArea className="lg:w-80 h-[420px] glass rounded-xl border border-border">
               <div className="p-3 space-y-2">
                 {view.locations.map((loc, i) => (
-                  <motion.div
+                  <motion.button
                     key={`${loc.label}-${i}`}
+                    type="button"
                     initial={{ opacity: 0, x: 12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
                     onClick={() =>
-                      navigate(`/spot/${slugifySpot(loc.label)}`, {
-                        state: {
-                          label: loc.label,
-                          lat: loc.lat,
-                          lng: loc.lng,
-                          titleHint: view.title,
-                          type: view.type,
-                          description: loc.description,
-                        },
+                      setSelectedPin({
+                        label: loc.label,
+                        lat: loc.lat,
+                        lng: loc.lng,
+                        title: view.title,
+                        type: view.type,
+                        city: loc.label,
+                        country: undefined,
                       })
                     }
-                    className="rounded-lg p-3 border border-border flex items-start gap-3 cursor-pointer hover:border-amber/20 hover:bg-muted/30 transition-all"
+                    className="w-full rounded-lg p-3 border border-border flex items-start gap-3 cursor-pointer hover:border-amber/20 hover:bg-muted/30 transition-all text-left"
                   >
                     <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center badge-${view.type.toLowerCase()}`}>
                       <MapPin className="w-4 h-4" />
@@ -335,12 +346,14 @@ export default function TitleDetail() {
                         <p className="text-xs text-muted-foreground/80 mt-1 line-clamp-2">{loc.description}</p>
                       )}
                     </div>
-                  </motion.div>
+                  </motion.button>
                 ))}
               </div>
             </ScrollArea>
           </div>
         </section>
+
+        <SpotActionsModal pin={selectedPin} onClose={() => setSelectedPin(null)} />
 
         {/* Community Photos */}
         <section className="mb-12">

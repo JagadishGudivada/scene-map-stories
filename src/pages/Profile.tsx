@@ -1,11 +1,11 @@
 import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Bookmark, Heart, Grid3X3, List, Users, Settings, Share2, X } from "lucide-react";
+import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X } from "lucide-react";
 import { mockUser, mockTitles, mockPosts } from "@/lib/mockData";
 import CinemaCard from "@/components/CinemaCard";
 import PostCard from "@/components/PostCard";
 import LeafletMap from "@/components/LeafletMap";
-import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots } from "@/hooks/useSaved";
+import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots, useAllWatchedTitles } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -38,6 +38,7 @@ export default function Profile() {
   const { slugs: savedLocationSlugs, loading: savedLocationsLoading, refresh: refreshLocations } = useAllSavedLocations();
   const { slugs: savedSpotSlugs, loading: savedSpotsLoading, refresh: refreshSavedSpots } = useAllSavedSpots();
   const { slugs: visitedSpotSlugs, spots: visitedSpots, loading: visitedSpotsLoading, refresh: refreshVisitedSpots } = useAllVisitedSpots();
+  const { slugs: watchedTitleSlugs, loading: watchedTitlesLoading } = useAllWatchedTitles();
 
   const visitedSpotsData = useMemo(
     () =>
@@ -408,6 +409,36 @@ export default function Profile() {
                       </motion.div>
                       );
                     })}
+                  </div>
+                )}
+
+                {/* Watched Titles */}
+                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
+                  <CheckCircle2 className="w-4 h-4 text-teal" /> Watched Titles
+                </h3>
+                {watchedTitlesLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading…</p>
+                ) : watchedTitleSlugs.length === 0 ? (
+                  <div className="glass rounded-2xl border border-border p-8 text-center">
+                    <CheckCircle2 className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No watched titles yet. Open a title and tap "Watched".</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {watchedTitleSlugs.map((slug, i) => (
+                      <motion.div
+                        key={slug}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="glass rounded-xl p-4 border border-border flex items-center gap-3 min-w-0"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 className="w-4 h-4 text-teal" />
+                        </div>
+                        <span className="text-sm font-medium text-foreground capitalize truncate">{slug.replace(/-\d{4}$/, "").replace(/-/g, " ")}</span>
+                      </motion.div>
+                    ))}
                   </div>
                 )}
               </div>

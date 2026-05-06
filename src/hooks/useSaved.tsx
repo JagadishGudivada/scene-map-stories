@@ -60,6 +60,65 @@ export function useSavedTitle(titleSlug: string) {
   return { saved, toggle, loading };
 }
 
+export function useWatchedTitle(titleSlug: string) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [watched, setWatched] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user || !titleSlug) return;
+    supabase
+      .from("watched_titles")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("title_slug", titleSlug)
+      .maybeSingle()
+      .then(({ data }) => setWatched(!!data));
+  }, [user, titleSlug]);
+
+  const toggle = useCallback(async () => {
+    if (!user) {
+      toast({ title: "Sign in required", description: "Please sign in to mark titles as watched." });
+      return;
+    }
+    setLoading(true);
+    if (watched) {
+      await supabase.from("watched_titles").delete().eq("user_id", user.id).eq("title_slug", titleSlug);
+      setWatched(false);
+      toast({ title: "Removed", description: "Title removed from your watched list." });
+    } else {
+      await supabase.from("watched_titles").insert({ user_id: user.id, title_slug: titleSlug });
+      setWatched(true);
+      toast({ title: "Watched!", description: "Title added to your watched list." });
+    }
+    setLoading(false);
+  }, [user, watched, titleSlug, toast]);
+
+  return { watched, toggle, loading };
+}
+
+export function useAllWatchedTitles() {
+  const { user } = useAuth();
+  const [slugs, setSlugs] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    if (!user) { setSlugs([]); setLoading(false); return; }
+    setLoading(true);
+    const { data } = await supabase
+      .from("watched_titles")
+      .select("title_slug")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    setSlugs(data?.map((d) => d.title_slug) ?? []);
+    setLoading(false);
+  }, [user]);
+
+  useEffect(() => { refresh(); }, [refresh]);
+  return { slugs, loading, refresh };
+}
+
 export function useSavedLocation(locationSlug: string) {
   const { user } = useAuth();
   const { toast } = useToast();

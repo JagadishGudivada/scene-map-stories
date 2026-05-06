@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useSavedLocation } from "@/hooks/useSaved";
 import LeafletMap from "@/components/LeafletMap";
+import SpotActionsModal from "@/components/SpotActionsModal";
 import ShareMenu from "@/components/ShareMenu";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import VerificationAccordion from "@/components/VerificationAccordion";
@@ -136,6 +137,7 @@ export default function LocationDetail() {
   const [aiLoading, setAiLoading] = useState(true);
   const [aiData, setAiData] = useState<any>(null);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const titleGridRef = useRef<HTMLDivElement>(null);
 
@@ -267,6 +269,8 @@ export default function LocationDetail() {
     lng: s.lng,
     label: s.name,
     title: s.titles.join(", "),
+    city: cityData.name,
+    country: cityData.country,
     type: "Movie" as const,
   }));
 
@@ -570,9 +574,21 @@ export default function LocationDetail() {
             {/* Spot rows */}
             <div className="flex-1 overflow-y-auto no-scrollbar space-y-1">
               {filteredSpots.map((spot) => (
-                <Link
+                <button
                   key={spot.id}
-                  to={`/spot/${spot.slug}`}
+                  type="button"
+                  onClick={() =>
+                    setSelectedPin({
+                      label: spot.name,
+                      lat: spot.lat,
+                      lng: spot.lng,
+                      title: spot.titles.join(", "),
+                      city: cityData.name,
+                      country: cityData.country,
+                      type: "Movie",
+                    })
+                  }
+                  className="block w-full text-left"
                 >
                   <motion.div
                     onMouseEnter={() => setActiveSpot(spot.id)}
@@ -602,7 +618,7 @@ export default function LocationDetail() {
                       }`}
                     />
                   </motion.div>
-                </Link>
+                </button>
               ))}
             </div>
 
@@ -615,6 +631,8 @@ export default function LocationDetail() {
           </div>
         </div>
       </section>
+
+      <SpotActionsModal pin={selectedPin} onClose={() => setSelectedPin(null)} />
 
       {/* SECTION 4: TITLES FILMED HERE */}
       <section ref={titleGridRef} className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
