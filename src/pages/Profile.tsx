@@ -1,12 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Bookmark, Heart, Grid3X3, List, Users, Settings, Share2, X } from "lucide-react";
 import { mockUser, mockTitles, mockPosts } from "@/lib/mockData";
-import { allMapPins } from "@/lib/mapData";
 import CinemaCard from "@/components/CinemaCard";
 import PostCard from "@/components/PostCard";
 import LeafletMap from "@/components/LeafletMap";
-import { useAllSavedTitles, useAllSavedLocations } from "@/hooks/useSaved";
+import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +36,42 @@ export default function Profile() {
   const { toast } = useToast();
   const { slugs: savedTitleSlugs, loading: savedTitlesLoading, refresh: refreshTitles } = useAllSavedTitles();
   const { slugs: savedLocationSlugs, loading: savedLocationsLoading, refresh: refreshLocations } = useAllSavedLocations();
+  const { slugs: savedSpotSlugs, loading: savedSpotsLoading, refresh: refreshSavedSpots } = useAllSavedSpots();
+  const { slugs: visitedSpotSlugs, spots: visitedSpots, loading: visitedSpotsLoading, refresh: refreshVisitedSpots } = useAllVisitedSpots();
+
+  const visitedSpotsData = useMemo(
+    () =>
+      visitedSpots
+        .filter((spot) => Number.isFinite(spot.lat) && Number.isFinite(spot.lng) && !(spot.lat === 0 && spot.lng === 0))
+        .map((spot) => ({
+          slug: spot.spot_slug,
+          name: spot.spot_name,
+          lat: spot.lat,
+          lng: spot.lng,
+          city: spot.city,
+          country: spot.country,
+          type: spot.type,
+          title: spot.city,
+        })),
+    [visitedSpots]
+  );
+
+  const visitedMapPins = useMemo(
+    () =>
+      visitedSpotsData.map((spot) => ({
+        lat: spot.lat,
+        lng: spot.lng,
+        label: spot.name,
+        title: spot.title,
+        type: spot.type,
+      })),
+    [visitedSpotsData]
+  );
+
+  const visitedCountriesCount = useMemo(
+    () => new Set(visitedSpotsData.map((spot) => spot.country)).size,
+    [visitedSpotsData]
+  );
 
   function slugify(title: string, year: number) {
     return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
@@ -56,6 +91,20 @@ export default function Profile() {
     await supabase.from("saved_locations").delete().eq("user_id", authUser.id).eq("location_slug", locationSlug);
     toast({ title: "Removed", description: "Location removed from saved list." });
     refreshLocations();
+  };
+
+  const handleUnsaveSpot = async (spotSlug: string) => {
+    if (!authUser) return;
+    await supabase.from("saved_spots").delete().eq("user_id", authUser.id).eq("spot_slug", spotSlug);
+    toast({ title: "Removed", description: "Spot removed from wishlist." });
+    refreshSavedSpots();
+  };
+
+  const handleUnvisitSpot = async (spotSlug: string) => {
+    if (!authUser) return;
+    await supabase.from("visited_spots").delete().eq("user_id", authUser.id).eq("spot_slug", spotSlug);
+    toast({ title: "Removed", description: "Spot removed from visited list." });
+    refreshVisitedSpots();
   };
 
   const formatNum = (n: number) => {
@@ -171,20 +220,42 @@ export default function Profile() {
             {activeTab === "map" && (
               <div>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {user.locationsMapped} locations pinned across {Math.floor(user.locationsMapped / 5)} countries
+                  {visitedMapPins.length} locations pinned across {visitedCountriesCount} countries
                 </p>
-                <LeafletMap pins={allMapPins} className="h-80" />
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {mockTitles.slice(0, 3).map((t, i) => (
-                    <div key={t.id} className="glass rounded-xl p-3 border border-border flex items-center gap-3">
-                      <img src={t.coverImage} className="w-10 h-10 rounded-lg object-cover" alt={t.title} />
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-foreground truncate">{t.title}</p>
-                        <p className="text-xs text-teal">{t.locationCount} pins</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <LeafletMap pins={visitedMapPins} className="h-80" />
+                {visitedSpotsLoading ? (
+                  <div className="glass rounded-2xl border border-border p-8 text-center mt-6">
+                    <p className="text-muted-foreground text-sm">Loading your visited spots…</p>
+                  </div>
+                ) : visitedSpotsData.length > 0 ? (
+                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {visitedSpotsData.slice(0, 4).map((spot, i) => (
+                      <motion.div
+                        key={spot.slug}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="glass rounded-xl p-4 border border-border flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-teal" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{spot.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{spot.city}, {spot.country}</p>
+                          </div>
+                        </div>
+                        <span className="text-xs text-teal font-medium">Been here</span>
+                      </motion.div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="glass rounded-2xl border border-border p-8 text-center mt-6">
+                    <MapPin className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No visited spots yet. Mark a spot with "I've Been Here" to populate your memory map.</p>
+                  </div>
+                )}
               </div>
             )}
 
@@ -254,6 +325,89 @@ export default function Profile() {
                         </button>
                       </motion.div>
                     ))}
+                  </div>
+                )}
+
+                {/* Saved Spots */}
+                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
+                  <Bookmark className="w-4 h-4 text-amber" /> Saved Spots Wishlist
+                </h3>
+                {savedSpotsLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading…</p>
+                ) : savedSpotSlugs.length === 0 ? (
+                  <div className="glass rounded-2xl border border-border p-8 text-center">
+                    <Bookmark className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No saved spots yet. Open a spot and tap "Save Spot".</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {savedSpotSlugs.map((slug, i) => (
+                      <motion.div
+                        key={slug}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-amber/10 flex items-center justify-center">
+                            <Bookmark className="w-4 h-4 text-amber" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground capitalize truncate">{slug.replace(/-/g, " ")}</span>
+                        </div>
+                        <button
+                          onClick={() => handleUnsaveSpot(slug)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Remove from wishlist"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Been Here Spots */}
+                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
+                  <MapPin className="w-4 h-4 text-teal" /> Been Here
+                </h3>
+                {visitedSpotsLoading ? (
+                  <p className="text-sm text-muted-foreground">Loading…</p>
+                ) : visitedSpotSlugs.length === 0 ? (
+                  <div className="glass rounded-2xl border border-border p-8 text-center">
+                    <MapPin className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No visited spots yet. Open a spot and tap "I've Been Here".</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {visitedSpotSlugs.map((slug, i) => {
+                      const persistedSpot = visitedSpots.find((spot) => spot.spot_slug === slug);
+                      return (
+                      <motion.div
+                        key={slug}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
+                            <MapPin className="w-4 h-4 text-teal" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground capitalize truncate">
+                            {persistedSpot ? persistedSpot.spot_name : slug.replace(/-/g, " ")}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleUnvisitSpot(slug)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
+                          title="Remove from visited"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </motion.div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -125,6 +125,66 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_spots: {
+        Row: {
+          created_at: string
+          id: string
+          spot_slug: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          spot_slug: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          spot_slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      visited_spots: {
+        Row: {
+          city: string
+          country: string
+          created_at: string
+          id: string
+          lat: number
+          lng: number
+          spot_name: string
+          spot_slug: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          city: string
+          country: string
+          created_at?: string
+          id?: string
+          lat: number
+          lng: number
+          spot_name: string
+          spot_slug: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          city?: string
+          country?: string
+          created_at?: string
+          id?: string
+          lat?: number
+          lng?: number
+          spot_name?: string
+          spot_slug?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

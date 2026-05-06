@@ -3,12 +3,13 @@ import { Link, useLocation, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MapPin, ChevronRight, Film, Tv, BookOpen, Navigation2, Camera,
-  Lightbulb, Info, Clock, ArrowRight, Loader2, Sparkles,
+  Lightbulb, Info, Clock, ArrowRight, Loader2, Sparkles, Bookmark, BookmarkCheck, CheckCircle2,
 } from "lucide-react";
 import ShareMenu from "@/components/ShareMenu";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
+import { useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
 import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
@@ -21,6 +22,8 @@ const typeIcons: Record<string, React.ElementType> = {
 
 export default function FilmingSpotDetail() {
   const { slug } = useParams<{ slug: string }>();
+  const spotSlug = slug || "";
+  const { saved: spotSaved, toggle: toggleSaveSpot, loading: saveSpotLoading } = useSavedSpot(spotSlug);
   const routeState = useLocation().state as {
     label?: string;
     lat?: number;
@@ -133,6 +136,19 @@ export default function FilmingSpotDetail() {
   }, [aiSpot, routeState?.description, routeState?.label, routeState?.lat, routeState?.lng, routeState?.titleHint, routeState?.type, slug, staticSpot]);
 
   const citySpots = staticSpot ? getSpotsByCity(staticSpot.citySlug).filter((s) => s.slug !== staticSpot.slug) : [];
+  const { visited: beenHere, toggle: toggleBeenHere, loading: beenHereLoading } = useBeenHereSpot(
+    spotSlug,
+    spot
+      ? {
+          spotName: spot.name,
+          lat: spot.lat,
+          lng: spot.lng,
+          city: spot.city,
+          country: spot.country,
+          type: spot.type,
+        }
+      : undefined
+  );
 
   if (!staticSpot && loading) {
     return (
@@ -368,6 +384,30 @@ export default function FilmingSpotDetail() {
                   </button>
                 }
               />
+              <button
+                onClick={toggleSaveSpot}
+                disabled={saveSpotLoading || !spotSlug}
+                className={`w-full h-11 px-4 rounded-xl font-bold text-sm transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 ${
+                  spotSaved
+                    ? "glass border border-amber/40 text-amber hover:bg-muted/50"
+                    : "bg-gradient-amber text-charcoal hover:opacity-90 shadow-amber"
+                }`}
+              >
+                {spotSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+                {spotSaved ? "Saved Spot" : "Save Spot"}
+              </button>
+              <button
+                onClick={toggleBeenHere}
+                disabled={beenHereLoading || !spotSlug}
+                className={`w-full h-11 px-4 rounded-xl border font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
+                  beenHere
+                    ? "bg-teal/15 border-teal/40 text-teal hover:bg-teal/20"
+                    : "glass border-border text-foreground hover:bg-muted/50"
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                {beenHere ? "Been Here" : "I've Been Here"}
+              </button>
               <button className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass text-foreground font-medium text-sm hover:border-amber/40 transition-all">
                 <Camera className="w-4 h-4" />
                 Upload a Photo
