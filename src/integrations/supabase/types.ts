@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_clicks: {
+        Row: {
+          created_at: string
+          destination_url: string
+          id: string
+          location_name: string | null
+          origin: string | null
+          partner: string
+          service: string
+          spot_name: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          destination_url: string
+          id?: string
+          location_name?: string | null
+          origin?: string | null
+          partner: string
+          service: string
+          spot_name?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          destination_url?: string
+          id?: string
+          location_name?: string | null
+          origin?: string | null
+          partner?: string
+          service?: string
+          spot_name?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
