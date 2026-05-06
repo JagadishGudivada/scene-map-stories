@@ -358,6 +358,9 @@ export default function FilmingSpotDetail() {
               </a>
               <PlanYourTripDialog
                 locationName={spot.city}
+                spotName={spot.name}
+                lat={spot.lat}
+                lng={spot.lng}
                 trigger={
                   <button className="relative overflow-hidden w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:brightness-110 transition-all shadow-amber">
                     <span className="relative z-10">Plan Your Trip 🗺️</span>
