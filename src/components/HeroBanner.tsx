@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
-import { heroSlides } from "@/lib/mockData";
+import { heroSlides, type Title } from "@/lib/mockData";
 
 const typeBadgeClass: Record<string, string> = {
   Movie: "badge-movie",
@@ -9,17 +9,59 @@ const typeBadgeClass: Record<string, string> = {
   Book: "badge-book",
 };
 
-export default function HeroBanner() {
+type HeroBannerProps = {
+  titles?: Title[];
+};
+
+type HeroSlide = {
+  id: string;
+  title: string;
+  year: number;
+  type: string;
+  image: string;
+  imageSrcSet?: string;
+  imageSizes?: string;
+  locationTag: string;
+  tagline: string;
+};
+
+export default function HeroBanner({ titles = [] }: HeroBannerProps) {
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
 
+  const slides = useMemo<HeroSlide[]>(() => {
+    if (titles.length > 0) {
+      return titles.slice(0, 6).map((title) => ({
+        id: `hero-${title.id}`,
+        title: title.title,
+        year: title.year,
+        type: title.type,
+        image: title.heroImage || title.coverImage,
+        imageSrcSet: title.heroImageSrcSet,
+        imageSizes: title.heroImageSizes,
+        locationTag: title.locations?.[0] || "Filming locations",
+        tagline: `${title.locationCount} filming locations discovered`,
+      }));
+    }
+
+    return heroSlides;
+  }, [titles]);
+
   useEffect(() => {
+    if (slides.length === 0) return;
+
     const timer = setInterval(() => {
       setDirection(1);
-      setCurrent((c) => (c + 1) % heroSlides.length);
+      setCurrent((c) => (c + 1) % slides.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [slides]);
+
+  useEffect(() => {
+    if (current >= slides.length) {
+      setCurrent(0);
+    }
+  }, [current, slides.length]);
 
   const go = (idx: number) => {
     setDirection(idx > current ? 1 : -1);
@@ -28,15 +70,17 @@ export default function HeroBanner() {
 
   const prev = () => {
     setDirection(-1);
-    setCurrent((c) => (c - 1 + heroSlides.length) % heroSlides.length);
+    setCurrent((c) => (c - 1 + slides.length) % slides.length);
   };
 
   const next = () => {
     setDirection(1);
-    setCurrent((c) => (c + 1) % heroSlides.length);
+    setCurrent((c) => (c + 1) % slides.length);
   };
 
-  const slide = heroSlides[current];
+  const slide = slides[current];
+
+  if (!slide) return null;
 
   return (
     <div className="relative h-[55vh] min-h-[380px] max-h-[600px] rounded-2xl overflow-hidden shadow-float">
@@ -53,12 +97,22 @@ export default function HeroBanner() {
         >
           <img
             src={slide.image}
+            srcSet={slide.imageSrcSet}
+            sizes={slide.imageSizes || "100vw"}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-35 pointer-events-none"
+          />
+          <img
+            src={slide.image}
+            srcSet={slide.imageSrcSet}
+            sizes={slide.imageSizes || "100vw"}
             alt={slide.title}
-            className="w-full h-full object-cover"
+            className="relative z-10 w-full h-full object-contain pointer-events-none select-none"
           />
           {/* Gradient layers */}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/60 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
           {/* Grain */}
           <div
             className="absolute inset-0 opacity-25 mix-blend-overlay"
@@ -70,7 +124,7 @@ export default function HeroBanner() {
       </AnimatePresence>
 
       {/* Content */}
-      <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 sm:p-10">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id + "-content"}
@@ -78,6 +132,7 @@ export default function HeroBanner() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            className="max-w-prose"
           >
             <div className="flex items-center gap-2 mb-3">
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeBadgeClass[slide.type]}`}>
@@ -90,14 +145,14 @@ export default function HeroBanner() {
               {slide.title}
             </h1>
 
-            <div className="flex items-center gap-2 mb-5">
+            <div className="flex flex-wrap items-center gap-2 mb-5">
               <MapPin className="w-4 h-4 text-amber" />
               <span className="text-muted-foreground text-sm">{slide.locationTag}</span>
               <span className="text-muted/50">·</span>
               <span className="text-amber text-sm font-medium">{slide.tagline}</span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button className="px-5 py-2.5 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:opacity-90 transition-opacity shadow-amber">
                 Explore Locations
               </button>
@@ -125,7 +180,7 @@ export default function HeroBanner() {
 
       {/* Dots */}
       <div className="absolute bottom-5 right-6 flex items-center gap-1.5">
-        {heroSlides.map((_, i) => (
+        {slides.map((_, i) => (
           <button
             key={i}
             onClick={() => go(i)}

@@ -14,6 +14,9 @@ export interface Title {
   year: number;
   type: MediaType;
   coverImage: string;
+  heroImage?: string;
+  heroImageSrcSet?: string;
+  heroImageSizes?: string;
   locationCount: number;
   rating: number;
   locations: string[];

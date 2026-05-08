@@ -36,8 +36,12 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
+    const AI_CHAT_COMPLETIONS_URL =
+      Deno.env.get("AI_CHAT_COMPLETIONS_URL") ||
+      "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const AI_MODEL = Deno.env.get("AI_MODEL") || "google/gemini-3-flash-preview";
+    if (!AI_API_KEY) throw new Error("AI_API_KEY is not configured");
 
     const cityName = slug
       .split("-")
@@ -46,14 +50,14 @@ serve(async (req) => {
 
     const userPrompt = `Provide detailed information about the city "${cityName}" as a famous filming location for movies, TV series, and books. Include city name, country, ISO country code, country flag emoji, precise coordinates, a one-line poetic tagline (e.g. "The Eternal City — cinema's most enduring backdrop"), approximate count of titles filmed there, approximate count of distinct filming spots/locations, 6-8 famous titles filmed there with year/type/genres/rating/spotsCount, 5-7 iconic real filming spots with name/lat/lng/titles, and 3-4 hidden gems with name/film/note. Also include a Location at a Glance payload with: bestTime (monthly crowd levels Jan-Dec using level 1-5, best months, overcrowded months, short note, report count), transit (3-4 practical tips, short note, walkable cluster count, walkable titles count), and crowdStatus (overall label, levelPercent 0-100, 3-5 key spots with status labels, updated text). Respond ONLY via the return_location tool.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(AI_CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: AI_MODEL,
         messages: [
           {
             role: "system",
@@ -220,8 +224,8 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.error("AI gateway error:", response.status, await response.text());
-      throw new Error("AI gateway error");
+      console.error("AI provider error:", response.status, await response.text());
+      throw new Error("AI provider error");
     }
 
     const data = await response.json();

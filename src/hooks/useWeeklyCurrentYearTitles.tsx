@@ -15,11 +15,55 @@ type TitleResult = {
   year: number;
   type: MediaType;
   rating?: number;
+  posterPath?: string;
   posterUrl?: string;
+  backdropPath?: string;
+  backdropUrl?: string;
+  imageBaseUrl?: string;
+  posterSizes?: string[];
+  backdropSizes?: string[];
   genres?: string[];
 };
 
-const CACHE_KEY = "weekly-current-year-titles-v3";
+const CACHE_KEY = "weekly-current-year-titles-v4";
+
+function getNumericWidth(size: string): number | null {
+  const match = /^w(\d+)$/.exec(size);
+  return match ? Number(match[1]) : null;
+}
+
+function normalizeImageSizes(sizes?: string[]): string[] {
+  if (!Array.isArray(sizes)) return [];
+  return sizes
+    .filter((s): s is string => typeof s === "string")
+    .filter((s) => /^w\d+$/.test(s))
+    .sort((a, b) => (getNumericWidth(a) ?? 0) - (getNumericWidth(b) ?? 0));
+}
+
+function createTmdbUrl(baseUrl: string, size: string, path: string) {
+  return `${baseUrl}${size}${path}`;
+}
+
+function buildTmdbSrcSet(baseUrl: string, path: string, rawSizes?: string[]) {
+  const widthSizes = normalizeImageSizes(rawSizes);
+  return widthSizes
+    .map((size) => {
+      const width = getNumericWidth(size);
+      if (!width) return null;
+      return `${createTmdbUrl(baseUrl, size, path)} ${width}w`;
+    })
+    .filter((value): value is string => Boolean(value))
+    .join(", ");
+}
+
+function getLargestTmdbWidthUrl(baseUrl: string, path: string, rawSizes?: string[]) {
+  const widthSizes = normalizeImageSizes(rawSizes);
+  const largest = widthSizes[widthSizes.length - 1];
+  if (!largest) {
+    return `${baseUrl}original${path}`;
+  }
+  return createTmdbUrl(baseUrl, largest, path);
+}
 
 function getIsoWeekKey(date = new Date()) {
   const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -42,20 +86,35 @@ function mapToTitleCard(result: TitleResult): Title {
   const matched = mockTitles.find(
     (t) => t.title.toLowerCase() === result.title.toLowerCase() && t.type === result.type
   );
+  const baseUrl = result.imageBaseUrl || "https://image.tmdb.org/t/p/";
+
+  const posterUrl = result.posterPath
+    ? getLargestTmdbWidthUrl(baseUrl, result.posterPath, result.posterSizes)
+    : result.posterUrl;
+  const backdropUrl = result.backdropPath
+    ? getLargestTmdbWidthUrl(baseUrl, result.backdropPath, result.backdropSizes)
+    : result.backdropUrl;
+  const heroSrcSet = result.backdropPath
+    ? buildTmdbSrcSet(baseUrl, result.backdropPath, result.backdropSizes)
+    : undefined;
+
   if (matched) {
     return {
       ...matched,
       id: `weekly-${slugifyTitle(result.title, result.year)}`,
       year: result.year,
       type: result.type,
-      coverImage: result.posterUrl || matched.coverImage,
+      coverImage: posterUrl || matched.coverImage,
+      heroImage: backdropUrl || posterUrl || matched.coverImage,
+      heroImageSrcSet: heroSrcSet,
+      heroImageSizes: "100vw",
       rating: result.rating ?? matched.rating,
       genres: result.genres && result.genres.length > 0 ? result.genres : matched.genres,
     };
   }
 
   const h = hashString(`${result.title}-${result.year}-${result.type}`);
-  const coverImage = result.posterUrl || mockTitles[0]?.coverImage || "";
+  const coverImage = posterUrl || mockTitles[0]?.coverImage || "";
   const defaultGenres: Record<MediaType, string[]> = {
     Movie: ["Drama"],
     Series: ["Drama", "Mystery"],
@@ -68,6 +127,9 @@ function mapToTitleCard(result: TitleResult): Title {
     year: result.year,
     type: result.type,
     coverImage,
+    heroImage: backdropUrl || coverImage,
+    heroImageSrcSet: heroSrcSet,
+    heroImageSizes: "100vw",
     locationCount: 8 + (h % 22),
     rating: result.rating ?? Number((7 + ((h % 21) / 10)).toFixed(1)),
     locations: ["Featured locations"],
@@ -94,6 +156,7 @@ export function useWeeklyCurrentYearTitles() {
 
   const currentYear = new Date().getFullYear();
   const weekKey = useMemo(() => getIsoWeekKey(), []);
+  const cacheKey = useMemo(() => CACHE_KEY, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,7 +165,7 @@ export function useWeeklyCurrentYearTitles() {
       setLoading(true);
       setError(null);
 
-      const cached = parseCache(localStorage.getItem(CACHE_KEY));
+      const cached = parseCache(localStorage.getItem(cacheKey));
       if (cached && cached.weekKey === weekKey && cached.year === currentYear && cached.titles.length > 0) {
         if (!cancelled) {
           setTitles(cached.titles);
@@ -126,19 +189,31 @@ export function useWeeklyCurrentYearTitles() {
           year: Number(item.year),
           type: "Movie",
           rating: Number(item.rating),
+          posterPath: item.posterPath ? String(item.posterPath) : undefined,
           posterUrl: item.posterUrl ? String(item.posterUrl) : undefined,
+          backdropPath: item.backdropPath ? String(item.backdropPath) : undefined,
+          backdropUrl: item.backdropUrl ? String(item.backdropUrl) : undefined,
+          imageBaseUrl: item.imageBaseUrl ? String(item.imageBaseUrl) : undefined,
+          posterSizes: Array.isArray(item.posterSizes)
+            ? item.posterSizes.map((s: unknown) => String(s))
+            : undefined,
+          backdropSizes: Array.isArray(item.backdropSizes)
+            ? item.backdropSizes.map((s: unknown) => String(s))
+            : undefined,
           genres: Array.isArray(item.genres) ? item.genres.map((g: unknown) => String(g)).slice(0, 3) : undefined,
         }));
 
-        const currentYearTitles = apiTitles
-          .filter((item) => item.year === currentYear)
-          .filter((item) => (item.rating ?? 0) >= 7.5)
+        const currentYearTitles = apiTitles.filter((item) => item.year === currentYear);
+        const topRatedCurrentYear = currentYearTitles
+          .filter((item) => (item.rating ?? 0) >= 7.0)
           .slice(0, 8);
-        if (currentYearTitles.length === 0) {
+
+        const selectedTitles = (topRatedCurrentYear.length > 0 ? topRatedCurrentYear : currentYearTitles).slice(0, 8);
+        if (selectedTitles.length === 0) {
           throw new Error("No current-year titles returned");
         }
 
-        const mapped = currentYearTitles.map(mapToTitleCard);
+        const mapped = selectedTitles.map((item) => mapToTitleCard(item));
         const payload: WeeklyCache = {
           weekKey,
           year: currentYear,
@@ -146,7 +221,7 @@ export function useWeeklyCurrentYearTitles() {
           titles: mapped,
         };
 
-        localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+        localStorage.setItem(cacheKey, JSON.stringify(payload));
 
         if (!cancelled) {
           setTitles(mapped);
@@ -174,7 +249,7 @@ export function useWeeklyCurrentYearTitles() {
     return () => {
       cancelled = true;
     };
-  }, [currentYear, weekKey]);
+  }, [cacheKey, currentYear, weekKey]);
 
   return { titles, loading, error, updatedAt, currentYear };
 }

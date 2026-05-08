@@ -130,7 +130,7 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <HeroBanner />
+            <HeroBanner titles={homepageTitles} />
           </motion.div>
         </div>
       </div>

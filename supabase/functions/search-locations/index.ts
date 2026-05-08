@@ -19,19 +19,23 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
+    const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
+    const AI_CHAT_COMPLETIONS_URL =
+      Deno.env.get("AI_CHAT_COMPLETIONS_URL") ||
+      "https://ai.gateway.lovable.dev/v1/chat/completions";
+    const AI_MODEL = Deno.env.get("AI_MODEL") || "google/gemini-3-flash-preview";
+    if (!AI_API_KEY) {
+      throw new Error("AI_API_KEY is not configured");
     }
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(AI_CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${AI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: AI_MODEL,
         messages: [
           {
             role: "system",
@@ -92,8 +96,8 @@ serve(async (req) => {
         });
       }
       const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI gateway error");
+      console.error("AI provider error:", response.status, t);
+      throw new Error("AI provider error");
     }
 
     const data = await response.json();
