@@ -6,6 +6,7 @@ import CinemaCard from "@/components/CinemaCard";
 import TrendingRow from "@/components/TrendingRow";
 import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
+import Footer from "@/components/Footer";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { mockTitles, mockPosts, type MediaType } from "@/lib/mockData";
 import {
@@ -472,6 +473,7 @@ export default function Index() {
           </>
         )}
       </div>
+      <Footer />
     </div>
   );
 }
