@@ -19,17 +19,20 @@ const SIZE_MAP: Record<NonNullable<LogoProps["size"]>, { icon: number; font: num
 export const LogoIcon = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
   <defs>
-    <linearGradient id="sarevista-pin" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(160 .5 .5)">
-      <stop offset="0%" stop-color="#E8A838"/>
+    <linearGradient id="sarevista-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1A1A1A"/>
+      <stop offset="100%" stop-color="#3D8B8B"/>
+    </linearGradient>
+    <linearGradient id="sarevista-sun" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F4C56B"/>
       <stop offset="100%" stop-color="#C4821E"/>
     </linearGradient>
   </defs>
-  <path d="M24 2 C13.5 2 6 9.8 6 19.5 C6 29 14 36 22 45 C23 46.2 25 46.2 26 45 C34 36 42 29 42 19.5 C42 9.8 34.5 2 24 2 Z" fill="url(#sarevista-pin)"/>
-  <path d="M3 14 H7 V18 H3 Z M3 21 H7 V25 H3 Z M3 28 H7 V32 H3 Z M41 14 H45 V18 H41 Z M41 21 H45 V25 H41 Z M41 28 H45 V32 H41 Z" fill="rgba(0,0,0,0.25)"/>
-  <path d="M14 19.5 C16.5 15.5 20 14 24 14 C28 14 31.5 15.5 34 19.5 C31.5 23.5 28 25 24 25 C20 25 16.5 23.5 14 19.5 Z" fill="none" stroke="#0D0D0D" stroke-width="1.5" stroke-linejoin="round"/>
-  <circle cx="24" cy="19.5" r="4" fill="#0D0D0D"/>
-  <circle cx="24" cy="19.5" r="1.6" fill="#F5F0E8"/>
-  <circle cx="25.4" cy="18.2" r="0.9" fill="#FFFFFF" opacity="0.2"/>
+  <circle cx="24" cy="24" r="22" fill="url(#sarevista-sky)"/>
+  <circle cx="24" cy="26" r="9" fill="url(#sarevista-sun)"/>
+  <path d="M2 34 L14 26 L22 31 L34 21 L46 30 L46 46 L2 46 Z" fill="#0D0D0D" opacity="0.85"/>
+  <path d="M2 38 L10 33 L18 36 L28 30 L38 34 L46 31 L46 46 L2 46 Z" fill="#0D0D0D"/>
+  <path d="M30 8 Q33 11 30 14 Q33 17 30 20" fill="none" stroke="#E8A838" stroke-width="1.5" stroke-linecap="round"/>
 </svg>
 `.trim();
 
@@ -49,42 +52,59 @@ export default function Logo({
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className="sarevista-logo-icon"
-      style={{ filter: "drop-shadow(0 4px 12px rgba(232, 168, 56, 0.4))", willChange: "transform" }}
+      style={{ filter: "drop-shadow(0 4px 12px rgba(232, 168, 56, 0.35))", willChange: "transform" }}
       aria-hidden="true"
     >
       <defs>
-        <linearGradient id="sarevista-pin-grad" x1="0" y1="0" x2="1" y2="1" gradientTransform="rotate(160 .5 .5)">
-          <stop offset="0%" stopColor="#E8A838" />
+        <linearGradient id="sarevista-sky-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1A1A1A" />
+          <stop offset="100%" stopColor="#3D8B8B" />
+        </linearGradient>
+        <linearGradient id="sarevista-sun-grad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#F4C56B" />
           <stop offset="100%" stopColor="#C4821E" />
         </linearGradient>
+        <clipPath id="sarevista-circle-clip">
+          <circle cx="24" cy="24" r="22" />
+        </clipPath>
       </defs>
-      {/* Pin body (teardrop) */}
+      {/* Sky disc — horizon */}
+      <circle cx="24" cy="24" r="22" fill="url(#sarevista-sky-grad)" />
+      {/* Setting sun */}
+      <circle className="sarevista-logo-sun" cx="24" cy="26" r="9" fill="url(#sarevista-sun-grad)" style={{ transformOrigin: "24px 26px", willChange: "transform" }} />
+      {/* Distant mountain ridge */}
       <path
-        className="sarevista-logo-pin"
-        d="M24 2 C13.5 2 6 9.8 6 19.5 C6 29 14 36 22 45 C23 46.2 25 46.2 26 45 C34 36 42 29 42 19.5 C42 9.8 34.5 2 24 2 Z"
-        fill="url(#sarevista-pin-grad)"
+        d="M2 34 L14 26 L22 31 L34 21 L46 30 L46 46 L2 46 Z"
+        fill="#0D0D0D"
+        opacity="0.55"
+        clipPath="url(#sarevista-circle-clip)"
       />
-      {/* Film perforations */}
-      {showNotches && (
-        <path
-          d="M3 14 H7 V18 H3 Z M3 21 H7 V25 H3 Z M3 28 H7 V32 H3 Z M41 14 H45 V18 H41 Z M41 21 H45 V25 H41 Z M41 28 H45 V32 H41 Z"
-          fill="rgba(0,0,0,0.25)"
-        />
-      )}
-      {/* Eye outline */}
+      {/* Foreground ridge */}
       <path
-        d="M14 19.5 C16.5 15.5 20 14 24 14 C28 14 31.5 15.5 34 19.5 C31.5 23.5 28 25 24 25 C20 25 16.5 23.5 14 19.5 Z"
+        d="M2 38 L10 33 L18 36 L28 30 L38 34 L46 31 L46 46 L2 46 Z"
+        fill="#0D0D0D"
+        clipPath="url(#sarevista-circle-clip)"
+      />
+      {/* Paper-plane trail (travel) */}
+      <path
+        className="sarevista-logo-trail"
+        d="M8 14 Q16 10 22 14 T36 12"
         fill="none"
-        stroke="#0D0D0D"
-        strokeWidth="1.5"
-        strokeLinejoin="round"
+        stroke="#E8A838"
+        strokeWidth="1.4"
+        strokeLinecap="round"
+        strokeDasharray="2 3"
+        opacity="0.85"
       />
-      {/* Iris */}
-      <circle cx="24" cy="19.5" r="4" fill="#0D0D0D" />
-      {/* Pupil */}
-      <circle className="sarevista-logo-pupil" cx="24" cy="19.5" r="1.6" fill="#F5F0E8" style={{ transformOrigin: "24px 19.5px", willChange: "transform" }} />
-      {/* Highlight */}
-      <circle cx="25.4" cy="18.2" r="0.9" fill="#FFFFFF" opacity="0.2" />
+      {/* Paper plane */}
+      <path
+        className="sarevista-logo-plane"
+        d="M36 12 L40 8 L38 14 L34 13 Z"
+        fill="#E8A838"
+        style={{ transformOrigin: "37px 11px", willChange: "transform" }}
+      />
+      {/* Outer ring */}
+      <circle cx="24" cy="24" r="22" fill="none" stroke="#E8A838" strokeWidth="1" opacity="0.4" />
     </svg>
   );
 

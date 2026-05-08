@@ -104,27 +104,6 @@ export type Database = {
         }
         Relationships: []
       }
-      saved_titles: {
-        Row: {
-          created_at: string
-          id: string
-          title_slug: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          title_slug: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          title_slug?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       saved_spots: {
         Row: {
           created_at: string
@@ -142,6 +121,27 @@ export type Database = {
           created_at?: string
           id?: string
           spot_slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      saved_titles: {
+        Row: {
+          created_at: string
+          id: string
+          title_slug: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title_slug: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title_slug?: string
           user_id?: string
         }
         Relationships: []
