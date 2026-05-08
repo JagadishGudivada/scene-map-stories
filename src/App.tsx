@@ -19,6 +19,7 @@ import FilmingSpots from "./pages/FilmingSpots";
 import FilmingSpotDetail from "./pages/FilmingSpotDetail";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import SitePageRoute from "./pages/SitePageRoute";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,25 @@ function AppRoutes() {
         <Route path="/u/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        {/* Footer / company pages */}
+        <Route path="/about" element={<SitePageRoute />} />
+        <Route path="/our-story" element={<SitePageRoute />} />
+        <Route path="/careers" element={<SitePageRoute />} />
+        <Route path="/press" element={<SitePageRoute />} />
+        <Route path="/contact" element={<SitePageRoute />} />
+        <Route path="/guides" element={<SitePageRoute />} />
+        <Route path="/destinations" element={<SitePageRoute />} />
+        <Route path="/community" element={<SitePageRoute />} />
+        <Route path="/help" element={<SitePageRoute />} />
+        <Route path="/safety" element={<SitePageRoute />} />
+        <Route path="/cancellation" element={<SitePageRoute />} />
+        <Route path="/report" element={<SitePageRoute />} />
+        <Route path="/accessibility" element={<SitePageRoute />} />
+        <Route path="/terms" element={<SitePageRoute />} />
+        <Route path="/privacy" element={<SitePageRoute />} />
+        <Route path="/cookies" element={<SitePageRoute />} />
+        <Route path="/affiliate-disclosure" element={<SitePageRoute />} />
+        <Route path="/sitemap" element={<SitePageRoute />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>
