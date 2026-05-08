@@ -8,7 +8,8 @@ import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
 import Footer from "@/components/Footer";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
-import { mockTitles, mockPosts, type MediaType } from "@/lib/mockData";
+import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
+import { mockPosts, type MediaType } from "@/lib/mockData";
 import {
   Sparkles,
   TrendingUp,
@@ -49,8 +50,28 @@ export default function Index() {
   const [activeSection, setActiveSection] = useState<"discover" | "community">("discover");
   const [showAIDropdown, setShowAIDropdown] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const {
+    titles: weeklyTitles,
+    loading: weeklyTitlesLoading,
+    error: weeklyTitlesError,
+    updatedAt: weeklyTitlesUpdatedAt,
+  } = useWeeklyCurrentYearTitles();
 
   const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
+
+  const homepageTitles = useMemo(() => {
+    if (weeklyTitles.length > 0) return weeklyTitles;
+    return [];
+  }, [weeklyTitles]);
+
+  const featuredTiles = useMemo(() => {
+    if (homepageTitles.length === 0) return [];
+    const cards = [];
+    for (let i = 0; i < 6; i += 1) {
+      cards.push(homepageTitles[i % homepageTitles.length]);
+    }
+    return cards;
+  }, [homepageTitles]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -76,7 +97,7 @@ export default function Index() {
   };
 
   const filteredTitles = useMemo(() => {
-    return mockTitles.filter((t) => {
+    return homepageTitles.filter((t) => {
       if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (selectedType !== "All" && t.type !== selectedType) return false;
       if (selectedGenre !== "All" && !t.genres.includes(selectedGenre)) return false;
@@ -87,7 +108,7 @@ export default function Index() {
       }
       return true;
     });
-  }, [searchQuery, selectedType, selectedGenre, selectedEra]);
+  }, [searchQuery, selectedType, selectedGenre, selectedEra, homepageTitles]);
 
   const hasActiveFilters = selectedGenre !== "All" || selectedType !== "All" || selectedEra !== "All";
   const isSearching = searchQuery.length > 0 || hasActiveFilters;
@@ -289,6 +310,14 @@ export default function Index() {
                 <Hash className="w-4 h-4 text-amber" />
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Trending</h3>
               </div>
+              {weeklyTitlesUpdatedAt && (
+                <p className="text-xs text-muted-foreground mb-3">
+                  Updated weekly · Last refresh {new Date(weeklyTitlesUpdatedAt).toLocaleDateString()}
+                </p>
+              )}
+              {weeklyTitlesError && !weeklyTitlesLoading && (
+                <p className="text-xs text-muted-foreground mb-3">Live update unavailable, showing fallback titles.</p>
+              )}
               <div className="flex flex-wrap gap-2">
                 {trendingTags.map((t) => (
                   <button
@@ -344,7 +373,7 @@ export default function Index() {
                 >
                   {/* Trending Row */}
                   <div className="mb-14">
-                    <TrendingRow titles={mockTitles} />
+                    <TrendingRow titles={homepageTitles} />
                   </div>
 
                   {/* Bento Grid */}
@@ -357,24 +386,32 @@ export default function Index() {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 auto-rows-auto">
-                      <div className="col-span-2 row-span-2">
-                        <CinemaCard title={mockTitles[0]} size="lg" delay={0} />
-                      </div>
-                      <div className="col-span-1">
-                        <CinemaCard title={mockTitles[1]} size="md" delay={0.1} />
-                      </div>
-                      <div className="col-span-1">
-                        <CinemaCard title={mockTitles[2]} size="md" delay={0.15} />
-                      </div>
-                      <div className="col-span-1">
-                        <CinemaCard title={mockTitles[3]} size="md" delay={0.2} />
-                      </div>
-                      <div className="col-span-1">
-                        <CinemaCard title={mockTitles[4]} size="md" delay={0.25} />
-                      </div>
-                      <div className="col-span-2 md:col-span-2">
-                        <CinemaCard title={mockTitles[5]} size="md" delay={0.3} />
-                      </div>
+                      {featuredTiles.length > 0 ? (
+                        <>
+                          <div className="col-span-2 row-span-2">
+                            <CinemaCard title={featuredTiles[0]} size="lg" delay={0} />
+                          </div>
+                          <div className="col-span-1">
+                            <CinemaCard title={featuredTiles[1]} size="md" delay={0.1} />
+                          </div>
+                          <div className="col-span-1">
+                            <CinemaCard title={featuredTiles[2]} size="md" delay={0.15} />
+                          </div>
+                          <div className="col-span-1">
+                            <CinemaCard title={featuredTiles[3]} size="md" delay={0.2} />
+                          </div>
+                          <div className="col-span-1">
+                            <CinemaCard title={featuredTiles[4]} size="md" delay={0.25} />
+                          </div>
+                          <div className="col-span-2 md:col-span-2">
+                            <CinemaCard title={featuredTiles[5]} size="md" delay={0.3} />
+                          </div>
+                        </>
+                      ) : (
+                        <div className="col-span-2 md:col-span-3 lg:col-span-4 glass rounded-2xl border border-border p-8 text-center">
+                          <p className="text-sm text-muted-foreground">No current-year titles available yet.</p>
+                        </div>
+                      )}
                     </div>
                   </section>
 
