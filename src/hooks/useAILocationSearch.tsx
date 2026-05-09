@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeCached } from "@/lib/aiClientCache";
 import type { MapPin } from "@/components/LeafletMap";
 
 export function useAILocationSearch() {
@@ -22,22 +22,13 @@ export function useAILocationSearch() {
 
     debounceRef.current = setTimeout(async () => {
       try {
-        const { data, error } = await supabase.functions.invoke("search-locations", {
-          body: { query: query.trim() },
-        });
-
-        if (error) {
-          console.error("AI search error:", error);
-          setAiError("Search failed");
-          setAiResults([]);
-          return;
-        }
-
-        if (data?.error) {
-          setAiError(data.error);
-          setAiResults([]);
-          return;
-        }
+        const q = query.trim();
+        const data = await invokeCached<any>(
+          "search-locations",
+          { query: q },
+          q.toLowerCase(),
+          { ttlSeconds: 60 * 60 * 24, persist: "session" }
+        );
 
         const locations: MapPin[] = (data?.locations || []).map((loc: any) => ({
           lat: loc.lat,
@@ -49,14 +40,17 @@ export function useAILocationSearch() {
         }));
 
         setAiResults(locations);
-      } catch (err) {
+      } catch (err: any) {
         console.error("AI search error:", err);
-        setAiError("Search failed");
+        const msg = err?.message || "";
+        if (/429/.test(msg)) setAiError("Too many searches — please wait a moment.");
+        else if (/402/.test(msg)) setAiError("AI credits exhausted.");
+        else setAiError("Search failed");
         setAiResults([]);
       } finally {
         setIsSearching(false);
       }
-    }, 600);
+    }, 300);
   }, []);
 
   const clearResults = useCallback(() => {

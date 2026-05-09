@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { invokeCached } from "@/lib/aiClientCache";
 
 export type TitleResult = {
   title: string;
@@ -31,31 +31,13 @@ export function useAITitleSearch() {
     setIsSearching(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("search-titles", {
-          body: { query: query.trim() },
-        });
-        // Handle rate limit / credit errors gracefully without crashing
-        const msg = (fnError as any)?.message || "";
-        if (fnError && /429/.test(msg)) {
-          setError("Too many searches — please wait a moment.");
-          setResults([]);
-          return;
-        }
-        if (fnError && /402/.test(msg)) {
-          setError("AI credits exhausted.");
-          setResults([]);
-          return;
-        }
-        if (fnError) {
-          setError("Search failed");
-          setResults([]);
-          return;
-        }
-        if (data?.error) {
-          setError(data.error);
-          setResults([]);
-          return;
-        }
+        const q = query.trim();
+        const data = await invokeCached<any>(
+          "search-titles",
+          { query: q },
+          q.toLowerCase(),
+          { ttlSeconds: 60 * 60 * 24, persist: "session" }
+        );
         const titles: TitleResult[] = (data?.titles || []).map((t: any) => ({
           title: String(t.title),
           year: Number(t.year),
@@ -63,14 +45,16 @@ export function useAITitleSearch() {
           creator: t.creator || undefined,
         }));
         setResults(titles);
-      } catch (e) {
-        console.error("title search error", e);
-        setError("Search failed");
+      } catch (e: any) {
+        const msg = e?.message || "";
+        if (/429/.test(msg)) setError("Too many searches — please wait a moment.");
+        else if (/402/.test(msg)) setError("AI credits exhausted.");
+        else setError("Search failed");
         setResults([]);
       } finally {
         setIsSearching(false);
       }
-    }, 700);
+    }, 350);
   }, []);
 
   const clear = useCallback(() => {
