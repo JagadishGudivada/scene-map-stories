@@ -147,18 +147,17 @@ export default function LocationDetail() {
     setAiLoading(true);
     setAiError(null);
     setAiData(null);
-    supabase.functions
-      .invoke("location-details", { body: { slug } })
-      .then(({ data, error }) => {
+    import("@/lib/aiClientCache")
+      .then(({ invokeCached }) => invokeCached("location-details", { slug }, slug))
+      .then((data: any) => {
         if (!active) return;
-        if (error) {
-          const msg = error.message || "";
-          setAiError(msg.includes("429") ? "Too many requests, please retry shortly." : msg.includes("402") ? "AI credits exhausted." : "Failed to load location.");
-        } else if (data?.error) {
-          setAiError(data.error);
-        } else {
-          setAiData(data);
-        }
+        if (data?.error) setAiError(data.error);
+        else setAiData(data);
+      })
+      .catch((err: any) => {
+        if (!active) return;
+        const msg = err?.message || "";
+        setAiError(msg.includes("429") ? "Too many requests, please retry shortly." : msg.includes("402") ? "AI credits exhausted." : "Failed to load location.");
       })
       .finally(() => active && setAiLoading(false));
     return () => { active = false; };

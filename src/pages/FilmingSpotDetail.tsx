@@ -65,8 +65,11 @@ export default function FilmingSpotDetail() {
 
     (async () => {
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("spot-details", {
-          body: {
+        const { invokeCached } = await import("@/lib/aiClientCache");
+        const cacheKey = `${slug}|${routeState?.titleHint || ""}`;
+        const data = await invokeCached<any>(
+          "spot-details",
+          {
             slug,
             label: routeState?.label,
             titleHint: routeState?.titleHint,
@@ -74,20 +77,14 @@ export default function FilmingSpotDetail() {
             lng: routeState?.lng,
             type: routeState?.type,
           },
-        });
+          cacheKey
+        );
 
         if (cancelled) return;
-
-        if (fnError) {
-          setError(fnError.message || "Failed to load location details");
-          return;
-        }
-
         if (data?.error) {
           setError(data.error);
           return;
         }
-
         setAiSpot(data);
       } catch (err) {
         if (!cancelled) {
