@@ -1,69 +1,57 @@
-# Monetize via Affiliate Links + Click Tracking
+## Goal
+Pages that depend on AI edge functions (`title-details`, `spot-details`, `search-titles`, `search-locations`, `location-details`) feel slow because every navigation triggers a fresh 3–15s AI call. Make perceived load feel near-instant.
 
-Phase 1 of the monetization roadmap. No paywall, no UI disruption — just turn existing outbound clicks into trackable, revenue-ready traffic and add 3 new high-converting service cards.
+## Strategy (4 layers)
 
-## Goals
+### 1. Server-side caching in the database (biggest win)
+Add a `ai_cache` table keyed by `(function_name, cache_key)` storing the JSON response + `expires_at`. Each edge function:
+- Computes a deterministic key (e.g. `title-details:<slug>`).
+- Returns cached row immediately if fresh (TTL: title-details 30 days, spot-details 30 days, location-details 30 days, search-titles 24h, search-locations 24h).
+- Otherwise calls AI, stores result, returns it.
 
-1. Every outbound link in `PlanYourTripDialog` goes through a central, swappable affiliate config.
-2. Add 3 new service cards: **Tours & Tickets**, **eSIM**, **Travel Insurance**.
-3. Log every click to the database so you can see what converts before partner dashboards report.
-4. Make it trivial to drop in real affiliate IDs later (one file edit).
+Result: second visit to any title/spot/location is ~50–150ms instead of 5–15s. First visitor warms the cache for everyone.
 
-## What gets built
+### 2. Switch to faster/cheaper models per route
+Right now everything uses `google/gemini-3-flash-preview` plus Google grounding (slow). Tune per use case:
+- `search-titles`, `search-locations` → `google/gemini-3.1-flash-lite-preview`, grounding **off** by default (autocomplete must be snappy).
+- `title-details`, `spot-details`, `location-details` → keep `gemini-3-flash-preview` but `reasoning_effort: "minimal"` and grounding only on cache miss.
+- Reduce `AI_TIMEOUT_MS` so we fail fast and fall back.
 
-### 1. Central affiliate config — `src/lib/affiliates.ts`
-Single source of truth for every partner URL. Each entry exposes a `buildUrl({ origin, destination, lat, lng, spotName })` function. Generic public URLs today; later, swap in `?aid=YOUR_ID` or partner-specific deep-link params without touching components.
+### 3. Client-side caching + prefetch
+- Wrap every `supabase.functions.invoke(...)` for AI routes in a `sessionStorage` + in-memory `Map` cache (per-tab). Subsequent navigation in the same session = 0ms.
+- On hover/focus of a title card or search result, **prefetch** `title-details` so by the time the user clicks, data is ready.
+- Persist `title-details` / `spot-details` results in `localStorage` with TTL (e.g. 7 days) so returning users skip the call entirely.
 
-Partners wired:
-- **Flights** → Skyscanner (`skyscanner.com/transport/flights/{from}/{to}`)
-- **Hotels** → Booking.com (already used; add affiliate placeholder)
-- **Directions** → Google Maps (no affiliate, kept for utility)
-- **Tours & Tickets** → GetYourGuide search URL
-- **eSIM** → Airalo country page
-- **Travel Insurance** → SafetyWing quote page
-
-### 2. Updated `PlanYourTripDialog`
-- Replace inline URL building with calls to the affiliate config.
-- Render 6 cards in a responsive 2- or 3-column grid (currently 3).
-- Each card click fires a tracking call before the browser navigates (using `navigator.sendBeacon` so it doesn't block the new tab).
-- Keep the existing origin auto-detect / LHR fallback exactly as is.
-
-### 3. Click tracking — new table `affiliate_clicks`
-| column | type | purpose |
-|---|---|---|
-| id | uuid | pk |
-| user_id | uuid nullable | from auth, null for anon |
-| partner | text | "skyscanner", "booking", "getyourguide", etc. |
-| service | text | "flights", "hotels", "tours", "esim", "insurance", "directions" |
-| spot_name | text nullable | spot the user was viewing |
-| location_name | text | city/location |
-| origin | text nullable | detected origin city/airport |
-| destination_url | text | the full outbound URL (for debugging/audit) |
-| created_at | timestamptz | default now() |
-
-**RLS**: anyone (anon + authenticated) can INSERT (it's a public clickstream). Only authenticated users with a future `admin` role can SELECT. For now, we just block public reads.
-
-### 4. Tracking helper — `src/lib/trackAffiliateClick.ts`
-Tiny wrapper that inserts a row via the Supabase client. Fire-and-forget; never blocks navigation; silently swallows errors.
-
-## Out of scope (next phases)
-
-- Pro subscription / paywall — held for Phase 2.
-- AI search quotas — held for Phase 2.
-- Sponsored cities / titles — held for Phase 3.
-- Admin dashboard to view click stats — can be added later by querying `affiliate_clicks`.
+### 4. Progressive rendering (perceived speed)
+- `TitleDetail` currently shows a blank loader until the full AI payload arrives. Render the page shell (hero, title, type, year from `navState`/slug) immediately, then stream in synopsis, locations, and cover image as they arrive.
+- Add real skeletons (using `src/components/ui/skeleton.tsx`) for the synopsis, location list, and map rather than a single spinner.
+- Optional stretch: convert `title-details` to SSE streaming so synopsis text appears token-by-token.
 
 ## Files touched
 
-- **New:** `src/lib/affiliates.ts`
-- **New:** `src/lib/trackAffiliateClick.ts`
-- **Edit:** `src/components/PlanYourTripDialog.tsx` (use config + tracking + 3 new cards)
-- **Migration:** create `affiliate_clicks` table with insert-only RLS
+**New**
+- `supabase/migrations/<ts>_ai_cache.sql` — `ai_cache` table + index on `(function_name, cache_key)` + RLS (service role only writes; public read via edge function only, so no public policy needed).
+- `supabase/functions/_shared/aiCache.ts` — `getCached(fn, key)` / `setCached(fn, key, value, ttlSeconds)` helpers using service role client.
+- `src/lib/aiClientCache.ts` — typed wrapper around `supabase.functions.invoke` with memory + sessionStorage + optional localStorage TTL.
 
-## How you make money once this ships
+**Edited**
+- `supabase/functions/title-details/index.ts` — cache by slug, lower reasoning, faster timeout.
+- `supabase/functions/spot-details/index.ts` — cache by slug.
+- `supabase/functions/location-details/index.ts` — cache by slug.
+- `supabase/functions/search-titles/index.ts` — cache by normalized query (24h), switch to flash-lite, grounding off.
+- `supabase/functions/search-locations/index.ts` — same treatment as search-titles.
+- `src/hooks/useAITitleSearch.tsx`, `src/hooks/useAILocationSearch.tsx` — use client cache, drop debounce from 700ms → 350ms (cache makes repeat keystrokes free).
+- `src/pages/TitleDetail.tsx` — render shell first, skeletons for sub-sections, use client cache, add hover prefetch hook export.
+- `src/pages/FilmingSpotDetail.tsx`, `src/pages/LocationDetail.tsx` — same shell-first treatment + client cache.
+- `src/components/CinemaCard.tsx` (and search result rows) — `onMouseEnter` triggers prefetch.
 
-1. Sign up for: Skyscanner Partners, Booking.com Affiliate, GetYourGuide Partner, Airalo Partners, SafetyWing Affiliate (all free, all approve quickly for travel content sites).
-2. Paste your affiliate IDs into `src/lib/affiliates.ts` — one line per partner.
-3. Watch the `affiliate_clicks` table to see which services convert best, and reorder the cards accordingly.
+## Expected impact
+- First-ever visit to a title page: ~5–8s (one AI call, minimal reasoning) vs ~10–15s today.
+- Repeat visits by anyone: <200ms (DB cache hit).
+- Repeat visits in same browser: instant (memory/session cache).
+- Search dropdown: feels instant after first few queries are cached.
 
-Expected lift: with even modest traffic, GetYourGuide + Booking typically out-earn flights 3–5×. The new "Tours" card alone is likely your biggest revenue driver.
+## Out of scope (can do later)
+- Replacing Wikipedia image fetch in `title-details`/`spot-details` with a faster cached image lookup.
+- Edge function streaming (SSE) for synopsis — only if perceived speed still feels slow after the above.
+- Background regeneration of stale cache entries (stale-while-revalidate).
