@@ -279,6 +279,7 @@ serve(async (req) => {
     parsed.coverImage =
       img || `https://source.unsplash.com/1600x900/?${encodeURIComponent(parsed.name + " skyline")}`;
 
+    setCached("location-details", slug, parsed, 60 * 60 * 24 * 30).catch(() => {});
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
