@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getCached, setCached } from "../_shared/aiCache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,6 +33,13 @@ serve(async (req) => {
     if (!slug || typeof slug !== "string") {
       return new Response(JSON.stringify({ error: "slug required" }), {
         status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const cached = await getCached<Record<string, unknown>>("location-details", slug);
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -271,6 +279,7 @@ serve(async (req) => {
     parsed.coverImage =
       img || `https://source.unsplash.com/1600x900/?${encodeURIComponent(parsed.name + " skyline")}`;
 
+    setCached("location-details", slug, parsed, 60 * 60 * 24 * 30).catch(() => {});
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

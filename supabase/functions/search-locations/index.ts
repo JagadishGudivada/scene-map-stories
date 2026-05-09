@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getCached, setCached, normalizeKey } from "../_shared/aiCache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,11 +20,19 @@ serve(async (req) => {
       });
     }
 
+    const cacheKey = normalizeKey(query);
+    const cached = await getCached<{ locations: unknown[] }>("search-locations", cacheKey);
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
       Deno.env.get("AI_CHAT_COMPLETIONS_URL") ||
       "https://ai.gateway.lovable.dev/v1/chat/completions";
-    const AI_MODEL = Deno.env.get("AI_MODEL") || "google/gemini-3-flash-preview";
+    const AI_MODEL = Deno.env.get("AI_MODEL_SEARCH") || "google/gemini-3.1-flash-lite-preview";
     if (!AI_API_KEY) {
       throw new Error("AI_API_KEY is not configured");
     }
@@ -102,23 +111,25 @@ serve(async (req) => {
 
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    let result: { locations: unknown[] } = { locations: [] };
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify({ locations: parsed.locations || [] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      result = { locations: parsed.locations || [] };
+    } else {
+      const content = data.choices?.[0]?.message?.content || "";
+      try {
+        const parsed = JSON.parse(content);
+        result = { locations: parsed.locations || [] };
+      } catch {
+        // empty
+      }
     }
-    const content = data.choices?.[0]?.message?.content || "";
-    try {
-      const parsed = JSON.parse(content);
-      return new Response(JSON.stringify({ locations: parsed.locations || [] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    } catch {
-      return new Response(JSON.stringify({ locations: [] }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (result.locations.length > 0) {
+      setCached("search-locations", cacheKey, result, 60 * 60 * 24).catch(() => {});
     }
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("search-locations error:", e);
     return new Response(

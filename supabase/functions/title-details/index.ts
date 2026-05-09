@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getCached, setCached } from "../_shared/aiCache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -71,6 +72,14 @@ serve(async (req) => {
       });
     }
 
+    // Cache lookup (30 days)
+    const cached = await getCached<Record<string, unknown>>("title-details", slug);
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
       Deno.env.get("AI_CHAT_COMPLETIONS_URL") ||
@@ -81,7 +90,7 @@ serve(async (req) => {
       AI_MODEL,
       (Deno.env.get("AI_REASONING_EFFORT") || "minimal").toLowerCase()
     );
-    const AI_ENABLE_GOOGLE_GROUNDING = isTruthyEnv(Deno.env.get("AI_ENABLE_GOOGLE_GROUNDING"), true);
+    const AI_ENABLE_GOOGLE_GROUNDING = isTruthyEnv(Deno.env.get("AI_ENABLE_GOOGLE_GROUNDING"), false);
     if (!AI_API_KEY) throw new Error("AI_API_KEY is not configured");
 
     // Reconstruct a human title from slug if no hint provided
@@ -211,6 +220,9 @@ serve(async (req) => {
       // Fetch a hero image from Wikipedia based on title
       const coverImage = await fetchWikipediaImage(parsed.title, parsed.year, parsed.type);
       if (coverImage) parsed.coverImage = coverImage;
+
+      // Cache for 30 days
+      setCached("title-details", slug, parsed, 60 * 60 * 24 * 30).catch(() => {});
 
       return new Response(JSON.stringify(parsed), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

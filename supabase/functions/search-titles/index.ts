@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { getCached, setCached, normalizeKey } from "../_shared/aiCache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -34,17 +35,27 @@ serve(async (req) => {
       });
     }
 
+    // Cache lookup (24h TTL for autocomplete results)
+    const cacheKey = normalizeKey(query);
+    const cached = await getCached<{ titles: unknown[] }>("search-titles", cacheKey);
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
       Deno.env.get("AI_CHAT_COMPLETIONS_URL") ||
       "https://ai.gateway.lovable.dev/v1/chat/completions";
-    const AI_MODEL = Deno.env.get("AI_MODEL") || "google/gemini-3-flash-preview";
-    const AI_TIMEOUT_MS = Number(Deno.env.get("AI_TIMEOUT_MS_SEARCH") || Deno.env.get("AI_TIMEOUT_MS") || "15000");
+    // Use the cheapest/fastest model for autocomplete; grounding off by default for speed
+    const AI_MODEL = Deno.env.get("AI_MODEL_SEARCH") || "google/gemini-3.1-flash-lite-preview";
+    const AI_TIMEOUT_MS = Number(Deno.env.get("AI_TIMEOUT_MS_SEARCH") || "8000");
     const AI_REASONING_EFFORT = resolveReasoningEffort(
       AI_MODEL,
-      (Deno.env.get("AI_REASONING_EFFORT") || "minimal").toLowerCase()
+      (Deno.env.get("AI_REASONING_EFFORT_SEARCH") || "minimal").toLowerCase()
     );
-    const AI_ENABLE_GOOGLE_GROUNDING = isTruthyEnv(Deno.env.get("AI_ENABLE_GOOGLE_GROUNDING"), true);
+    const AI_ENABLE_GOOGLE_GROUNDING = isTruthyEnv(Deno.env.get("AI_ENABLE_GOOGLE_GROUNDING_SEARCH"), false);
     if (!AI_API_KEY) throw new Error("AI_API_KEY is not configured");
 
     const basePayload = {
@@ -157,7 +168,10 @@ serve(async (req) => {
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
-      return new Response(JSON.stringify({ titles: parsed.titles || [] }), {
+      const result = { titles: parsed.titles || [] };
+      // 24h cache for autocomplete
+      setCached("search-titles", cacheKey, result, 60 * 60 * 24).catch(() => {});
+      return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

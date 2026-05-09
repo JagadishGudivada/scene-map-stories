@@ -69,14 +69,13 @@ export default function TitleDetail() {
     setAiDetails(null);
     (async () => {
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("title-details", {
-          body: { slug, title: navState?.title, year: navState?.year },
-        });
+        const { invokeCached } = await import("@/lib/aiClientCache");
+        const data = await invokeCached<any>(
+          "title-details",
+          { slug, title: navState?.title, year: navState?.year },
+          slug
+        );
         if (cancelled) return;
-        if (fnError) {
-          setError("Failed to load title details");
-          return;
-        }
         if (data?.error) {
           setError(data.error);
           return;
