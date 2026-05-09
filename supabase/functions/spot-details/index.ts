@@ -167,6 +167,7 @@ serve(async (req) => {
         parsed.image = `https://source.unsplash.com/1600x900/?${q}`;
       }
 
+      setCached("spot-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
       return new Response(JSON.stringify(parsed), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
