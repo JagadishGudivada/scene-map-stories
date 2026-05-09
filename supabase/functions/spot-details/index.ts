@@ -19,6 +19,14 @@ serve(async (req) => {
       });
     }
 
+    const cacheKey = `${slug}|${titleHint || ""}`;
+    const cached = await getCached<Record<string, unknown>>("spot-details", cacheKey);
+    if (cached) {
+      return new Response(JSON.stringify(cached), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
       Deno.env.get("AI_CHAT_COMPLETIONS_URL") ||
