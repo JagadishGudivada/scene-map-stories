@@ -745,18 +745,25 @@ export default function LocationDetail() {
             <h3 className="text-lg font-semibold text-foreground mb-1">Best Time to Visit for Filming Locations</h3>
             <p className="text-xs text-muted-foreground mb-5">Crowd levels and weather by month</p>
 
-            <div className="flex items-end gap-2 mb-4" style={{ height: 80 }}>
-              {bestTimeData.monthLevels.map((m: { month: string; level: number }) => {
-                const h = m.level * 16;
-                const color =
-                  m.level >= 5 ? "bg-destructive" : m.level >= 4 ? "bg-amber" : m.level >= 3 ? "bg-amber/60" : "bg-teal";
-                return (
-                  <div key={m.month} className="flex-1 flex flex-col items-center gap-1">
-                    <div className={`w-full rounded-sm ${color}`} style={{ height: h }} />
-                    <span className="text-[10px] text-muted-foreground">{m.month}</span>
-                  </div>
-                );
-              })}
+            <div className="mb-4">
+              <div className="grid grid-cols-12 gap-1 sm:gap-1.5">
+                {bestTimeData.monthLevels.map((m: { month: string; level: number }) => {
+                  const h = m.level * 16;
+                  const color =
+                    m.level >= 5 ? "bg-destructive" : m.level >= 4 ? "bg-amber" : m.level >= 3 ? "bg-amber/60" : "bg-teal";
+                  return (
+                    <div key={m.month} className="min-w-0 flex flex-col items-center gap-1">
+                      <div className="h-20 w-full flex items-end">
+                        <div className={`w-full rounded-sm sm:rounded-md ${color}`} style={{ height: h }} />
+                      </div>
+                      <span className="text-[9px] sm:text-[10px] leading-none text-muted-foreground whitespace-nowrap">
+                        <span className="md:hidden">{m.month.slice(0, 3)}</span>
+                        <span className="hidden md:inline">{m.month}</span>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex flex-wrap gap-3 mb-3">

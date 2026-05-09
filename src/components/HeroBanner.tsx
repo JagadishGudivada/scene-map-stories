@@ -19,8 +19,11 @@ type HeroSlide = {
   title: string;
   year: number;
   type: Title["type"];
+  coverImage: string;
   image: string;
   imageSrcSet?: string;
+  imageDesktopSrcSet?: string;
+  imageMobileSrcSet?: string;
   imageSizes?: string;
   locationTag: string;
   tagline: string;
@@ -42,8 +45,11 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
         title: title.title,
         year: title.year,
         type: title.type,
+        coverImage: title.coverImage,
         image: title.heroImage || title.coverImage,
         imageSrcSet: title.heroImageSrcSet,
+        imageDesktopSrcSet: title.heroImageDesktopSrcSet || title.heroImageSrcSet,
+        imageMobileSrcSet: title.heroImageMobileSrcSet,
         imageSizes: title.heroImageSizes,
         locationTag: title.locations?.[0] || "Filming locations",
         tagline: `${title.locationCount} filming locations discovered`,
@@ -101,21 +107,37 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
           transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
           className="absolute inset-0"
         >
-          <img
-            src={slide.image}
-            srcSet={slide.imageSrcSet}
-            sizes={slide.imageSizes || "100vw"}
-            alt=""
-            aria-hidden="true"
-            className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-35 pointer-events-none"
-          />
-          <img
-            src={slide.image}
-            srcSet={slide.imageSrcSet}
-            sizes={slide.imageSizes || "100vw"}
-            alt={slide.title}
-            className="relative z-10 w-full h-full object-contain pointer-events-none select-none"
-          />
+          <picture>
+            {slide.imageMobileSrcSet && (
+              <source media="(max-width: 640px)" srcSet={slide.imageMobileSrcSet} sizes="100vw" />
+            )}
+            {slide.imageDesktopSrcSet && (
+              <source media="(min-width: 641px)" srcSet={slide.imageDesktopSrcSet} sizes={slide.imageSizes || "100vw"} />
+            )}
+            <img
+              src={slide.image}
+              srcSet={slide.imageSrcSet}
+              sizes={slide.imageSizes || "100vw"}
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover scale-110 blur-2xl opacity-35 pointer-events-none"
+            />
+          </picture>
+          <picture>
+            {slide.imageMobileSrcSet && (
+              <source media="(max-width: 640px)" srcSet={slide.imageMobileSrcSet} sizes="100vw" />
+            )}
+            {slide.imageDesktopSrcSet && (
+              <source media="(min-width: 641px)" srcSet={slide.imageDesktopSrcSet} sizes={slide.imageSizes || "100vw"} />
+            )}
+            <img
+              src={slide.imageMobileSrcSet ? slide.coverImage : slide.image}
+              srcSet={slide.imageSrcSet}
+              sizes={slide.imageSizes || "100vw"}
+              alt={slide.title}
+              className="relative z-10 w-full h-full object-cover sm:object-contain pointer-events-none select-none"
+            />
+          </picture>
           {/* Gradient layers */}
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />

@@ -25,7 +25,7 @@ type TitleResult = {
   genres?: string[];
 };
 
-const CACHE_KEY = "weekly-current-year-titles-v4";
+const CACHE_KEY = "weekly-current-year-titles-v5";
 
 function getNumericWidth(size: string): number | null {
   const match = /^w(\d+)$/.exec(size);
@@ -94,8 +94,11 @@ function mapToTitleCard(result: TitleResult): Title {
   const backdropUrl = result.backdropPath
     ? getLargestTmdbWidthUrl(baseUrl, result.backdropPath, result.backdropSizes)
     : result.backdropUrl;
-  const heroSrcSet = result.backdropPath
+  const heroDesktopSrcSet = result.backdropPath
     ? buildTmdbSrcSet(baseUrl, result.backdropPath, result.backdropSizes)
+    : undefined;
+  const heroMobileSrcSet = result.posterPath
+    ? buildTmdbSrcSet(baseUrl, result.posterPath, result.posterSizes)
     : undefined;
 
   if (matched) {
@@ -106,8 +109,10 @@ function mapToTitleCard(result: TitleResult): Title {
       type: result.type,
       coverImage: posterUrl || matched.coverImage,
       heroImage: backdropUrl || posterUrl || matched.coverImage,
-      heroImageSrcSet: heroSrcSet,
+      heroImageSrcSet: heroDesktopSrcSet,
       heroImageSizes: "100vw",
+      heroImageMobileSrcSet: heroMobileSrcSet,
+      heroImageDesktopSrcSet: heroDesktopSrcSet,
       rating: result.rating ?? matched.rating,
       genres: result.genres && result.genres.length > 0 ? result.genres : matched.genres,
     };
@@ -128,8 +133,10 @@ function mapToTitleCard(result: TitleResult): Title {
     type: result.type,
     coverImage,
     heroImage: backdropUrl || coverImage,
-    heroImageSrcSet: heroSrcSet,
+    heroImageSrcSet: heroDesktopSrcSet,
     heroImageSizes: "100vw",
+    heroImageMobileSrcSet: heroMobileSrcSet,
+    heroImageDesktopSrcSet: heroDesktopSrcSet,
     locationCount: 8 + (h % 22),
     rating: result.rating ?? Number((7 + ((h % 21) / 10)).toFixed(1)),
     locations: ["Featured locations"],

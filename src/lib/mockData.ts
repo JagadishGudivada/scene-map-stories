@@ -17,6 +17,8 @@ export interface Title {
   heroImage?: string;
   heroImageSrcSet?: string;
   heroImageSizes?: string;
+  heroImageMobileSrcSet?: string;
+  heroImageDesktopSrcSet?: string;
   locationCount: number;
   rating: number;
   locations: string[];
