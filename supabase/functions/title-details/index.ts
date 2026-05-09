@@ -221,6 +221,9 @@ serve(async (req) => {
       const coverImage = await fetchWikipediaImage(parsed.title, parsed.year, parsed.type);
       if (coverImage) parsed.coverImage = coverImage;
 
+      // Cache for 30 days
+      setCached("title-details", slug, parsed, 60 * 60 * 24 * 30).catch(() => {});
+
       return new Response(JSON.stringify(parsed), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
