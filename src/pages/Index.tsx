@@ -9,6 +9,7 @@ import PopularLocations from "@/components/PopularLocations";
 import Footer from "@/components/Footer";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
+import { useRecentTitleDetails } from "@/hooks/useRecentTitleDetails";
 import { mockPosts, type MediaType } from "@/lib/mockData";
 import {
   Sparkles,
@@ -56,6 +57,11 @@ export default function Index() {
     error: weeklyTitlesError,
     updatedAt: weeklyTitlesUpdatedAt,
   } = useWeeklyCurrentYearTitles();
+  const {
+    titles: recentTitles,
+    loading: recentTitlesLoading,
+    error: recentTitlesError,
+  } = useRecentTitleDetails(5);
 
   const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
 
@@ -65,13 +71,10 @@ export default function Index() {
   }, [weeklyTitles]);
 
   const featuredTiles = useMemo(() => {
-    if (homepageTitles.length === 0) return [];
-    const cards = [];
-    for (let i = 0; i < 6; i += 1) {
-      cards.push(homepageTitles[i % homepageTitles.length]);
-    }
-    return cards;
-  }, [homepageTitles]);
+    const source = recentTitles.length > 0 ? recentTitles : homepageTitles;
+    if (source.length === 0) return [];
+    return source.slice(0, 5);
+  }, [homepageTitles, recentTitles]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -385,6 +388,15 @@ export default function Index() {
                       </div>
                     </div>
 
+                    {recentTitlesLoading && (
+                      <p className="text-xs text-muted-foreground mb-3">Loading latest cached title details...</p>
+                    )}
+                    {recentTitlesError && (
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Unable to read latest cached details, showing fallback titles.
+                      </p>
+                    )}
+
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 auto-rows-auto">
                       {featuredTiles.length > 0 ? (
                         <>
@@ -402,9 +414,6 @@ export default function Index() {
                           </div>
                           <div className="col-span-1">
                             <CinemaCard title={featuredTiles[4]} size="md" delay={0.25} />
-                          </div>
-                          <div className="col-span-2 md:col-span-2">
-                            <CinemaCard title={featuredTiles[5]} size="md" delay={0.3} />
                           </div>
                         </>
                       ) : (

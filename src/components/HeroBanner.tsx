@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { heroSlides, type Title } from "@/lib/mockData";
 
@@ -17,7 +18,7 @@ type HeroSlide = {
   id: string;
   title: string;
   year: number;
-  type: string;
+  type: Title["type"];
   image: string;
   imageSrcSet?: string;
   imageSizes?: string;
@@ -25,7 +26,12 @@ type HeroSlide = {
   tagline: string;
 };
 
+function slugifyTitle(title: string, year: number) {
+  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "").replace(/^-+/, "")}-${year}`;
+}
+
 export default function HeroBanner({ titles = [] }: HeroBannerProps) {
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
 
@@ -153,7 +159,14 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <button className="px-5 py-2.5 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:opacity-90 transition-opacity shadow-amber">
+              <button
+                onClick={() => {
+                  navigate(`/title/${slugifyTitle(slide.title, slide.year)}`, {
+                    state: { title: slide.title, year: slide.year, type: slide.type },
+                  });
+                }}
+                className="px-5 py-2.5 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:opacity-90 transition-opacity shadow-amber"
+              >
                 Explore Locations
               </button>
               <button className="px-5 py-2.5 rounded-xl glass text-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
@@ -167,19 +180,19 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
       {/* Navigation Arrows */}
       <button
         onClick={prev}
-        className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
+        className="absolute z-30 left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button
         onClick={next}
-        className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
+        className="absolute z-30 right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
       >
         <ChevronRight className="w-5 h-5" />
       </button>
 
       {/* Dots */}
-      <div className="absolute bottom-5 right-6 flex items-center gap-1.5">
+      <div className="absolute z-30 bottom-5 right-6 flex items-center gap-1.5">
         {slides.map((_, i) => (
           <button
             key={i}

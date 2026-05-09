@@ -662,7 +662,7 @@ export default function LocationDetail() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
           {filteredTitles.map((title, i) => (
             <motion.div
               key={title.id}
@@ -675,50 +675,35 @@ export default function LocationDetail() {
                   state: { title: title.title, year: title.year, type: title.type },
                 })
               }
-              className="group glass rounded-2xl overflow-hidden hover:scale-[1.02] hover:shadow-amber hover:border-amber/30 transition-all duration-300 cursor-pointer"
+              className="relative h-64 w-44 shrink-0 rounded-2xl overflow-hidden group cursor-pointer shadow-card"
             >
-              {/* Poster */}
-              <div className="relative aspect-[2/3] overflow-hidden">
-                <img
-                  src={title.image}
-                  alt={title.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 cinema-overlay" />
-                {/* Type badge */}
-                <span className="absolute top-3 left-3 badge-movie text-xs font-semibold px-2.5 py-1 rounded-full">
+              {/* Background image */}
+              <img
+                src={title.image}
+                alt={title.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              {/* Gradient overlay */}
+              <div className="absolute inset-0 cinema-overlay" />
+              {/* Type badge */}
+              <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                  title.type === "Movie" ? "badge-movie" : title.type === "Series" ? "badge-series" : "badge-book"
+                }`}>
                   {title.type}
                 </span>
-                {/* Year */}
-                <span className="absolute top-3 right-3 glass text-xs text-muted-foreground px-2.5 py-1 rounded-full">
-                  {title.year}
-                </span>
               </div>
-              {/* Info */}
-              <div className="p-4">
-                <h3 className="font-serif italic text-xl text-foreground mb-1">{title.title}</h3>
-                <div className="flex items-center gap-1.5 text-amber text-sm mb-2">
-                  <MapPin className="w-3.5 h-3.5" />
-                  <span className="font-medium">{title.spots} filming spots in {cityData.name}</span>
+              {/* Bottom content */}
+              <div className="absolute bottom-0 left-0 right-0 p-3">
+                <div className="flex items-center gap-1 mb-1">
+                  <Star className="w-3 h-3 text-amber fill-amber" />
+                  <span className="text-xs font-semibold text-amber">{title.rating}</span>
+                  <span className="text-xs text-muted-foreground ml-1">{title.year}</span>
                 </div>
-                <div className="flex flex-wrap gap-1.5 mb-3">
-                  {title.genres.map((g) => (
-                    <span key={g} className="text-xs px-2 py-0.5 rounded-full bg-teal/10 text-teal border border-teal/20">
-                      {g}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex items-center gap-1 mb-4">
-                  <Star className="w-3.5 h-3.5 text-amber fill-amber" />
-                  <span className="text-sm font-semibold text-amber">{title.rating}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button className="flex-1 px-3 py-2 rounded-xl border border-teal/30 text-teal text-xs font-semibold hover:bg-teal/10 transition-colors">
-                    Explore Locations
-                  </button>
-                  <button className="w-9 h-9 rounded-xl flex items-center justify-center glass text-foreground hover:bg-amber/10 hover:text-amber transition-colors">
-                    <Bookmark className="w-4 h-4" />
-                  </button>
+                <h3 className="font-serif text-foreground text-base leading-tight mb-1">{title.title}</h3>
+                <div className="flex items-center gap-1 text-amber/80">
+                  <MapPin className="w-3 h-3" />
+                  <span className="text-xs">{title.spots} spots</span>
                 </div>
               </div>
             </motion.div>
