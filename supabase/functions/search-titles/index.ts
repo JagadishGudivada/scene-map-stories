@@ -151,17 +151,38 @@ serve(async (req) => {
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, please try again shortly." }), {
+        return new Response(JSON.stringify({ error: "Rate limited, please try again shortly.", titles: [] }), {
           status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
+        return new Response(JSON.stringify({ error: "AI credits exhausted.", titles: [] }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.error("AI provider error:", response.status, await response.text());
-      throw new Error("AI provider error");
+      const errText = await response.text();
+      console.error("AI provider error:", response.status, errText);
+
+      // Fallback to a stable model if the preview model errored (5xx).
+      if (response.status >= 500 && AI_MODEL !== "google/gemini-2.5-flash-lite") {
+        const fallbackPayload = { ...basePayload, model: "google/gemini-2.5-flash-lite" };
+        response = await fetch(AI_CHAT_COMPLETIONS_URL, {
+          method: "POST",
+          signal: AbortSignal.timeout(AI_TIMEOUT_MS),
+          headers: { Authorization: `Bearer ${AI_API_KEY}`, "Content-Type": "application/json" },
+          body: JSON.stringify(fallbackPayload),
+        });
+        if (!response.ok) {
+          console.error("Fallback model also failed:", response.status, await response.text());
+          return new Response(JSON.stringify({ titles: [], error: "AI temporarily unavailable" }), {
+            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      } else {
+        return new Response(JSON.stringify({ titles: [], error: "AI temporarily unavailable" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const data = await response.json();

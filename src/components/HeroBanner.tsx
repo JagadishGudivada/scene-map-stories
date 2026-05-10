@@ -19,7 +19,7 @@ type HeroSlide = {
   title: string;
   year: number;
   type: Title["type"];
-  coverImage: string;
+  coverImage?: string;
   image: string;
   imageSrcSet?: string;
   imageDesktopSrcSet?: string;
