@@ -1,1 +1,19 @@
-project_id = "gsdtkzjiaydkearsngxy"
+project_id = "vtblupfehbkrbnsdrrfq"
+
+[functions.search-titles]
+verify_jwt = false
+
+[functions.search-locations]
+verify_jwt = false
+
+[functions.title-details]
+verify_jwt = false
+
+[functions.location-details]
+verify_jwt = false
+
+[functions.spot-details]
+verify_jwt = false
+
+[functions.weekly-movies]
+verify_jwt = false

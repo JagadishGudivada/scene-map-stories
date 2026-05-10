@@ -400,21 +400,31 @@ export default function Index() {
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 auto-rows-auto">
                       {featuredTiles.length > 0 ? (
                         <>
-                          <div className="col-span-2 row-span-2">
-                            <CinemaCard title={featuredTiles[0]} size="lg" delay={0} />
-                          </div>
-                          <div className="col-span-1">
-                            <CinemaCard title={featuredTiles[1]} size="md" delay={0.1} />
-                          </div>
-                          <div className="col-span-1">
-                            <CinemaCard title={featuredTiles[2]} size="md" delay={0.15} />
-                          </div>
-                          <div className="col-span-1">
-                            <CinemaCard title={featuredTiles[3]} size="md" delay={0.2} />
-                          </div>
-                          <div className="col-span-1">
-                            <CinemaCard title={featuredTiles[4]} size="md" delay={0.25} />
-                          </div>
+                          {featuredTiles[0] && (
+                            <div className="col-span-2 row-span-2">
+                              <CinemaCard title={featuredTiles[0]} size="lg" delay={0} />
+                            </div>
+                          )}
+                          {featuredTiles[1] && (
+                            <div className="col-span-1">
+                              <CinemaCard title={featuredTiles[1]} size="md" delay={0.1} />
+                            </div>
+                          )}
+                          {featuredTiles[2] && (
+                            <div className="col-span-1">
+                              <CinemaCard title={featuredTiles[2]} size="md" delay={0.15} />
+                            </div>
+                          )}
+                          {featuredTiles[3] && (
+                            <div className="col-span-1">
+                              <CinemaCard title={featuredTiles[3]} size="md" delay={0.2} />
+                            </div>
+                          )}
+                          {featuredTiles[4] && (
+                            <div className="col-span-1">
+                              <CinemaCard title={featuredTiles[4]} size="md" delay={0.25} />
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="col-span-2 md:col-span-3 lg:col-span-4 glass rounded-2xl border border-border p-8 text-center">

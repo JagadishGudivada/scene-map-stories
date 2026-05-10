@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { mockTitles, mockPosts } from "@/lib/mockData";
 import { titleLocationPins } from "@/lib/mapData";
-import LeafletMap from "@/components/LeafletMap";
+import LeafletMap, { type MapPin as LeafletMapPin } from "@/components/LeafletMap";
+import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
@@ -58,6 +59,7 @@ export default function TitleDetail() {
   const [aiDetails, setAiDetails] = useState<AIDetails | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLocationPin, setSelectedLocationPin] = useState<LeafletMapPin | null>(null);
 
   useEffect(() => {
     if (mockTitle || !slug) return;
@@ -308,15 +310,13 @@ export default function TitleDetail() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.04 }}
                     onClick={() =>
-                      navigate(`/spot/${slugifySpot(loc.label)}`, {
-                        state: {
-                          label: loc.label,
-                          lat: loc.lat,
-                          lng: loc.lng,
-                          titleHint: view.title,
-                          type: view.type,
-                          description: loc.description,
-                        },
+                      setSelectedLocationPin({
+                        label: loc.label,
+                        lat: loc.lat,
+                        lng: loc.lng,
+                        title: view.title,
+                        type: view.type,
+                        city: loc.label,
                       })
                     }
                     className="rounded-lg p-3 border border-border flex items-start gap-3 cursor-pointer hover:border-amber/20 hover:bg-muted/30 transition-all"
@@ -371,6 +371,11 @@ export default function TitleDetail() {
             ))}
           </div>
         </section>
+
+        <SpotActionsModal
+          pin={selectedLocationPin}
+          onClose={() => setSelectedLocationPin(null)}
+        />
       </div>
     </div>
   );
