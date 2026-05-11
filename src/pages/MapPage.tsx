@@ -106,7 +106,7 @@ export default function MapPage() {
   const searchResults = useMemo(() => {
     if (searchQuery.length < 2) return [];
     const q = searchQuery.toLowerCase();
-    const localMatches = allMapPins
+    const localMatches = basePins
       .filter((pin) => pin.label.toLowerCase().includes(q) || pin.title?.toLowerCase().includes(q));
     
     // Combine AI + local, deduplicate
