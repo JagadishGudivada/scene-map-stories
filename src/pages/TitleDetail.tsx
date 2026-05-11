@@ -142,6 +142,32 @@ export default function TitleDetail() {
       };
     }
     if (aiDetails) {
+  // Build a unified view-model
+  const view = useMemo(() => {
+    const extra = userLocations;
+    if (mockTitle) {
+      const titleSlug = slugify(mockTitle.title, mockTitle.year);
+      const pins = titleLocationPins[titleSlug] || [];
+      const locationItems = pins.length
+        ? pins.map((p) => ({ label: p.label, lat: p.lat, lng: p.lng, description: undefined as string | undefined }))
+        : mockTitle.locations.map((l) => ({ label: l, lat: 0, lng: 0, description: undefined as string | undefined }));
+      const merged = [...locationItems, ...extra];
+      return {
+        source: "mock" as const,
+        title: mockTitle.title,
+        year: mockTitle.year,
+        type: mockTitle.type,
+        rating: mockTitle.rating,
+        synopsis: undefined as string | undefined,
+        creator: undefined as string | undefined,
+        genres: mockTitle.genres,
+        coverImage: mockTitle.coverImage,
+        locations: merged,
+        locationCount: merged.length,
+      };
+    }
+    if (aiDetails) {
+      const merged = [...(aiDetails.locations || []), ...extra];
       return {
         source: "ai" as const,
         title: aiDetails.title,
@@ -152,12 +178,12 @@ export default function TitleDetail() {
         creator: aiDetails.creator,
         genres: aiDetails.genres || [],
         coverImage: aiDetails.coverImage || heroRomeImg,
-        locations: aiDetails.locations || [],
-        locationCount: (aiDetails.locations || []).length,
+        locations: merged,
+        locationCount: merged.length,
       };
     }
     return null;
-  }, [mockTitle, aiDetails]);
+  }, [mockTitle, aiDetails, userLocations]);
 
   // titleSlug and saved state must be computed before any conditional returns (Rules of Hooks)
   const titleSlug = view ? slugify(view.title, view.year) : "";
