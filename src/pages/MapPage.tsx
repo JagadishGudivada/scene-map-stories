@@ -121,7 +121,7 @@ export default function MapPage() {
       }
     }
     return combined.slice(0, 10);
-  }, [searchQuery, aiResults]);
+  }, [searchQuery, aiResults, basePins]);
 
   // When AI results come in, fit map to show them
   useEffect(() => {
