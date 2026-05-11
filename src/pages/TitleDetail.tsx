@@ -121,29 +121,6 @@ export default function TitleDetail() {
 
   // Build a unified view-model
   const view = useMemo(() => {
-    if (mockTitle) {
-      const titleSlug = slugify(mockTitle.title, mockTitle.year);
-      const pins = titleLocationPins[titleSlug] || [];
-      const locationItems = pins.length
-        ? pins.map((p) => ({ label: p.label, lat: p.lat, lng: p.lng, description: undefined }))
-        : mockTitle.locations.map((l) => ({ label: l, lat: 0, lng: 0, description: undefined }));
-      return {
-        source: "mock" as const,
-        title: mockTitle.title,
-        year: mockTitle.year,
-        type: mockTitle.type,
-        rating: mockTitle.rating,
-        synopsis: undefined as string | undefined,
-        creator: undefined as string | undefined,
-        genres: mockTitle.genres,
-        coverImage: mockTitle.coverImage,
-        locations: locationItems,
-        locationCount: mockTitle.locationCount,
-      };
-    }
-    if (aiDetails) {
-  // Build a unified view-model
-  const view = useMemo(() => {
     const extra = userLocations;
     if (mockTitle) {
       const titleSlug = slugify(mockTitle.title, mockTitle.year);
