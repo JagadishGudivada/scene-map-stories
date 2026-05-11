@@ -290,6 +290,7 @@ export default function TitleDetail() {
                 <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2">
                   <CheckCircle2 className="w-4 h-4" /> <span className="hidden xs:inline">I've</span> Been Here
                 </button>
+                <AddLocationDialog titleSlug={titleSlug} titleName={view.title} />
                 <ShareMenu
                   title={view.title}
                   text={`Explore ${view.locationCount} filming locations from ${view.title} (${view.year})`}
