@@ -12,6 +12,7 @@ import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
+import AddLocationDialog from "@/components/AddLocationDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSavedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +61,31 @@ export default function TitleDetail() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedLocationPin, setSelectedLocationPin] = useState<LeafletMapPin | null>(null);
+  const [userLocations, setUserLocations] = useState<AILocation[]>([]);
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("location_suggestions")
+        .select("verified_label, verified_lat, verified_lng, ai_notes")
+        .eq("title_slug", slug)
+        .eq("status", "verified");
+      if (cancelled || !data) return;
+      setUserLocations(
+        data
+          .filter((r) => r.verified_lat != null && r.verified_lng != null)
+          .map((r) => ({
+            label: r.verified_label as string,
+            lat: r.verified_lat as number,
+            lng: r.verified_lng as number,
+            description: (r.ai_notes as string | null) || undefined,
+          }))
+      );
+    })();
+    return () => { cancelled = true; };
+  }, [slug]);
 
   useEffect(() => {
     if (mockTitle || !slug) return;
