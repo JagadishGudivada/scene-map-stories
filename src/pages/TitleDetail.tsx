@@ -12,6 +12,7 @@ import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
 import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
+import AddLocationDialog from "@/components/AddLocationDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSavedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +61,31 @@ export default function TitleDetail() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedLocationPin, setSelectedLocationPin] = useState<LeafletMapPin | null>(null);
+  const [userLocations, setUserLocations] = useState<AILocation[]>([]);
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("location_suggestions")
+        .select("verified_label, verified_lat, verified_lng, ai_notes")
+        .eq("title_slug", slug)
+        .eq("status", "verified");
+      if (cancelled || !data) return;
+      setUserLocations(
+        data
+          .filter((r) => r.verified_lat != null && r.verified_lng != null)
+          .map((r) => ({
+            label: r.verified_label as string,
+            lat: r.verified_lat as number,
+            lng: r.verified_lng as number,
+            description: (r.ai_notes as string | null) || undefined,
+          }))
+      );
+    })();
+    return () => { cancelled = true; };
+  }, [slug]);
 
   useEffect(() => {
     if (mockTitle || !slug) return;
@@ -95,12 +121,14 @@ export default function TitleDetail() {
 
   // Build a unified view-model
   const view = useMemo(() => {
+    const extra = userLocations;
     if (mockTitle) {
       const titleSlug = slugify(mockTitle.title, mockTitle.year);
       const pins = titleLocationPins[titleSlug] || [];
       const locationItems = pins.length
-        ? pins.map((p) => ({ label: p.label, lat: p.lat, lng: p.lng, description: undefined }))
-        : mockTitle.locations.map((l) => ({ label: l, lat: 0, lng: 0, description: undefined }));
+        ? pins.map((p) => ({ label: p.label, lat: p.lat, lng: p.lng, description: undefined as string | undefined }))
+        : mockTitle.locations.map((l) => ({ label: l, lat: 0, lng: 0, description: undefined as string | undefined }));
+      const merged = [...locationItems, ...extra];
       return {
         source: "mock" as const,
         title: mockTitle.title,
@@ -111,11 +139,12 @@ export default function TitleDetail() {
         creator: undefined as string | undefined,
         genres: mockTitle.genres,
         coverImage: mockTitle.coverImage,
-        locations: locationItems,
-        locationCount: mockTitle.locationCount,
+        locations: merged,
+        locationCount: merged.length,
       };
     }
     if (aiDetails) {
+      const merged = [...(aiDetails.locations || []), ...extra];
       return {
         source: "ai" as const,
         title: aiDetails.title,
@@ -126,12 +155,12 @@ export default function TitleDetail() {
         creator: aiDetails.creator,
         genres: aiDetails.genres || [],
         coverImage: aiDetails.coverImage || heroRomeImg,
-        locations: aiDetails.locations || [],
-        locationCount: (aiDetails.locations || []).length,
+        locations: merged,
+        locationCount: merged.length,
       };
     }
     return null;
-  }, [mockTitle, aiDetails]);
+  }, [mockTitle, aiDetails, userLocations]);
 
   // titleSlug and saved state must be computed before any conditional returns (Rules of Hooks)
   const titleSlug = view ? slugify(view.title, view.year) : "";
@@ -261,6 +290,7 @@ export default function TitleDetail() {
                 <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2">
                   <CheckCircle2 className="w-4 h-4" /> <span className="hidden xs:inline">I've</span> Been Here
                 </button>
+                <AddLocationDialog titleSlug={titleSlug} titleName={view.title} />
                 <ShareMenu
                   title={view.title}
                   text={`Explore ${view.locationCount} filming locations from ${view.title} (${view.year})`}

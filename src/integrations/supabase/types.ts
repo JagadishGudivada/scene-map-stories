@@ -77,6 +77,54 @@ export type Database = {
         }
         Relationships: []
       }
+      location_suggestions: {
+        Row: {
+          ai_notes: string | null
+          created_at: string
+          description: string | null
+          id: string
+          location_name: string
+          status: Database["public"]["Enums"]["suggestion_status"]
+          title_name: string
+          title_slug: string
+          updated_at: string
+          user_id: string
+          verified_label: string | null
+          verified_lat: number | null
+          verified_lng: number | null
+        }
+        Insert: {
+          ai_notes?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location_name: string
+          status?: Database["public"]["Enums"]["suggestion_status"]
+          title_name: string
+          title_slug: string
+          updated_at?: string
+          user_id: string
+          verified_label?: string | null
+          verified_lat?: number | null
+          verified_lng?: number | null
+        }
+        Update: {
+          ai_notes?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          location_name?: string
+          status?: Database["public"]["Enums"]["suggestion_status"]
+          title_name?: string
+          title_slug?: string
+          updated_at?: string
+          user_id?: string
+          verified_label?: string | null
+          verified_lat?: number | null
+          verified_lng?: number | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -249,6 +297,7 @@ export type Database = {
         | "new_photo"
         | "system"
         | "welcome"
+      suggestion_status: "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -385,6 +434,7 @@ export const Constants = {
         "system",
         "welcome",
       ],
+      suggestion_status: ["pending", "verified", "rejected"],
     },
   },
 } as const
