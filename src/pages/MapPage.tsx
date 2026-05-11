@@ -9,6 +9,7 @@ import { allMapPins } from "@/lib/mapData";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
+import { useWeeklyReleaseLocations } from "@/hooks/useWeeklyReleaseLocations";
 
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
@@ -30,6 +31,10 @@ export default function MapPage() {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+  const { pins: weeklyPins, loading: weeklyLoading } = useWeeklyReleaseLocations();
+
+  // Base pins shown on the map: weekly release locations when available, else static fallback
+  const basePins = weeklyPins.length > 0 ? weeklyPins : allMapPins;
 
   // Handle URL search params from homepage
   useEffect(() => {
@@ -74,7 +79,7 @@ export default function MapPage() {
   const combinedPins = useMemo(() => {
     if (aiResults.length > 0) {
       // Deduplicate by lat/lng proximity
-      const merged = [...allMapPins];
+      const merged = [...basePins];
       for (const ai of aiResults) {
         const exists = merged.some(
           (p) => Math.abs(p.lat - ai.lat) < 0.01 && Math.abs(p.lng - ai.lng) < 0.01
@@ -83,8 +88,8 @@ export default function MapPage() {
       }
       return merged;
     }
-    return allMapPins;
-  }, [aiResults]);
+    return basePins;
+  }, [aiResults, basePins]);
 
   const filteredPins = useMemo(() => {
     return combinedPins.filter((pin) => {
@@ -101,7 +106,7 @@ export default function MapPage() {
   const searchResults = useMemo(() => {
     if (searchQuery.length < 2) return [];
     const q = searchQuery.toLowerCase();
-    const localMatches = allMapPins
+    const localMatches = basePins
       .filter((pin) => pin.label.toLowerCase().includes(q) || pin.title?.toLowerCase().includes(q));
     
     // Combine AI + local, deduplicate
@@ -116,7 +121,7 @@ export default function MapPage() {
       }
     }
     return combined.slice(0, 10);
-  }, [searchQuery, aiResults]);
+  }, [searchQuery, aiResults, basePins]);
 
   // When AI results come in, fit map to show them
   useEffect(() => {
