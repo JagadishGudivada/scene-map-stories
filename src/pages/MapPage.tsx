@@ -31,6 +31,10 @@ export default function MapPage() {
   const mapInstanceRef = useRef<L.Map | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
+  const { pins: weeklyPins, loading: weeklyLoading } = useWeeklyReleaseLocations();
+
+  // Base pins shown on the map: weekly release locations when available, else static fallback
+  const basePins = weeklyPins.length > 0 ? weeklyPins : allMapPins;
 
   // Handle URL search params from homepage
   useEffect(() => {
