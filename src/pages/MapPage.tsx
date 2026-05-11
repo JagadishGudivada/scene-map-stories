@@ -9,6 +9,7 @@ import { allMapPins } from "@/lib/mapData";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
+import { useWeeklyReleaseLocations } from "@/hooks/useWeeklyReleaseLocations";
 
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
