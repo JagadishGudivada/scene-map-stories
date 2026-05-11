@@ -79,7 +79,7 @@ export default function MapPage() {
   const combinedPins = useMemo(() => {
     if (aiResults.length > 0) {
       // Deduplicate by lat/lng proximity
-      const merged = [...allMapPins];
+      const merged = [...basePins];
       for (const ai of aiResults) {
         const exists = merged.some(
           (p) => Math.abs(p.lat - ai.lat) < 0.01 && Math.abs(p.lng - ai.lng) < 0.01
@@ -88,8 +88,8 @@ export default function MapPage() {
       }
       return merged;
     }
-    return allMapPins;
-  }, [aiResults]);
+    return basePins;
+  }, [aiResults, basePins]);
 
   const filteredPins = useMemo(() => {
     return combinedPins.filter((pin) => {
