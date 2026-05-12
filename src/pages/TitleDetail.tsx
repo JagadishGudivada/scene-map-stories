@@ -164,6 +164,28 @@ export default function TitleDetail() {
     return null;
   }, [mockTitle, aiDetails, userLocations]);
 
+  // Fetch related titles from TMDB
+  useEffect(() => {
+    if (!view) return;
+    let cancelled = false;
+    setRelatedLoading(true);
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("related-titles", {
+          body: { title: view.title, year: view.year, type: view.type },
+        });
+        if (cancelled) return;
+        const titles = Array.isArray(data?.titles) ? data.titles : [];
+        setRelatedTitlesData(titles);
+      } catch {
+        if (!cancelled) setRelatedTitlesData([]);
+      } finally {
+        if (!cancelled) setRelatedLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [view?.title, view?.year, view?.type]);
+
   // titleSlug and saved state must be computed before any conditional returns (Rules of Hooks)
   const titleSlug = view ? slugify(view.title, view.year) : "";
   const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
