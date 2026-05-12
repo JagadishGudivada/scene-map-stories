@@ -62,6 +62,8 @@ export default function TitleDetail() {
   const [error, setError] = useState<string | null>(null);
   const [selectedLocationPin, setSelectedLocationPin] = useState<LeafletMapPin | null>(null);
   const [userLocations, setUserLocations] = useState<AILocation[]>([]);
+  const [relatedTitlesData, setRelatedTitlesData] = useState<any[] | null>(null);
+  const [relatedLoading, setRelatedLoading] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
