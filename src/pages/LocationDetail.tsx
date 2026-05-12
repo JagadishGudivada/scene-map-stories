@@ -139,6 +139,8 @@ export default function LocationDetail() {
   const [aiData, setAiData] = useState<any>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
+  const [relatedLocations, setRelatedLocations] = useState<RelatedLocation[]>(fallbackRelatedLocations);
+  const [relatedLoading, setRelatedLoading] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const titleGridRef = useRef<HTMLDivElement>(null);
 
