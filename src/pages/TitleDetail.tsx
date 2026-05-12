@@ -62,6 +62,8 @@ export default function TitleDetail() {
   const [error, setError] = useState<string | null>(null);
   const [selectedLocationPin, setSelectedLocationPin] = useState<LeafletMapPin | null>(null);
   const [userLocations, setUserLocations] = useState<AILocation[]>([]);
+  const [relatedTitlesData, setRelatedTitlesData] = useState<any[] | null>(null);
+  const [relatedLoading, setRelatedLoading] = useState(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -162,6 +164,28 @@ export default function TitleDetail() {
     return null;
   }, [mockTitle, aiDetails, userLocations]);
 
+  // Fetch related titles from TMDB
+  useEffect(() => {
+    if (!view) return;
+    let cancelled = false;
+    setRelatedLoading(true);
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("related-titles", {
+          body: { title: view.title, year: view.year, type: view.type },
+        });
+        if (cancelled) return;
+        const titles = Array.isArray(data?.titles) ? data.titles : [];
+        setRelatedTitlesData(titles);
+      } catch {
+        if (!cancelled) setRelatedTitlesData([]);
+      } finally {
+        if (!cancelled) setRelatedLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [view?.title, view?.year, view?.type]);
+
   // titleSlug and saved state must be computed before any conditional returns (Rules of Hooks)
   const titleSlug = view ? slugify(view.title, view.year) : "";
   const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
@@ -215,9 +239,13 @@ export default function TitleDetail() {
     title: view.title,
   }));
 
-  const relatedTitles = mockTitles
+  const fallbackRelated = mockTitles
     .filter((t) => slugify(t.title, t.year) !== titleSlug)
     .slice(0, 4);
+  const relatedTitles = (relatedTitlesData && relatedTitlesData.length > 0
+    ? relatedTitlesData
+    : fallbackRelated
+  ).slice(0, 8);
   const communityPosts = mockPosts.slice(0, 2);
 
   return (
@@ -395,11 +423,19 @@ export default function TitleDetail() {
         {/* Related Titles */}
         <section className="mb-12">
           <h2 className="font-serif text-2xl text-foreground mb-5">You Might Also Like</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {relatedTitles.map((t, i) => (
-              <CinemaCard key={t.id} title={t} size="md" delay={i * 0.06} />
-            ))}
-          </div>
+          {relatedLoading && !relatedTitlesData ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-72 rounded-2xl bg-muted/30 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {relatedTitles.map((t: any, i: number) => (
+                <CinemaCard key={t.id || `${t.title}-${t.year}`} title={t} size="md" delay={i * 0.06} />
+              ))}
+            </div>
+          )}
         </section>
 
         <SpotActionsModal
