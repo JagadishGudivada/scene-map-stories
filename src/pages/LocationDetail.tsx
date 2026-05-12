@@ -85,7 +85,8 @@ const communityPhotos = [
   { id: "c8", user: "luciafilm", match: 90, likes: 298 },
 ];
 
-const relatedLocations = [
+type RelatedLocation = { name: string; flag: string; count: number; slug: string; code?: string };
+const fallbackRelatedLocations: RelatedLocation[] = [
   { name: "Paris", code: "FR", flag: "🇫🇷", count: 35, slug: "paris" },
   { name: "London", code: "GB", flag: "🇬🇧", count: 38, slug: "london" },
   { name: "Santorini", code: "GR", flag: "🇬🇷", count: 12, slug: "santorini" },
@@ -138,6 +139,8 @@ export default function LocationDetail() {
   const [aiData, setAiData] = useState<any>(null);
   const [aiError, setAiError] = useState<string | null>(null);
   const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
+  const [relatedLocations, setRelatedLocations] = useState<RelatedLocation[]>(fallbackRelatedLocations);
+  const [relatedLoading, setRelatedLoading] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const titleGridRef = useRef<HTMLDivElement>(null);
 
@@ -162,6 +165,24 @@ export default function LocationDetail() {
       .finally(() => active && setAiLoading(false));
     return () => { active = false; };
   }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+    let active = true;
+    setRelatedLoading(true);
+    const name = aiData?.name as string | undefined;
+    const country = aiData?.country as string | undefined;
+    supabase.functions
+      .invoke("related-locations", { body: { slug, name, country } })
+      .then(({ data, error }) => {
+        if (!active || error) return;
+        const locs = (data as any)?.locations;
+        if (Array.isArray(locs) && locs.length > 0) setRelatedLocations(locs);
+      })
+      .catch(() => {})
+      .finally(() => active && setRelatedLoading(false));
+    return () => { active = false; };
+  }, [slug, aiData?.name, aiData?.country]);
 
   const cityData = useMemo(() => {
     const baseCityData = romeData;
