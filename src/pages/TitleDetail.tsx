@@ -239,9 +239,13 @@ export default function TitleDetail() {
     title: view.title,
   }));
 
-  const relatedTitles = mockTitles
+  const fallbackRelated = mockTitles
     .filter((t) => slugify(t.title, t.year) !== titleSlug)
     .slice(0, 4);
+  const relatedTitles = (relatedTitlesData && relatedTitlesData.length > 0
+    ? relatedTitlesData
+    : fallbackRelated
+  ).slice(0, 8);
   const communityPosts = mockPosts.slice(0, 2);
 
   return (
