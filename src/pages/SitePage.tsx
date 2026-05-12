@@ -18,15 +18,17 @@ export default function SitePage({ eyebrow, title, intro, sections }: SitePagePr
   return (
     <div className="min-h-screen pt-24 pb-12 bg-background">
       <article className="max-w-3xl mx-auto px-4 sm:px-6">
-        <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-amber transition-colors mb-8">
-          <ChevronLeft className="w-3.5 h-3.5" /> Back to home
-        </Link>
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <Link to="/" className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-amber transition-colors">
+            <ChevronLeft className="w-3.5 h-3.5" /> Back to home
+          </Link>
 
-        {eyebrow && (
-          <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber">
-            {eyebrow}
-          </span>
-        )}
+          {eyebrow && (
+            <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-amber">
+              {eyebrow}
+            </span>
+          )}
+        </div>
         <h1 className="font-serif text-4xl md:text-5xl text-foreground mt-2 mb-6 leading-[1.05]">
           {title}
         </h1>

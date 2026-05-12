@@ -79,7 +79,7 @@ async function getTmdbImageConfig(apiKey: string): Promise<TmdbImageConfig> {
 const GENRE_MAP: Record<number, string> = {
   28: "Action",
   12: "Adventure",
-  16: "Animation",
+  //16: "Animation",
   35: "Comedy",
   80: "Crime",
   99: "Documentary",

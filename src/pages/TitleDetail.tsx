@@ -10,7 +10,6 @@ import { titleLocationPins } from "@/lib/mapData";
 import LeafletMap, { type MapPin as LeafletMapPin } from "@/components/LeafletMap";
 import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
-import CinemaCard from "@/components/CinemaCard";
 import ShareMenu from "@/components/ShareMenu";
 import AddLocationDialog from "@/components/AddLocationDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -424,15 +423,53 @@ export default function TitleDetail() {
         <section className="mb-12">
           <h2 className="font-serif text-2xl text-foreground mb-5">You Might Also Like</h2>
           {relatedLoading && !relatedTitlesData ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="h-72 rounded-2xl bg-muted/30 animate-pulse" />
+                <div key={i} className="h-64 w-44 shrink-0 rounded-2xl bg-muted/30 animate-pulse" />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
               {relatedTitles.map((t: any, i: number) => (
-                <CinemaCard key={t.id || `${t.title}-${t.year}`} title={t} size="md" delay={i * 0.06} />
+                <motion.div
+                  key={t.id || `${t.title}-${t.year}`}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ delay: i * 0.08, duration: 0.5 }}
+                  onClick={() =>
+                    navigate(`/title/${slugify(t.title, t.year)}`, {
+                      state: { title: t.title, year: t.year, type: t.type },
+                    })
+                  }
+                  className="relative h-64 w-44 shrink-0 rounded-2xl overflow-hidden group cursor-pointer shadow-card"
+                >
+                  <img
+                    src={t.coverImage || t.image || heroRomeImg}
+                    alt={t.title}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 cinema-overlay" />
+                  <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                      t.type === "Movie" ? "badge-movie" : t.type === "Series" ? "badge-series" : "badge-book"
+                    }`}>
+                      {t.type}
+                    </span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 p-3">
+                    <div className="flex items-center gap-1 mb-1">
+                      <Star className="w-3 h-3 text-amber fill-amber" />
+                      <span className="text-xs font-semibold text-amber">{t.rating}</span>
+                      <span className="text-xs text-muted-foreground ml-1">{t.year}</span>
+                    </div>
+                    <h3 className="font-serif text-foreground text-base leading-tight mb-1">{t.title}</h3>
+                    <div className="flex items-center gap-1 text-amber/80">
+                      <MapPin className="w-3 h-3" />
+                      <span className="text-xs">{t.locationCount ?? t.spots ?? 0} spots</span>
+                    </div>
+                  </div>
+                </motion.div>
               ))}
             </div>
           )}
