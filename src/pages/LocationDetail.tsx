@@ -85,7 +85,8 @@ const communityPhotos = [
   { id: "c8", user: "luciafilm", match: 90, likes: 298 },
 ];
 
-const relatedLocations = [
+type RelatedLocation = { name: string; flag: string; count: number; slug: string; code?: string };
+const fallbackRelatedLocations: RelatedLocation[] = [
   { name: "Paris", code: "FR", flag: "🇫🇷", count: 35, slug: "paris" },
   { name: "London", code: "GB", flag: "🇬🇧", count: 38, slug: "london" },
   { name: "Santorini", code: "GR", flag: "🇬🇷", count: 12, slug: "santorini" },
