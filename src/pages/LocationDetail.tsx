@@ -184,6 +184,7 @@ export default function LocationDetail() {
     return () => { active = false; };
   }, [slug, aiData?.name, aiData?.country]);
 
+  const cityData = useMemo(() => {
     const baseCityData = romeData;
     if (aiData) {
       return {
