@@ -166,7 +166,24 @@ export default function LocationDetail() {
     return () => { active = false; };
   }, [slug]);
 
-  const cityData = useMemo(() => {
+  useEffect(() => {
+    if (!slug) return;
+    let active = true;
+    setRelatedLoading(true);
+    const name = aiData?.name as string | undefined;
+    const country = aiData?.country as string | undefined;
+    supabase.functions
+      .invoke("related-locations", { body: { slug, name, country } })
+      .then(({ data, error }) => {
+        if (!active || error) return;
+        const locs = (data as any)?.locations;
+        if (Array.isArray(locs) && locs.length > 0) setRelatedLocations(locs);
+      })
+      .catch(() => {})
+      .finally(() => active && setRelatedLoading(false));
+    return () => { active = false; };
+  }, [slug, aiData?.name, aiData?.country]);
+
     const baseCityData = romeData;
     if (aiData) {
       return {
