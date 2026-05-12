@@ -423,11 +423,19 @@ export default function TitleDetail() {
         {/* Related Titles */}
         <section className="mb-12">
           <h2 className="font-serif text-2xl text-foreground mb-5">You Might Also Like</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {relatedTitles.map((t, i) => (
-              <CinemaCard key={t.id} title={t} size="md" delay={i * 0.06} />
-            ))}
-          </div>
+          {relatedLoading && !relatedTitlesData ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-72 rounded-2xl bg-muted/30 animate-pulse" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {relatedTitles.map((t: any, i: number) => (
+                <CinemaCard key={t.id || `${t.title}-${t.year}`} title={t} size="md" delay={i * 0.06} />
+              ))}
+            </div>
+          )}
         </section>
 
         <SpotActionsModal
