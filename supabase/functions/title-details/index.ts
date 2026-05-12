@@ -172,27 +172,33 @@ serve(async (req) => {
       },
     };
 
-    let response = await fetch(AI_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-      headers: {
-        Authorization: `Bearer ${AI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(AI_ENABLE_GOOGLE_GROUNDING ? withGrounding : basePayload),
-    });
+    const callAi = async (payload: unknown) => {
+      let lastResp: Response | null = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const r = await fetch(AI_CHAT_COMPLETIONS_URL, {
+            method: "POST",
+            signal: AbortSignal.timeout(AI_TIMEOUT_MS),
+            headers: {
+              Authorization: `Bearer ${AI_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+          if (r.ok || r.status === 429 || r.status === 402 || r.status === 400) return r;
+          lastResp = r;
+        } catch (err) {
+          console.error(`AI fetch attempt ${attempt + 1} failed:`, err);
+        }
+        await new Promise((res) => setTimeout(res, 500 * Math.pow(2, attempt)));
+      }
+      return lastResp ?? new Response("upstream unavailable", { status: 502 });
+    };
+
+    let response = await callAi(AI_ENABLE_GOOGLE_GROUNDING ? withGrounding : basePayload);
 
     if (!response.ok && AI_ENABLE_GOOGLE_GROUNDING) {
-      // Fallback for compatibility-layer payload differences.
-      response = await fetch(AI_CHAT_COMPLETIONS_URL, {
-        method: "POST",
-        signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-        headers: {
-          Authorization: `Bearer ${AI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(basePayload),
-      });
+      response = await callAi(basePayload);
     }
 
     if (!response.ok) {
