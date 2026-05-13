@@ -6,6 +6,7 @@ import CinemaCard from "@/components/CinemaCard";
 import TrendingRow from "@/components/TrendingRow";
 import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
+import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import Footer from "@/components/Footer";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
@@ -438,6 +439,9 @@ export default function Index() {
                   <div className="mb-14">
                     <PopularLocations />
                   </div>
+
+                  {/* Recently Visited by Community */}
+                  <RecentlyVisitedSpots />
 
                   {/* Map CTA Strip */}
                   <motion.div
