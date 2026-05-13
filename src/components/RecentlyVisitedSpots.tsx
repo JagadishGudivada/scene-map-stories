@@ -38,58 +38,84 @@ export default function RecentlyVisitedSpots() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 auto-rows-[160px] md:auto-rows-[180px] gap-3">
         {loading
-          ? Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-56 rounded-2xl" />
-            ))
-          : spots.map((spot, i) => (
-              <motion.div
-                key={spot.slug}
-                initial={{ opacity: 0, y: 12 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05, duration: 0.4 }}
-              >
-                <Link
-                  to={`/spot/${spot.slug}`}
-                  className="group block relative h-56 rounded-2xl overflow-hidden border border-border hover:border-amber/40 transition-all"
+          ? Array.from({ length: 6 }).map((_, i) => {
+              const span = bentoSpan(i);
+              return <Skeleton key={i} className={`rounded-2xl ${span}`} />;
+            })
+          : spots.slice(0, 6).map((spot, i) => {
+              const span = bentoSpan(i);
+              const isLarge = i === 0;
+              return (
+                <motion.div
+                  key={spot.slug}
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05, duration: 0.4 }}
+                  className={span}
                 >
-                  <img
-                    src={spot.image || FALLBACK_IMG}
-                    alt={spot.name}
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG;
-                    }}
-                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
-                  <div className="absolute inset-0 p-4 flex flex-col justify-between text-white">
-                    <div className="flex items-center justify-between">
-                      <span className="glass rounded-full px-2.5 py-1 text-[10px] uppercase tracking-wider border border-white/10 backdrop-blur-md">
-                        {spot.flag ? `${spot.flag} ` : ""}{spot.country || "Worldwide"}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="font-serif text-xl leading-tight mb-1 line-clamp-1">
-                        {spot.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 text-xs text-white/70 mb-2">
-                        <MapPin className="w-3 h-3" />
-                        <span className="line-clamp-1">{spot.city || "Filming spot"}</span>
+                  <Link
+                    to={`/spot/${spot.slug}`}
+                    className="group block relative h-full w-full rounded-2xl overflow-hidden border border-border hover:border-amber/40 transition-all"
+                  >
+                    <img
+                      src={spot.image || FALLBACK_IMG}
+                      alt={spot.name}
+                      loading="lazy"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG;
+                      }}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                    <div className="absolute inset-0 p-3 md:p-4 flex flex-col justify-between text-white">
+                      <div className="flex items-center justify-between">
+                        <span className="glass rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider border border-white/10 backdrop-blur-md">
+                          {spot.flag ? `${spot.flag} ` : ""}{spot.country || "Worldwide"}
+                        </span>
                       </div>
-                      {spot.titles.length > 0 && (
-                        <p className="text-[11px] text-white/80 line-clamp-1 italic">
-                          Featured in {spot.titles.slice(0, 2).join(" · ")}
-                        </p>
-                      )}
+                      <div>
+                        <h3 className={`font-serif leading-tight mb-1 line-clamp-2 ${isLarge ? "text-2xl md:text-3xl" : "text-base md:text-lg"}`}>
+                          {spot.name}
+                        </h3>
+                        <div className="flex items-center gap-1.5 text-xs text-white/70 mb-1">
+                          <MapPin className="w-3 h-3" />
+                          <span className="line-clamp-1">{spot.city || "Filming spot"}</span>
+                        </div>
+                        {isLarge && spot.titles.length > 0 && (
+                          <p className="text-[11px] text-white/80 line-clamp-1 italic">
+                            Featured in {spot.titles.slice(0, 2).join(" · ")}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              </motion.div>
-            ))}
+                  </Link>
+                </motion.div>
+              );
+            })}
       </div>
     </motion.section>
   );
+}
+
+function bentoSpan(i: number): string {
+  // 4-col bento: [0 spans 2x2 | 1 spans 2x1] / [0 cont. | 2 | 3] / [4 spans 2x1 | 5 spans 2x1]
+  switch (i) {
+    case 0:
+      return "col-span-2 row-span-2";
+    case 1:
+      return "col-span-2 row-span-1";
+    case 2:
+      return "col-span-1 row-span-1";
+    case 3:
+      return "col-span-1 row-span-1";
+    case 4:
+      return "col-span-2 row-span-1";
+    case 5:
+      return "col-span-2 row-span-1";
+    default:
+      return "col-span-1 row-span-1";
+  }
 }
