@@ -15,6 +15,7 @@ import AddLocationDialog from "@/components/AddLocationDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSavedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 import heroRomeImg from "@/assets/hero-rome.jpg";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
@@ -247,8 +248,25 @@ export default function TitleDetail() {
   ).slice(0, 8);
   const communityPosts = mockPosts.slice(0, 2);
 
+  const seoTitle = `${view.title} (${view.year}) Filming Locations`;
+  const seoDesc = (view.synopsis ||
+    `Discover real filming locations from ${view.title} (${view.year}). Map the places that brought this ${view.type.toLowerCase()} to life.`).slice(0, 160);
+  const movieSchema = {
+    "@context": "https://schema.org",
+    "@type": view.type === "Series" ? "TVSeries" : view.type === "Book" ? "Book" : "Movie",
+    name: view.title,
+    datePublished: String(view.year),
+    image: view.coverImage,
+    description: seoDesc,
+    aggregateRating: view.rating
+      ? { "@type": "AggregateRating", ratingValue: view.rating, bestRating: 10, ratingCount: 1 }
+      : undefined,
+    genre: view.genres,
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
+      <Seo title={seoTitle} description={seoDesc} type="article" image={view.coverImage} jsonLd={movieSchema} />
       {/* Full-bleed Hero */}
       <div className="relative h-[55vh] min-h-[400px] w-full overflow-hidden">
         <img src={view.coverImage} alt={view.title} className="w-full h-full object-cover" />

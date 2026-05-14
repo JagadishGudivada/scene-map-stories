@@ -1,0 +1,29 @@
+# Sarevista
+
+> Discover, save, and share real-world filming locations from your favourite movies, series, and books. Cinema meets travel — not a list, your memory map.
+
+Sarevista turns the films, series, and books you love into real places you can visit. We catalog filming spots verified by our community, layer in cultural context, and help you plan trips around the stories that moved you.
+
+## Pages
+
+- [Home](/): Discover filming locations and your cinematic memory map.
+- [Discovery Map](/map): Interactive world map of filming locations.
+- [Add a Title](/add): Submit a new title and its filming locations.
+- [About](/about): What Sarevista is and who builds it.
+- [Our Story](/our-story): How Sarevista started.
+- [Travel Guides](/guides): Itineraries built around films, series, and novels.
+- [Destinations](/destinations): Browse filming spots by country and city.
+- [Community](/community): Contributors and how to get involved.
+- [Help Center](/help): FAQs and support.
+- [Contact](/contact): How to get in touch.
+
+## Optional
+
+- [Careers](/careers)
+- [Press](/press)
+- [Safety](/safety)
+- [Accessibility](/accessibility)
+- [Terms](/terms)
+- [Privacy](/privacy)
+- [Cookies](/cookies)
+- [Affiliate Disclosure](/affiliate-disclosure)

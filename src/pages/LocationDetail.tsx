@@ -13,6 +13,7 @@ import SpotActionsModal from "@/components/SpotActionsModal";
 import ShareMenu from "@/components/ShareMenu";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import VerificationAccordion from "@/components/VerificationAccordion";
+import Seo from "@/components/Seo";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import heroRomeImg from "@/assets/hero-rome-location.jpg";
 import heroRomeAlt from "@/assets/hero-rome.jpg";
@@ -332,8 +333,22 @@ export default function LocationDetail() {
     );
   }
 
+  const locSeoTitle = `${cityData.name}, ${cityData.country} — Filming Locations`;
+  const locSeoDesc = (cityData.tagline ||
+    `Explore filming locations in ${cityData.name}, ${cityData.country}. ${cityData.totalLocations}+ on-screen spots from movies and series.`).slice(0, 160);
+  const placeSchema = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: cityData.name,
+    address: { "@type": "PostalAddress", addressCountry: cityData.country },
+    geo: { "@type": "GeoCoordinates", latitude: cityData.coords.lat, longitude: cityData.coords.lng },
+    image: cityData.coverImage,
+    description: locSeoDesc,
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
+      <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={placeSchema} />
       {/* SECTION 1: HERO */}
       <div ref={heroRef} className="relative h-screen w-full overflow-hidden grain">
         <img

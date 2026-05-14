@@ -8,6 +8,7 @@ import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
 import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import Footer from "@/components/Footer";
+import Seo from "@/components/Seo";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
 import { useRecentTitleDetails } from "@/hooks/useRecentTitleDetails";
@@ -126,6 +127,10 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
+      <Seo
+        title="Sarevista — Filming Locations Map for Movies, Series & Books"
+        description="Discover, save, and share real filming locations from your favourite movies, series, and books. Cinema meets travel — your memory map."
+      />
       {/* === HERO SECTION === */}
       <div className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20">
