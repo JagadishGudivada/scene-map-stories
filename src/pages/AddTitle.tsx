@@ -5,6 +5,7 @@ import {
   Film, Tv, BookOpen, MapPin, Plus, X, Image, Sparkles, ArrowLeft, Check,
 } from "lucide-react";
 import type { MediaType } from "@/lib/mockData";
+import Seo from "@/components/Seo";
 
 const typeOptions: { type: MediaType; icon: typeof Film; label: string }[] = [
   { type: "Movie", icon: Film, label: "Movie" },
@@ -81,6 +82,10 @@ export default function AddTitle() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
+      <Seo
+        title="Add a Title — Submit Filming Locations"
+        description="Submit a movie, series, or book and map its real filming locations. Help build the world's cinematic memory map."
+      />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 pt-24">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">

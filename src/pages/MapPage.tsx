@@ -10,6 +10,7 @@ import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { useWeeklyReleaseLocations } from "@/hooks/useWeeklyReleaseLocations";
+import Seo from "@/components/Seo";
 
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
@@ -173,6 +174,10 @@ export default function MapPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Seo
+        title="Discovery Map — Filming Locations Worldwide"
+        description="Explore an interactive world map of filming locations from movies, series, and books. Plan your next cinematic trip."
+      />
       <div className="fixed inset-0 pt-16">
         <LeafletMap
           pins={displayPins}
