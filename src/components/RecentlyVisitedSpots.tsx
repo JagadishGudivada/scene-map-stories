@@ -67,7 +67,7 @@ export default function RecentlyVisitedSpots() {
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG;
                       }}
-                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                     <div className="absolute inset-0 p-3 md:p-4 flex flex-col justify-between text-white">
