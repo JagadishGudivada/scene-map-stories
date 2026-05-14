@@ -12,3 +12,5 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+Sitemap: https://scene-map-stories.lovable.app/sitemap.xml
