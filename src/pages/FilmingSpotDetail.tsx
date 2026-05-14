@@ -9,6 +9,7 @@ import ShareMenu from "@/components/ShareMenu";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
+import Seo from "@/components/Seo";
 import { useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
 import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
@@ -184,8 +185,22 @@ export default function FilmingSpotDetail() {
 
   const Icon = typeIcons[spot.type] || Film;
 
+  const spotSeoTitle = `${spot.name}, ${spot.city} — Filming Location`;
+  const spotSeoDesc = (spot.description ||
+    `${spot.name} in ${spot.city}, ${spot.country} — featured in ${spot.titles.join(", ") || "screen and story"}.`).slice(0, 160);
+  const spotSchema = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    name: spot.name,
+    address: { "@type": "PostalAddress", addressLocality: spot.city, addressCountry: spot.country },
+    geo: { "@type": "GeoCoordinates", latitude: spot.lat, longitude: spot.lng },
+    description: spotSeoDesc,
+    image: (spot as any).image,
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground pt-20">
+      <Seo title={spotSeoTitle} description={spotSeoDesc} type="article" image={(spot as any).image} jsonLd={spotSchema} />
       {/* Breadcrumb */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-2">
         <Breadcrumb>
