@@ -227,12 +227,18 @@ serve(async (req) => {
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
 
-      // Fetch a hero image from Wikipedia based on title
-      const coverImage = await fetchWikipediaImage(parsed.title, parsed.year, parsed.type);
+      // Fetch authoritative imagery (TMDB for movies/series, OpenLibrary for books)
+      const { coverImage, backdropImage } = await resolveTitleImage({
+        title: parsed.title,
+        year: parsed.year,
+        type: parsed.type,
+        author: parsed.creator,
+      });
       if (coverImage) parsed.coverImage = coverImage;
+      if (backdropImage) parsed.backdropImage = backdropImage;
 
       // Cache for 30 days
-      setCached("title-details", slug, parsed, 60 * 60 * 24 * 30).catch(() => {});
+      setCached("title-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
 
       return new Response(JSON.stringify(parsed), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
