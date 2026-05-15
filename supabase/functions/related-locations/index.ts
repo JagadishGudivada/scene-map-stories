@@ -26,7 +26,7 @@ serve(async (req) => {
       });
     }
 
-    const cacheKey = normalizeKey(slug);
+    const cacheKey = CACHE_VERSION + normalizeKey(slug);
     const cached = await getCached<{ locations: any[] }>("related-locations", cacheKey);
     if (cached) {
       return new Response(JSON.stringify(cached), {
