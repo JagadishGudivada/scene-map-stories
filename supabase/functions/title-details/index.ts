@@ -76,7 +76,8 @@ serve(async (req) => {
     }
 
     // Cache lookup (30 days)
-    const cached = await getCached<Record<string, unknown>>("title-details", slug);
+    const cacheKey = CACHE_VERSION + slug;
+    const cached = await getCached<Record<string, unknown>>("title-details", cacheKey);
     if (cached) {
       return new Response(JSON.stringify(cached), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
