@@ -25,44 +25,6 @@ function resolveReasoningEffort(model: string, requested: string): "none" | "min
   return normalized as "none" | "minimal" | "low" | "medium" | "high";
 }
 
-async function fetchWikipediaImage(
-  title: string,
-  year?: number,
-  type?: string
-): Promise<string | null> {
-  const queries = [
-    year ? `${title} ${year} ${type === "Book" ? "novel" : type === "Series" ? "TV series" : "film"}` : null,
-    `${title} ${type === "Book" ? "novel" : type === "Series" ? "TV series" : "film"}`,
-    title,
-  ].filter(Boolean) as string[];
-
-  for (const q of queries) {
-    try {
-      const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(
-        q
-      )}&srlimit=1&origin=*`;
-      const sr = await fetch(searchUrl);
-      const sj = await sr.json();
-      const pageTitle = sj?.query?.search?.[0]?.title;
-      if (!pageTitle) continue;
-
-      const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-        pageTitle.replace(/ /g, "_")
-      )}`;
-      const summaryRes = await fetch(summaryUrl);
-      const summary = await summaryRes.json();
-      const img =
-        summary?.originalimage?.source ||
-        summary?.thumbnail?.source ||
-        null;
-      if (img) return img;
-    } catch (e) {
-      console.error("wiki image fetch failed:", e);
-    }
-  }
-  return null;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
