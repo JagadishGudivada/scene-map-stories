@@ -233,39 +233,54 @@ serve(async (req) => {
 
     const parsed = JSON.parse(toolCall.function.arguments);
 
-    // Enrich each title with a best-effort matched image so cards reflect the returned title names.
+    // Authoritative title imagery via TMDB / OpenLibrary
     if (Array.isArray(parsed.titles) && parsed.titles.length > 0) {
       const titleImages = await Promise.all(
-        parsed.titles.map(async (t: any) => {
-          const typeHint =
-            t?.type === "Series" ? "TV series" : t?.type === "Book" ? "book" : "film";
-          const img =
-            (await fetchWikipediaImage(`${t?.title ?? ""} ${typeHint}`)) ||
-            (await fetchWikipediaImage(String(t?.title ?? "")));
-
-          return (
-            img ||
-            `https://source.unsplash.com/800x1200/?${encodeURIComponent(
-              `${String(t?.title ?? "")} cinema`
-            )}`
-          );
-        })
+        parsed.titles.map((t: any) =>
+          resolveTitleImage({
+            title: String(t?.title ?? ""),
+            year: Number(t?.year) || undefined,
+            type: t?.type,
+          }).catch(() => ({ coverImage: null, backdropImage: null }))
+        )
       );
-
       parsed.titles = parsed.titles.map((t: any, i: number) => ({
         ...t,
-        image: titleImages[i],
+        image: titleImages[i].coverImage || titleImages[i].backdropImage || null,
       }));
     }
 
-    // Fetch hero image from Wikipedia
-    const img =
-      (await fetchWikipediaImage(`${parsed.name} ${parsed.country} cityscape`)) ||
-      (await fetchWikipediaImage(parsed.name));
-    parsed.coverImage =
-      img || `https://source.unsplash.com/1600x900/?${encodeURIComponent(parsed.name + " skyline")}`;
+    // Authoritative city hero image (Wikipedia strict → Wikidata coords → satellite static)
+    parsed.coverImage = await resolveLocationImage({
+      name: parsed.name,
+      city: parsed.name,
+      country: parsed.country,
+      lat: parsed.lat,
+      lng: parsed.lng,
+      kind: "city",
+    });
 
-    setCached("location-details", slug, parsed, 60 * 60 * 24 * 30).catch(() => {});
+    // Authoritative spot images
+    if (Array.isArray(parsed.spots) && parsed.spots.length > 0) {
+      const spotImages = await Promise.all(
+        parsed.spots.map((s: any) =>
+          resolveLocationImage({
+            name: s?.name,
+            city: parsed.name,
+            country: parsed.country,
+            lat: s?.lat,
+            lng: s?.lng,
+            kind: "spot",
+          }).catch(() => null)
+        )
+      );
+      parsed.spots = parsed.spots.map((s: any, i: number) => ({
+        ...s,
+        image: spotImages[i],
+      }));
+    }
+
+    setCached("location-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
