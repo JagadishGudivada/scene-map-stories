@@ -123,10 +123,26 @@ serve(async (req) => {
       });
     }
     const parsed = JSON.parse(args);
-    const locations = (parsed.locations || [])
+    const baseLocations = (parsed.locations || [])
       .filter((l: any) => l?.name && slugify(l.name) !== slugify(cityName))
       .slice(0, 6)
       .map((l: any) => ({ ...l, slug: slugify(l.name) }));
+
+    // Authoritative city imagery for each related city
+    const images = await Promise.all(
+      baseLocations.map((l: any) =>
+        resolveLocationImage({
+          name: l.name,
+          city: l.name,
+          country: l.country,
+          kind: "city",
+        }).catch(() => null)
+      )
+    );
+    const locations = baseLocations.map((l: any, i: number) => ({
+      ...l,
+      coverImage: images[i],
+    }));
 
     const payload = { locations };
     setCached("related-locations", cacheKey, payload, 60 * 60 * 24 * 30).catch(() => {});
