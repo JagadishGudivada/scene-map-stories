@@ -1,29 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCached, setCached } from "../_shared/aiCache.ts";
+import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
+
+const CACHE_VERSION = "v2:";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-async function fetchWikipediaImage(query: string): Promise<string | null> {
-  try {
-    const sUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(query)}&srlimit=1&origin=*`;
-    const sr = await fetch(sUrl);
-    const sj = await sr.json();
-    const pageTitle = sj?.query?.search?.[0]?.title;
-    if (!pageTitle) return null;
-    const summaryRes = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle.replace(/ /g, "_"))}`
-    );
-    const summary = await summaryRes.json();
-    return summary?.originalimage?.source || summary?.thumbnail?.source || null;
-  } catch (e) {
-    console.error("wiki image error:", e);
-    return null;
-  }
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
