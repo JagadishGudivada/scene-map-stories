@@ -22,7 +22,7 @@ serve(async (req) => {
       });
     }
 
-    const cacheKey = `${slug}|${titleHint || ""}`;
+    const cacheKey = `${CACHE_VERSION}${slug}|${titleHint || ""}`;
     const cached = await getCached<Record<string, unknown>>("spot-details", cacheKey);
     if (cached) {
       return new Response(JSON.stringify(cached), {
