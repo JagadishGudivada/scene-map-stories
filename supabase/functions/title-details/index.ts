@@ -1,5 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCached, setCached } from "../_shared/aiCache.ts";
+import { resolveTitleImage } from "../_shared/images.ts";
+
+const CACHE_VERSION = "v2:";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,44 +25,6 @@ function resolveReasoningEffort(model: string, requested: string): "none" | "min
   return normalized as "none" | "minimal" | "low" | "medium" | "high";
 }
 
-async function fetchWikipediaImage(
-  title: string,
-  year?: number,
-  type?: string
-): Promise<string | null> {
-  const queries = [
-    year ? `${title} ${year} ${type === "Book" ? "novel" : type === "Series" ? "TV series" : "film"}` : null,
-    `${title} ${type === "Book" ? "novel" : type === "Series" ? "TV series" : "film"}`,
-    title,
-  ].filter(Boolean) as string[];
-
-  for (const q of queries) {
-    try {
-      const searchUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(
-        q
-      )}&srlimit=1&origin=*`;
-      const sr = await fetch(searchUrl);
-      const sj = await sr.json();
-      const pageTitle = sj?.query?.search?.[0]?.title;
-      if (!pageTitle) continue;
-
-      const summaryUrl = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(
-        pageTitle.replace(/ /g, "_")
-      )}`;
-      const summaryRes = await fetch(summaryUrl);
-      const summary = await summaryRes.json();
-      const img =
-        summary?.originalimage?.source ||
-        summary?.thumbnail?.source ||
-        null;
-      if (img) return img;
-    } catch (e) {
-      console.error("wiki image fetch failed:", e);
-    }
-  }
-  return null;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -73,7 +38,8 @@ serve(async (req) => {
     }
 
     // Cache lookup (30 days)
-    const cached = await getCached<Record<string, unknown>>("title-details", slug);
+    const cacheKey = CACHE_VERSION + slug;
+    const cached = await getCached<Record<string, unknown>>("title-details", cacheKey);
     if (cached) {
       return new Response(JSON.stringify(cached), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -223,12 +189,18 @@ serve(async (req) => {
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
 
-      // Fetch a hero image from Wikipedia based on title
-      const coverImage = await fetchWikipediaImage(parsed.title, parsed.year, parsed.type);
+      // Fetch authoritative imagery (TMDB for movies/series, OpenLibrary for books)
+      const { coverImage, backdropImage } = await resolveTitleImage({
+        title: parsed.title,
+        year: parsed.year,
+        type: parsed.type,
+        author: parsed.creator,
+      });
       if (coverImage) parsed.coverImage = coverImage;
+      if (backdropImage) parsed.backdropImage = backdropImage;
 
       // Cache for 30 days
-      setCached("title-details", slug, parsed, 60 * 60 * 24 * 30).catch(() => {});
+      setCached("title-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
 
       return new Response(JSON.stringify(parsed), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

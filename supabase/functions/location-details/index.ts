@@ -1,29 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCached, setCached } from "../_shared/aiCache.ts";
+import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
+
+const CACHE_VERSION = "v2:";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-async function fetchWikipediaImage(query: string): Promise<string | null> {
-  try {
-    const sUrl = `https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srsearch=${encodeURIComponent(query)}&srlimit=1&origin=*`;
-    const sr = await fetch(sUrl);
-    const sj = await sr.json();
-    const pageTitle = sj?.query?.search?.[0]?.title;
-    if (!pageTitle) return null;
-    const summaryRes = await fetch(
-      `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(pageTitle.replace(/ /g, "_"))}`
-    );
-    const summary = await summaryRes.json();
-    return summary?.originalimage?.source || summary?.thumbnail?.source || null;
-  } catch (e) {
-    console.error("wiki image error:", e);
-    return null;
-  }
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -37,7 +22,8 @@ serve(async (req) => {
       });
     }
 
-    const cached = await getCached<Record<string, unknown>>("location-details", slug);
+    const cacheKey = CACHE_VERSION + slug;
+    const cached = await getCached<Record<string, unknown>>("location-details", cacheKey);
     if (cached) {
       return new Response(JSON.stringify(cached), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -247,39 +233,54 @@ serve(async (req) => {
 
     const parsed = JSON.parse(toolCall.function.arguments);
 
-    // Enrich each title with a best-effort matched image so cards reflect the returned title names.
+    // Authoritative title imagery via TMDB / OpenLibrary
     if (Array.isArray(parsed.titles) && parsed.titles.length > 0) {
       const titleImages = await Promise.all(
-        parsed.titles.map(async (t: any) => {
-          const typeHint =
-            t?.type === "Series" ? "TV series" : t?.type === "Book" ? "book" : "film";
-          const img =
-            (await fetchWikipediaImage(`${t?.title ?? ""} ${typeHint}`)) ||
-            (await fetchWikipediaImage(String(t?.title ?? "")));
-
-          return (
-            img ||
-            `https://source.unsplash.com/800x1200/?${encodeURIComponent(
-              `${String(t?.title ?? "")} cinema`
-            )}`
-          );
-        })
+        parsed.titles.map((t: any) =>
+          resolveTitleImage({
+            title: String(t?.title ?? ""),
+            year: Number(t?.year) || undefined,
+            type: t?.type,
+          }).catch(() => ({ coverImage: null, backdropImage: null }))
+        )
       );
-
       parsed.titles = parsed.titles.map((t: any, i: number) => ({
         ...t,
-        image: titleImages[i],
+        image: titleImages[i].coverImage || titleImages[i].backdropImage || null,
       }));
     }
 
-    // Fetch hero image from Wikipedia
-    const img =
-      (await fetchWikipediaImage(`${parsed.name} ${parsed.country} cityscape`)) ||
-      (await fetchWikipediaImage(parsed.name));
-    parsed.coverImage =
-      img || `https://source.unsplash.com/1600x900/?${encodeURIComponent(parsed.name + " skyline")}`;
+    // Authoritative city hero image (Wikipedia strict → Wikidata coords → satellite static)
+    parsed.coverImage = await resolveLocationImage({
+      name: parsed.name,
+      city: parsed.name,
+      country: parsed.country,
+      lat: parsed.lat,
+      lng: parsed.lng,
+      kind: "city",
+    });
 
-    setCached("location-details", slug, parsed, 60 * 60 * 24 * 30).catch(() => {});
+    // Authoritative spot images
+    if (Array.isArray(parsed.spots) && parsed.spots.length > 0) {
+      const spotImages = await Promise.all(
+        parsed.spots.map((s: any) =>
+          resolveLocationImage({
+            name: s?.name,
+            city: parsed.name,
+            country: parsed.country,
+            lat: s?.lat,
+            lng: s?.lng,
+            kind: "spot",
+          }).catch(() => null)
+        )
+      );
+      parsed.spots = parsed.spots.map((s: any, i: number) => ({
+        ...s,
+        image: spotImages[i],
+      }));
+    }
+
+    setCached("location-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
