@@ -22,7 +22,8 @@ serve(async (req) => {
       });
     }
 
-    const cached = await getCached<Record<string, unknown>>("location-details", slug);
+    const cacheKey = CACHE_VERSION + slug;
+    const cached = await getCached<Record<string, unknown>>("location-details", cacheKey);
     if (cached) {
       return new Response(JSON.stringify(cached), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
