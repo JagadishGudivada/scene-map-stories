@@ -125,7 +125,7 @@ Respond ONLY in compact JSON:
       ai_notes: typeof parsed.notes === "string" ? parsed.notes.slice(0, 500) : null,
     }).eq("id", suggestionId);
 
-    return json({ ok: true, verified, evidenceCount: evidence.length, debug: { ev: evidence.slice(0,2).map((e:any)=>e.title), aiNotes: parsed.notes } });
+    return json({ ok: true, verified, evidenceCount: evidence.length });
   } catch (e) {
     console.error(e);
     return json({ error: "Unexpected error" }, 500);
