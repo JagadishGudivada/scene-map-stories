@@ -136,8 +136,14 @@ Respond ONLY in compact JSON:
 
 async function ddgSearch(query: string): Promise<Array<{ source: string; title: string; snippet: string; url: string }>> {
   try {
-    const res = await fetch(`https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`, {
-      headers: { "User-Agent": UA, Accept: "text/html" },
+    const res = await fetch(`https://html.duckduckgo.com/html/`, {
+      method: "POST",
+      headers: {
+        "User-Agent": UA,
+        Accept: "text/html",
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: `q=${encodeURIComponent(query)}`,
     });
     if (!res.ok) return [];
     const html = await res.text();
