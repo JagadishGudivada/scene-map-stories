@@ -34,28 +34,50 @@ Deno.serve(async (req) => {
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) return json({ error: "AI not configured" }, 500);
 
-    const prompt = `Verify whether the movie/series/book "${row.title_name}" was filmed at or features this real-world location: "${row.location_name}".${row.description ? ` User note: ${row.description}` : ""}
+    const today = new Date().toISOString().slice(0, 10);
+    const prompt = `Today is ${today}. Using up-to-date web sources (Wikipedia, IMDb, news articles, official press, fan wikis, novel/book references), verify whether the movie / series / book "${row.title_name}" is set at, was filmed at, or notably features this real-world location: "${row.location_name}".${row.description ? ` User note: ${row.description}` : ""}
+
+Rules:
+- Accept both FILMING locations and STORY/SETTING locations (e.g. a novel set in Cornwall counts even if the book was not "filmed" there).
+- Accept regional matches: if the title is set in/around a region (e.g. "Cornwall, UK") and the user submits a place inside that region, treat it as verified.
+- Use grounded web search to confirm. If multiple independent sources confirm the connection, set verified=true.
+- Return precise lat/lng for the canonical place (city/landmark centroid is fine).
+- Only set verified=false if no credible source supports the connection.
 
 Respond ONLY in compact JSON:
-{"verified": true|false, "label": "<canonical place name, e.g. 'Durdle Door, Dorset, UK'>", "lat": <number>, "lng": <number>, "notes": "<one sentence reasoning>"}
+{"verified": true|false, "label": "<canonical place name, e.g. 'Cornwall, England, UK'>", "lat": <number>, "lng": <number>, "notes": "<one sentence citing the source/reasoning>"}`;
 
-If you cannot confirm with reasonable confidence, set verified=false and lat/lng to 0.`;
-
-    const aiRes = await fetch(AI_URL, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
+    const body: any = {
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: "You verify real-world filming and story locations for movies/series/books using grounded web search. Always reply with valid JSON only." },
+        { role: "user", content: prompt },
+      ],
+      response_format: { type: "json_object" },
+      extra_body: {
+        extra_body: {
+          google: {
+            tools: [{ google_search: {} }],
+          },
+        },
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: "You verify real-world filming locations for movies/series/books. Use your knowledge to confirm and return precise coordinates. Always reply with valid JSON only." },
-          { role: "user", content: prompt },
-        ],
-        response_format: { type: "json_object" },
-      }),
+    };
+
+    let aiRes = await fetch(AI_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
+
+    // Fallback without grounding if gateway rejects extra_body
+    if (!aiRes.ok && (aiRes.status === 400 || aiRes.status === 422)) {
+      const { extra_body, ...plain } = body;
+      aiRes = await fetch(AI_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+        body: JSON.stringify(plain),
+      });
+    }
 
     if (!aiRes.ok) {
       const txt = await aiRes.text();
