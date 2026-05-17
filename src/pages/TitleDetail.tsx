@@ -11,6 +11,7 @@ import LeafletMap, { type MapPin as LeafletMapPin } from "@/components/LeafletMa
 import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
 import ShareMenu from "@/components/ShareMenu";
+import ReportInfoDialog from "@/components/ReportInfoDialog";
 import AddLocationDialog from "@/components/AddLocationDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useSavedTitle } from "@/hooks/useSaved";
@@ -340,6 +341,9 @@ export default function TitleDetail() {
                   title={view.title}
                   text={`Explore ${view.locationCount} filming locations from ${view.title} (${view.year})`}
                 />
+              </div>
+              <div className="mt-2">
+                <ReportInfoDialog entityType="title" slug={titleSlug} />
               </div>
             </motion.div>
           </div>

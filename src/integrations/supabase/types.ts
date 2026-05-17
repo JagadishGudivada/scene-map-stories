@@ -77,6 +77,54 @@ export type Database = {
         }
         Relationships: []
       }
+      data_reports: {
+        Row: {
+          created_at: string
+          current_value: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["report_entity"]
+          field: string
+          id: string
+          reason: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          status: Database["public"]["Enums"]["report_status"]
+          suggested_value: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: string | null
+          entity_id: string
+          entity_type: Database["public"]["Enums"]["report_entity"]
+          field: string
+          id?: string
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          suggested_value?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: string | null
+          entity_id?: string
+          entity_type?: Database["public"]["Enums"]["report_entity"]
+          field?: string
+          id?: string
+          reason?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: Database["public"]["Enums"]["report_status"]
+          suggested_value?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       location_suggestions: {
         Row: {
           ai_notes: string | null
@@ -122,6 +170,63 @@ export type Database = {
           verified_label?: string | null
           verified_lat?: number | null
           verified_lng?: number | null
+        }
+        Relationships: []
+      }
+      locations: {
+        Row: {
+          city: string | null
+          country: string | null
+          created_at: string
+          data: Json
+          description: string | null
+          flag: string | null
+          hero_image_url: string | null
+          id: string
+          last_fetched_at: string
+          lat: number | null
+          lng: number | null
+          name: string
+          slug: string
+          source: string | null
+          updated_at: string
+          verified: boolean
+        }
+        Insert: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          data?: Json
+          description?: string | null
+          flag?: string | null
+          hero_image_url?: string | null
+          id?: string
+          last_fetched_at?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          slug: string
+          source?: string | null
+          updated_at?: string
+          verified?: boolean
+        }
+        Update: {
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          data?: Json
+          description?: string | null
+          flag?: string | null
+          hero_image_url?: string | null
+          id?: string
+          last_fetched_at?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          slug?: string
+          source?: string | null
+          updated_at?: string
+          verified?: boolean
         }
         Relationships: []
       }
@@ -221,6 +326,195 @@ export type Database = {
         }
         Relationships: []
       }
+      spots: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          data: Json
+          description: string | null
+          flag: string | null
+          fun_facts: string[] | null
+          id: string
+          image_url: string | null
+          last_fetched_at: string
+          lat: number | null
+          lng: number | null
+          name: string
+          slug: string
+          source: string | null
+          updated_at: string
+          verified: boolean
+          visit_tips: string[] | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          data?: Json
+          description?: string | null
+          flag?: string | null
+          fun_facts?: string[] | null
+          id?: string
+          image_url?: string | null
+          last_fetched_at?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          slug: string
+          source?: string | null
+          updated_at?: string
+          verified?: boolean
+          visit_tips?: string[] | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          data?: Json
+          description?: string | null
+          flag?: string | null
+          fun_facts?: string[] | null
+          id?: string
+          image_url?: string | null
+          last_fetched_at?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          slug?: string
+          source?: string | null
+          updated_at?: string
+          verified?: boolean
+          visit_tips?: string[] | null
+        }
+        Relationships: []
+      }
+      title_spots: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["spot_role"]
+          spot_id: string
+          title_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["spot_role"]
+          spot_id: string
+          title_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["spot_role"]
+          spot_id?: string
+          title_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "title_spots_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "spots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "title_spots_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      titles: {
+        Row: {
+          backdrop_url: string | null
+          created_at: string
+          data: Json
+          genres: string[] | null
+          id: string
+          imdb_id: string | null
+          last_fetched_at: string
+          poster_url: string | null
+          rating: number | null
+          slug: string
+          source: string | null
+          synopsis: string | null
+          title: string
+          tmdb_id: number | null
+          type: Database["public"]["Enums"]["media_type"]
+          updated_at: string
+          verified: boolean
+          year: number | null
+        }
+        Insert: {
+          backdrop_url?: string | null
+          created_at?: string
+          data?: Json
+          genres?: string[] | null
+          id?: string
+          imdb_id?: string | null
+          last_fetched_at?: string
+          poster_url?: string | null
+          rating?: number | null
+          slug: string
+          source?: string | null
+          synopsis?: string | null
+          title: string
+          tmdb_id?: number | null
+          type: Database["public"]["Enums"]["media_type"]
+          updated_at?: string
+          verified?: boolean
+          year?: number | null
+        }
+        Update: {
+          backdrop_url?: string | null
+          created_at?: string
+          data?: Json
+          genres?: string[] | null
+          id?: string
+          imdb_id?: string | null
+          last_fetched_at?: string
+          poster_url?: string | null
+          rating?: number | null
+          slug?: string
+          source?: string | null
+          synopsis?: string | null
+          title?: string
+          tmdb_id?: number | null
+          type?: Database["public"]["Enums"]["media_type"]
+          updated_at?: string
+          verified?: boolean
+          year?: number | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       visited_spots: {
         Row: {
           city: string
@@ -286,9 +580,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "moderator" | "user"
+      media_type: "Movie" | "Series" | "Book"
       notification_type:
         | "follow"
         | "like"
@@ -297,6 +599,9 @@ export type Database = {
         | "new_photo"
         | "system"
         | "welcome"
+      report_entity: "title" | "location" | "spot"
+      report_status: "pending" | "accepted" | "rejected"
+      spot_role: "filming" | "setting"
       suggestion_status: "pending" | "verified" | "rejected"
     }
     CompositeTypes: {
@@ -425,6 +730,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "moderator", "user"],
+      media_type: ["Movie", "Series", "Book"],
       notification_type: [
         "follow",
         "like",
@@ -434,6 +741,9 @@ export const Constants = {
         "system",
         "welcome",
       ],
+      report_entity: ["title", "location", "spot"],
+      report_status: ["pending", "accepted", "rejected"],
+      spot_role: ["filming", "setting"],
       suggestion_status: ["pending", "verified", "rejected"],
     },
   },
