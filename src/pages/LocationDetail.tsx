@@ -11,6 +11,7 @@ import { useSavedLocation } from "@/hooks/useSaved";
 import LeafletMap from "@/components/LeafletMap";
 import SpotActionsModal from "@/components/SpotActionsModal";
 import ShareMenu from "@/components/ShareMenu";
+import ReportInfoDialog from "@/components/ReportInfoDialog";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import VerificationAccordion from "@/components/VerificationAccordion";
 import Seo from "@/components/Seo";
@@ -486,6 +487,7 @@ export default function LocationDetail() {
               text={`Discover ${cityData.totalLocations} filming locations in ${cityData.name}, ${cityData.country}`}
               className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all flex items-center gap-1.5"
             />
+            <ReportInfoDialog entityType="location" slug={slug || ""} />
           </motion.div>
         </div>
 

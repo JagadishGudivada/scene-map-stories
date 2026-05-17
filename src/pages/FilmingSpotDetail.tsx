@@ -6,6 +6,7 @@ import {
   Lightbulb, Info, Clock, ArrowRight, Loader2, Sparkles, Bookmark, BookmarkCheck, CheckCircle2,
 } from "lucide-react";
 import ShareMenu from "@/components/ShareMenu";
+import ReportInfoDialog from "@/components/ReportInfoDialog";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
@@ -429,6 +430,9 @@ export default function FilmingSpotDetail() {
                 text={`Visit ${spot.name} in ${spot.city} — a real filming location from ${spot.titles.join(", ")}`}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass text-foreground font-medium text-sm hover:border-amber/40 transition-all"
               />
+              <div className="flex justify-center pt-1">
+                <ReportInfoDialog entityType="spot" slug={spotSlug} />
+              </div>
             </motion.div>
 
             {/* Visit Tips */}
