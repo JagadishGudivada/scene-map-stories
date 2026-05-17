@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCached, setCached } from "../_shared/aiCache.ts";
 import { resolveTitleImage } from "../_shared/images.ts";
+import { getTitle, upsertTitle } from "../_shared/store.ts";
 
 const CACHE_VERSION = "v2:";
 
@@ -37,10 +38,20 @@ serve(async (req) => {
       });
     }
 
-    // Cache lookup (30 days)
+    // Persistent table read-through (preferred)
+    const stored = await getTitle(slug);
+    if (stored) {
+      return new Response(JSON.stringify(stored), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Legacy ai_cache fallback (30 days)
     const cacheKey = CACHE_VERSION + slug;
     const cached = await getCached<Record<string, unknown>>("title-details", cacheKey);
     if (cached) {
+      // Migrate cached payload into the new table
+      upsertTitle(slug, cached as Record<string, any>).catch(() => {});
       return new Response(JSON.stringify(cached), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -199,7 +210,8 @@ serve(async (req) => {
       if (coverImage) parsed.coverImage = coverImage;
       if (backdropImage) parsed.backdropImage = backdropImage;
 
-      // Cache for 30 days
+      // Persist to canonical table + legacy cache
+      upsertTitle(slug, parsed).catch(() => {});
       setCached("title-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
 
       return new Response(JSON.stringify(parsed), {

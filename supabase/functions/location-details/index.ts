@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { getCached, setCached } from "../_shared/aiCache.ts";
 import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
+import { getLocation, upsertLocation } from "../_shared/store.ts";
 
 const CACHE_VERSION = "v2:";
 
@@ -22,9 +23,17 @@ serve(async (req) => {
       });
     }
 
+    const stored = await getLocation(slug);
+    if (stored) {
+      return new Response(JSON.stringify(stored), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const cacheKey = CACHE_VERSION + slug;
     const cached = await getCached<Record<string, unknown>>("location-details", cacheKey);
     if (cached) {
+      upsertLocation(slug, cached as Record<string, any>).catch(() => {});
       return new Response(JSON.stringify(cached), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -280,6 +289,7 @@ serve(async (req) => {
       }));
     }
 
+    upsertLocation(slug, parsed).catch(() => {});
     setCached("location-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
