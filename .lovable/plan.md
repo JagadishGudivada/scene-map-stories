@@ -1,53 +1,149 @@
 ## Goal
-Replace the current "best-effort Wikipedia + Unsplash random" image strategy with deterministic, source-of-truth images for both **titles** (movies/series/books) and **locations** (cities, filming spots).
+Replace the ephemeral `ai_cache` (JSON blobs with TTL) with **first-class, queryable tables** for titles, locations, and spots. Fetch from AI/TMDB/Wikipedia **once**, persist forever, and allow user-reported corrections.
 
-## Current problems
-- **Titles**: `title-details`, `related-titles`, `location-details` use a Wikipedia search → first result. Often wrong (returns disambiguation pages, generic articles, or unrelated movies with the same name). Falls back to `source.unsplash.com` which is **deprecated** and returns broken/random images.
-- **Locations / spots**: Same Wikipedia-first approach. For a "filming spot" like "Stairs of Joker", Wikipedia rarely has the exact image; Unsplash returns random street photos.
+## Why move off `ai_cache`
+- Payloads expire (30d TTL) → repeat AI cost on cache miss.
+- Opaque JSON → can't query, join, filter, or rank.
+- No way to correct a single field — whole row is overwritten on refresh.
+- No provenance, no versioning, no moderation path for reports.
 
-## Strategy
+---
 
-### Titles → TMDB (authoritative)
-TMDB is already in use (`related-titles`, `TMDB_API_KEY` in env). Make it the **single source** for movie/series posters and backdrops:
-1. `GET /search/movie` (or `/search/tv`) with `query`, `year`, `include_adult=false`.
-2. Pick the result with highest `popularity` + matching year (±1).
-3. Use `poster_path` (w500) for cover, `backdrop_path` (w1280) for hero.
-4. For **books**, fall back to **Open Library Covers API** (`https://covers.openlibrary.org/b/title/<title>-L.jpg` after `/search.json` lookup by title+author).
+## New tables
 
-### Locations & spots → Wikimedia + Wikidata (precise) → Mapbox Static fallback
-1. **Wikipedia REST `/page/summary/{exact title}`** first — but only when we can resolve the *exact* page title. Use `action=opensearch` to confirm the top hit's title contains the spot/city name as a token; if not, skip.
-2. Use **Wikidata SPARQL** by coordinates for famous landmarks: query for items within ~50m of (lat,lng) with a P18 (image) property; pull the Commons file URL via `Special:FilePath`.
-3. For cities: use the country/city Wikipedia page summary (very reliable for cityscapes).
-4. **Final fallback**: **Mapbox Static Images API** centered on (lat,lng) — guaranteed to show the actual place from satellite/street view tiles. Requires `MAPBOX_TOKEN` (free tier sufficient). If user doesn't want to add it, fall back to OpenStreetMap static via `staticmap.openstreetmap.de`.
+### 1. `titles`
+Canonical record for every Movie / Series / Book.
 
-### Cache invalidation
-Bump cache by changing the `cache_key` prefix (e.g. add `v2:` prefix) so existing wrong images get re-fetched. Old entries expire naturally.
+| column | type | notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `slug` | text UNIQUE | e.g. `project-hail-mary-2026` |
+| `tmdb_id` | int | nullable, indexed |
+| `imdb_id` | text | nullable |
+| `type` | enum (`Movie`,`Series`,`Book`) | |
+| `title` | text | |
+| `year` | int | |
+| `synopsis` | text | |
+| `genres` | text[] | |
+| `rating` | numeric | |
+| `poster_url` | text | TMDB w500 |
+| `backdrop_url` | text | TMDB w1280 |
+| `data` | jsonb | extra fields (cast, runtime, etc.) |
+| `source` | text | `tmdb` / `openlibrary` / `ai` |
+| `verified` | boolean | manual override flag |
+| `last_fetched_at` | timestamptz | |
+| `created_at`, `updated_at` | timestamptz | |
 
-## Implementation
+### 2. `locations`
+City / region pages (e.g. "Dorset, UK", "Reykjavík").
 
-### New shared helpers — `supabase/functions/_shared/images.ts`
-- `getTmdbImage(title, year, type)` → `{ poster, backdrop }` or `null`
-- `getOpenLibraryCover(title, author?)` → url or `null`
-- `getWikipediaImageStrict(exactTitle)` — only returns if opensearch confirms exact match
-- `getWikidataImageByCoords(lat, lng, radiusKm)` → url or `null`
-- `getStaticMapImage(lat, lng, zoom)` → Mapbox or OSM URL (always succeeds)
-- `resolveTitleImage({title, year, type, author?})` — orchestrates: TMDB → OpenLibrary → strict Wikipedia → null
-- `resolveLocationImage({name, city, country, lat, lng, kind})` — orchestrates: strict Wikipedia → Wikidata-by-coords → static map
+| column | type | notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `slug` | text UNIQUE | |
+| `name`, `city`, `country`, `flag` | text | |
+| `lat`, `lng` | double precision | |
+| `hero_image_url` | text | Wikipedia/Wikidata resolved |
+| `description` | text | |
+| `data` | jsonb | city intel, tips, etc. |
+| `source`, `verified`, `last_fetched_at`, timestamps | | |
 
-### Edge functions to update
-1. `title-details/index.ts` — replace `fetchWikipediaImage` with `resolveTitleImage`. Add `posterImage` and `backdropImage` fields.
-2. `related-titles/index.ts` — already uses TMDB; add stricter year-match scoring (no change to image source).
-3. `location-details/index.ts` — replace title image enrichment with `resolveTitleImage`; replace city hero with `resolveLocationImage` using returned lat/lng.
-4. `spot-details/index.ts` — replace Wikipedia/Unsplash block with `resolveLocationImage` (will hit Wikidata by coords for famous spots, static map otherwise).
-5. `related-locations/index.ts` — switch any city image logic to the same helper.
+### 3. `spots`
+Exact filming/setting spots (e.g. "Durdle Door").
 
-### Frontend
-No type changes needed — fields (`coverImage`, `image`, `heroImage`) stay the same. The `TitleDetail.tsx` / `LocationDetail.tsx` pages already render these. Optional polish: lazy-load + skeleton on image error.
+| column | type | notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `slug` | text UNIQUE | |
+| `name`, `address`, `city`, `country`, `flag` | text | |
+| `lat`, `lng` | double precision | indexed (PostGIS-style btree on both) |
+| `image_url` | text | Wikidata-by-coords or Mapbox static |
+| `description` | text | |
+| `fun_facts`, `visit_tips` | text[] | |
+| `data` | jsonb | |
+| `source`, `verified`, `last_fetched_at`, timestamps | | |
 
-### Secrets
-Need to ask user for **`MAPBOX_TOKEN`** (free, 50k/month) for the static map fallback. Without it, OSM static map fallback works but is lower quality.
+### 4. `title_spots` (join)
+| `title_id` → titles.id | `spot_id` → spots.id | `role` (`filming`/`setting`) | UNIQUE(title_id, spot_id) |
 
-## Technical Notes
-- All requests run server-side in edge functions; respect 5–10s budget per call by running image lookups in `Promise.allSettled` with `AbortSignal.timeout(4000)`.
-- Cache key bump: prepend `"v2:"` to slug/key in `getCached`/`setCached` calls so we re-fetch with the new logic without manual DB cleanup.
-- TMDB rate limit (~50 req/s) is fine for our volume.
+### 5. `data_reports` (user corrections)
+| column | type | notes |
+|---|---|---|
+| `id` | uuid PK | |
+| `user_id` | uuid | reporter |
+| `entity_type` | enum (`title`,`location`,`spot`) | |
+| `entity_id` | uuid | |
+| `field` | text | e.g. `image_url`, `lat`, `description` |
+| `current_value` | text | snapshot |
+| `suggested_value` | text | |
+| `reason` | text | |
+| `status` | enum (`pending`,`accepted`,`rejected`) | default pending |
+| `resolved_by`, `resolved_at` | | |
+| timestamps | | |
+
+---
+
+## Images: store URLs, not files
+
+**Recommendation: store URLs only.** Reasons:
+- TMDB & Wikimedia URLs are stable, CDN-backed, free, and already optimized.
+- Mapbox static URLs are deterministic from lat/lng — no need to persist bytes.
+- Storing files = ~200KB–2MB per record × thousands of rows → storage cost + bandwidth + cache invalidation complexity.
+- **Exception**: if a user uploads their own photo (future feature), THEN use Supabase Storage with a `user_photos` bucket.
+
+Add a lightweight **image health check** (optional, later): cron edge function pings `image_url` weekly; on 404 it triggers re-resolution via existing `_shared/images.ts`.
+
+---
+
+## Edge function changes
+
+Each detail function becomes **read-through cache** against the new tables:
+
+```
+spot-details(slug)
+  → SELECT from spots WHERE slug=$1
+     ├── found & fresh (last_fetched_at < 90d) → return row
+     └── miss/stale → call AI + resolveLocationImage → UPSERT → return
+```
+
+Same for `title-details` (against `titles`) and `location-details` (against `locations`).
+
+`ai_cache` rows for these three function_names become redundant and can be dropped after migration.
+
+---
+
+## Report flow (UI)
+
+- Add small "Report incorrect info" button on TitleDetail / LocationDetail / FilmingSpotDetail pages.
+- Dialog: choose field → enter correction → submit.
+- Inserts row into `data_reports`. Admin reviews → on accept, updates the canonical row + sets `verified=true`.
+
+(Admin moderation UI is out of scope for this plan — initial version just collects reports.)
+
+---
+
+## RLS
+
+- `titles`, `locations`, `spots`: **public SELECT**, no public write (writes happen via edge functions using service role).
+- `title_spots`: public SELECT.
+- `data_reports`: authenticated users INSERT their own; SELECT own; admin role can SELECT/UPDATE all (uses `user_roles` + `has_role` pattern).
+
+---
+
+## Migration plan
+
+1. Create the 5 tables + enums + indexes + RLS.
+2. Create `user_roles` + `has_role` (needed for admin moderation).
+3. Update 4 edge functions (`title-details`, `location-details`, `spot-details`, `related-locations`) to read-through the new tables.
+4. Backfill: one-shot script reads existing `ai_cache` rows and UPSERTs into the new tables.
+5. Update `useRecentTitleDetails` / `useRecentVisitedSpots` to query `titles` / `spots` directly (cleaner, faster than parsing `ai_cache.payload`).
+6. Add `ReportInfoDialog` component + wire into the three detail pages.
+7. After verification, drop `ai_cache` rows for `title-details`/`location-details`/`spot-details` (keep table for other AI calls).
+
+---
+
+## Out of scope (future)
+- Admin moderation dashboard.
+- User-uploaded photos → Supabase Storage bucket.
+- Image health-check cron.
+- Full-text search across titles/spots.
