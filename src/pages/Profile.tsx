@@ -72,9 +72,29 @@ export default function Profile() {
         label: spot.name,
         title: spot.title,
         type: spot.type,
+        city: spot.city,
+        country: spot.country,
+        visited: true,
       })),
     [visitedSpotsData]
   );
+
+  const visitedCities = useMemo(() => {
+    const map = new Map<string, { name: string; lat: number; lng: number; count: number }>();
+    visitedSpotsData.forEach((s) => {
+      const key = `${s.city ?? ""}|${s.country ?? ""}`;
+      if (!s.city) return;
+      const existing = map.get(key);
+      if (existing) {
+        existing.lat = (existing.lat * existing.count + s.lat) / (existing.count + 1);
+        existing.lng = (existing.lng * existing.count + s.lng) / (existing.count + 1);
+        existing.count += 1;
+      } else {
+        map.set(key, { name: s.city, lat: s.lat, lng: s.lng, count: 1 });
+      }
+    });
+    return Array.from(map.values());
+  }, [visitedSpotsData]);
 
   const visitedCountriesCount = useMemo(
     () => new Set(visitedSpotsData.map((spot) => spot.country)).size,
