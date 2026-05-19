@@ -1,44 +1,51 @@
 import { useMemo, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X } from "lucide-react";
-import { mockUser, mockTitles, mockPosts } from "@/lib/mockData";
-import CinemaCard from "@/components/CinemaCard";
-import PostCard from "@/components/PostCard";
 import LeafletMap from "@/components/LeafletMap";
 import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots, useAllWatchedTitles } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import coverImg from "@/assets/cover-paris.jpg";
 
 type Tab = "map" | "saved" | "posts" | "lists";
 
 const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "map", label: "Memory Map", icon: MapPin },
-  { id: "saved", label: "Saved Titles", icon: Bookmark },
+  { id: "saved", label: "Saved", icon: Bookmark },
   { id: "posts", label: "Posts", icon: Grid3X3 },
   { id: "lists", label: "Lists", icon: List },
 ];
 
-const mockLists = [
-  { id: "l1", name: "Italian Cinema Spots", count: 12, coverImage: coverImg, emoji: "🇮🇹" },
-  { id: "l2", name: "Netflix Korea Locations", count: 8, coverImage: mockTitles[0].coverImage, emoji: "🇰🇷" },
-  { id: "l3", name: "Classics of Hollywood", count: 21, coverImage: mockTitles[1].coverImage, emoji: "🎬" },
-  { id: "l4", name: "Books I Want to Visit", count: 6, coverImage: mockTitles[2].coverImage, emoji: "📚" },
-];
+function prettifySlug(slug: string) {
+  return slug.replace(/-\d{4}$/, "").replace(/-/g, " ");
+}
 
-// MapPlaceholder replaced by LeafletMap
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("map");
-  const [following, setFollowing] = useState(false);
-  const user = mockUser;
   const { user: authUser } = useAuth();
+  const { username: routeUsername } = useParams<{ username: string }>();
   const { toast } = useToast();
   const { slugs: savedTitleSlugs, loading: savedTitlesLoading, refresh: refreshTitles } = useAllSavedTitles();
   const { slugs: savedLocationSlugs, loading: savedLocationsLoading, refresh: refreshLocations } = useAllSavedLocations();
   const { slugs: savedSpotSlugs, loading: savedSpotsLoading, refresh: refreshSavedSpots } = useAllSavedSpots();
   const { slugs: visitedSpotSlugs, spots: visitedSpots, loading: visitedSpotsLoading, refresh: refreshVisitedSpots } = useAllVisitedSpots();
   const { slugs: watchedTitleSlugs, loading: watchedTitlesLoading } = useAllWatchedTitles();
+
+  // Derive real user identity from auth metadata
+  const meta = (authUser?.user_metadata ?? {}) as Record<string, any>;
+  const displayName: string =
+    meta.full_name || meta.name || meta.user_name || authUser?.email?.split("@")[0] || "Your Profile";
+  const username: string =
+    routeUsername || meta.user_name || meta.preferred_username || authUser?.email?.split("@")[0] || "you";
+  const avatarUrl: string | undefined = meta.avatar_url || meta.picture;
+  const initials = displayName
+    .split(/\s+/)
+    .map((p) => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 
   const visitedSpotsData = useMemo(
     () =>
@@ -74,12 +81,6 @@ export default function Profile() {
     [visitedSpotsData]
   );
 
-  function slugify(title: string, year: number) {
-    return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
-  }
-
-  const savedTitlesData = mockTitles.filter((t) => savedTitleSlugs.includes(slugify(t.title, t.year)));
-
   const handleUnsaveTitle = async (titleSlug: string) => {
     if (!authUser) return;
     await supabase.from("saved_titles").delete().eq("user_id", authUser.id).eq("title_slug", titleSlug);
@@ -108,80 +109,82 @@ export default function Profile() {
     refreshVisitedSpots();
   };
 
-  const formatNum = (n: number) => {
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-    return n.toString();
+  const handleShare = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: displayName, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast({ title: "Link copied", description: "Profile URL copied to clipboard." });
+      }
+    } catch {
+      /* user cancelled */
+    }
   };
+
+  const stats = [
+    { label: "Titles Saved", value: savedTitleSlugs.length, icon: Bookmark, color: "text-amber" },
+    { label: "Spots Visited", value: visitedSpotSlugs.length, icon: MapPin, color: "text-teal" },
+    { label: "Countries", value: visitedCountriesCount, icon: Users, color: "text-foreground" },
+    { label: "Watched", value: watchedTitleSlugs.length, icon: Heart, color: "text-foreground" },
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
-      {/* Cover Photo */}
-      <div className="relative h-64 sm:h-80 w-full overflow-hidden">
-        <img src={coverImg} alt="Cover" className="w-full h-full object-cover" />
+      {/* Cover */}
+      <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-gradient-to-br from-amber/20 via-background to-teal/20">
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/30 via-transparent to-transparent" />
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Profile Header */}
         <div className="-mt-16 relative z-10 mb-6">
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            {/* Avatar + Name */}
             <div className="flex items-end gap-4">
-              <div className="w-28 h-28 rounded-full overflow-hidden amber-ring border-4 border-background shrink-0 shadow-float">
-                <img
-                  src={user.avatar}
-                  alt={user.displayName}
-                  className="w-full h-full object-cover bg-muted"
-                />
+              <div className="w-28 h-28 rounded-full overflow-hidden amber-ring border-4 border-background shrink-0 shadow-float bg-muted flex items-center justify-center">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-serif text-3xl text-amber">{initials || "?"}</span>
+                )}
               </div>
               <div className="pb-1">
-                <h1 className="font-serif text-2xl text-foreground leading-tight">{user.displayName}</h1>
-                <p className="text-muted-foreground text-sm">@{user.username}</p>
+                <h1 className="font-serif text-2xl text-foreground leading-tight">{displayName}</h1>
+                <p className="text-muted-foreground text-sm">@{username}</p>
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-2">
               <button
-                onClick={() => setFollowing(!following)}
-                className={`h-9 px-5 rounded-xl text-sm font-semibold transition-all duration-200 ${
-                  following
-                    ? "glass border border-border text-foreground hover:border-red-400/30 hover:text-red-400"
-                    : "bg-gradient-amber text-charcoal hover:opacity-90 shadow-amber"
-                }`}
+                onClick={handleShare}
+                className="h-9 px-4 rounded-xl glass border border-border text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
               >
-                {following ? "Following" : "Follow"}
+                <Share2 className="w-4 h-4" /> Share
               </button>
-              <button className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
-                <Share2 className="w-4 h-4" />
-              </button>
-              <button className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors">
+              <Link
+                to="/auth"
+                className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                title="Account settings"
+              >
                 <Settings className="w-4 h-4" />
-              </button>
+              </Link>
             </div>
           </div>
 
-          {/* Bio */}
-          <div className="mt-4 space-y-2">
-            <p className="text-foreground text-sm leading-relaxed max-w-lg">{user.bio}</p>
-            <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
+          {authUser?.email && (
+            <div className="mt-4 flex items-center gap-1.5 text-muted-foreground text-sm">
               <MapPin className="w-4 h-4 text-amber" />
-              <span>{user.location}</span>
+              <span>{authUser.email}</span>
             </div>
-          </div>
+          )}
 
-          {/* Stats Row */}
+          {/* Stats */}
           <div className="flex items-center gap-0 mt-5 glass rounded-2xl border border-border divide-x divide-border overflow-hidden">
-            {[
-              { label: "Titles Saved", value: user.titlesSaved, icon: Bookmark, color: "text-amber" },
-              { label: "Locations", value: user.locationsMapped, icon: MapPin, color: "text-teal" },
-              { label: "Followers", value: formatNum(user.followers), icon: Users, color: "text-foreground" },
-              { label: "Following", value: user.following, icon: Heart, color: "text-foreground" },
-            ].map((stat) => (
+            {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="flex-1 flex flex-col items-center py-4 px-2 hover:bg-muted/50 transition-colors cursor-pointer"
+                className="flex-1 flex flex-col items-center py-4 px-2 hover:bg-muted/50 transition-colors"
               >
                 <stat.icon className={`w-4 h-4 mb-1.5 ${stat.color}`} />
                 <span className={`text-xl font-bold font-serif ${stat.color}`}>{stat.value}</span>
@@ -191,7 +194,7 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Tabs */}
         <div className="flex border-b border-border mb-6 overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
             <button
@@ -209,7 +212,6 @@ export default function Profile() {
           ))}
         </div>
 
-        {/* Tab Content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -230,7 +232,7 @@ export default function Profile() {
                   </div>
                 ) : visitedSpotsData.length > 0 ? (
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {visitedSpotsData.slice(0, 4).map((spot, i) => (
+                    {visitedSpotsData.slice(0, 6).map((spot, i) => (
                       <motion.div
                         key={spot.slug}
                         initial={{ opacity: 0, y: 12 }}
@@ -268,24 +270,35 @@ export default function Profile() {
                 </h3>
                 {savedTitlesLoading ? (
                   <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : savedTitlesData.length === 0 ? (
+                ) : savedTitleSlugs.length === 0 ? (
                   <div className="glass rounded-2xl border border-border p-8 text-center mb-6">
                     <Bookmark className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
                     <p className="text-muted-foreground text-sm">No saved titles yet. Browse titles and tap "Save to Map".</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-                    {savedTitlesData.map((title, i) => (
-                      <div key={title.id} className="relative group">
-                        <CinemaCard title={title} size="md" delay={i * 0.06} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                    {savedTitleSlugs.map((slug, i) => (
+                      <motion.div
+                        key={slug}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                        className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
+                      >
+                        <Link to={`/title/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-9 h-9 rounded-lg bg-amber/10 flex items-center justify-center">
+                            <Bookmark className="w-4 h-4 text-amber" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground capitalize truncate">{prettifySlug(slug)}</span>
+                        </Link>
                         <button
-                          onClick={() => handleUnsaveTitle(slugify(title.title, title.year))}
-                          className="absolute top-2 right-2 z-10 w-7 h-7 rounded-full bg-background/80 border border-border flex items-center justify-center text-muted-foreground hover:text-red-400 hover:border-red-400/40 transition-colors opacity-0 group-hover:opacity-100"
+                          onClick={() => handleUnsaveTitle(slug)}
+                          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
                           title="Remove from saved"
                         >
                           <X className="w-3.5 h-3.5" />
                         </button>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 )}
@@ -311,12 +324,12 @@ export default function Profile() {
                         transition={{ delay: i * 0.05 }}
                         className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <Link to={`/location/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
                             <MapPin className="w-4 h-4 text-teal" />
                           </div>
                           <span className="text-sm font-medium text-foreground capitalize truncate">{slug.replace(/-/g, " ")}</span>
-                        </div>
+                        </Link>
                         <button
                           onClick={() => handleUnsaveLocation(slug)}
                           className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
@@ -350,12 +363,12 @@ export default function Profile() {
                         transition={{ delay: i * 0.05 }}
                         className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <Link to={`/spot/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-9 h-9 rounded-lg bg-amber/10 flex items-center justify-center">
                             <Bookmark className="w-4 h-4 text-amber" />
                           </div>
                           <span className="text-sm font-medium text-foreground capitalize truncate">{slug.replace(/-/g, " ")}</span>
-                        </div>
+                        </Link>
                         <button
                           onClick={() => handleUnsaveSpot(slug)}
                           className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
@@ -368,7 +381,7 @@ export default function Profile() {
                   </div>
                 )}
 
-                {/* Been Here Spots */}
+                {/* Been Here */}
                 <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
                   <MapPin className="w-4 h-4 text-teal" /> Been Here
                 </h3>
@@ -384,29 +397,29 @@ export default function Profile() {
                     {visitedSpotSlugs.map((slug, i) => {
                       const persistedSpot = visitedSpots.find((spot) => spot.spot_slug === slug);
                       return (
-                      <motion.div
-                        key={slug}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
-                            <MapPin className="w-4 h-4 text-teal" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground capitalize truncate">
-                            {persistedSpot ? persistedSpot.spot_name : slug.replace(/-/g, " ")}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleUnvisitSpot(slug)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
-                          title="Remove from visited"
+                        <motion.div
+                          key={slug}
+                          initial={{ opacity: 0, y: 12 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
                         >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </motion.div>
+                          <Link to={`/spot/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
+                            <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
+                              <MapPin className="w-4 h-4 text-teal" />
+                            </div>
+                            <span className="text-sm font-medium text-foreground capitalize truncate">
+                              {persistedSpot ? persistedSpot.spot_name : slug.replace(/-/g, " ")}
+                            </span>
+                          </Link>
+                          <button
+                            onClick={() => handleUnvisitSpot(slug)}
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Remove from visited"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </motion.div>
                       );
                     })}
                   </div>
@@ -433,10 +446,12 @@ export default function Profile() {
                         transition={{ delay: i * 0.05 }}
                         className="glass rounded-xl p-4 border border-border flex items-center gap-3 min-w-0"
                       >
-                        <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center flex-shrink-0">
-                          <CheckCircle2 className="w-4 h-4 text-teal" />
-                        </div>
-                        <span className="text-sm font-medium text-foreground capitalize truncate">{slug.replace(/-\d{4}$/, "").replace(/-/g, " ")}</span>
+                        <Link to={`/title/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center flex-shrink-0">
+                            <CheckCircle2 className="w-4 h-4 text-teal" />
+                          </div>
+                          <span className="text-sm font-medium text-foreground capitalize truncate">{prettifySlug(slug)}</span>
+                        </Link>
                       </motion.div>
                     ))}
                   </div>
@@ -445,36 +460,16 @@ export default function Profile() {
             )}
 
             {activeTab === "posts" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {mockPosts.map((post, i) => (
-                  <PostCard key={post.id} post={post} delay={i * 0.08} />
-                ))}
+              <div className="glass rounded-2xl border border-border p-10 text-center">
+                <Grid3X3 className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">No posts yet. Sharing your scene photos and trip notes is coming soon.</p>
               </div>
             )}
 
             {activeTab === "lists" && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {mockLists.map((list, i) => (
-                  <motion.div
-                    key={list.id}
-                    initial={{ opacity: 0, y: 16 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                    className="group relative h-36 rounded-2xl overflow-hidden cursor-pointer shadow-card"
-                  >
-                    <img src={list.coverImage} alt={list.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{list.emoji}</span>
-                        <div>
-                          <h3 className="font-serif text-sm text-foreground">{list.name}</h3>
-                          <p className="text-xs text-muted-foreground">{list.count} titles</p>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
+              <div className="glass rounded-2xl border border-border p-10 text-center">
+                <List className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">No lists yet. Curated collections are coming soon — your saved titles, locations and spots already live in the Saved tab.</p>
               </div>
             )}
           </motion.div>
