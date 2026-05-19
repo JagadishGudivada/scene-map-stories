@@ -279,6 +279,49 @@ export default function LeafletMap({
     }
   }, [highlightedPin]);
 
+  // Visited city regions — translucent green circles + labels
+  const visitedCityLayersRef = useRef<L.Layer[] | null>(null);
+  useEffect(() => {
+    const map = leafletMap.current;
+    if (!map) return;
+
+    if (visitedCityLayersRef.current) {
+      visitedCityLayersRef.current.forEach((l) => map.removeLayer(l));
+      visitedCityLayersRef.current = null;
+    }
+
+    if (visitedCities && visitedCities.length) {
+      const layers: L.Layer[] = [];
+      visitedCities.forEach((city) => {
+        const radius = (city.radiusKm ?? 6) * 1000;
+        const circle = L.circle([city.lat, city.lng], {
+          radius,
+          color: VISITED_COLOR,
+          weight: 1.5,
+          opacity: 0.75,
+          fillColor: VISITED_COLOR,
+          fillOpacity: 0.12,
+          dashArray: "4, 6",
+          interactive: false,
+        }).addTo(map);
+        layers.push(circle);
+
+        const label = L.marker([city.lat, city.lng], {
+          interactive: false,
+          icon: L.divIcon({
+            className: "visited-city-label",
+            html: `<div style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:${VISITED_COLOR};color:hsl(0,0%,8%);font-weight:700;font-size:10px;font-family:Inter,sans-serif;letter-spacing:0.04em;text-transform:uppercase;box-shadow:0 2px 8px ${VISITED_COLOR}66;white-space:nowrap;">✓ ${city.name}${city.count ? ` · ${city.count}` : ""}</div>`,
+            iconSize: [0, 0],
+            iconAnchor: [0, 0],
+          }),
+        }).addTo(map);
+        layers.push(label);
+      });
+      visitedCityLayersRef.current = layers;
+    }
+  }, [visitedCities]);
+
+
   return (
     <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`}>
       <div ref={mapRef} className="w-full h-full" />
