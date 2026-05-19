@@ -15,7 +15,18 @@ export interface MapPin {
   country?: string;
   type: MediaType;
   image?: string;
+  visited?: boolean;
 }
+
+export interface VisitedCityRegion {
+  name: string;
+  lat: number;
+  lng: number;
+  count?: number;
+  radiusKm?: number;
+}
+
+const VISITED_COLOR = "hsl(150, 60%, 50%)";
 
 const typeColors: Record<MediaType, string> = {
   Movie: "hsl(38, 80%, 56%)",
