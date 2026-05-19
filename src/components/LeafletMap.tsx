@@ -155,9 +155,9 @@ export default function LeafletMap({
 
     pins.forEach((pin) => {
       const marker = L.marker([pin.lat, pin.lng], {
-        icon: createCategoryIcon(pin.type, isDark),
+        icon: createCategoryIcon(pin.type, isDark, pin.visited),
       });
-      marker.bindTooltip(pin.label, {
+      marker.bindTooltip(pin.visited ? `✓ ${pin.label}` : pin.label, {
         direction: "top",
         offset: [0, -18],
         opacity: 1,
