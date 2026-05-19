@@ -15,7 +15,18 @@ export interface MapPin {
   country?: string;
   type: MediaType;
   image?: string;
+  visited?: boolean;
 }
+
+export interface VisitedCityRegion {
+  name: string;
+  lat: number;
+  lng: number;
+  count?: number;
+  radiusKm?: number;
+}
+
+const VISITED_COLOR = "hsl(150, 60%, 50%)";
 
 const typeColors: Record<MediaType, string> = {
   Movie: "hsl(38, 80%, 56%)",
@@ -29,13 +40,14 @@ const typeSvgPaths: Record<MediaType, string> = {
   Book: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
 
-function createCategoryIcon(type: MediaType, isDark: boolean) {
-  const color = typeColors[type];
+function createCategoryIcon(type: MediaType, isDark: boolean, visited = false) {
+  const color = visited ? VISITED_COLOR : typeColors[type];
   const bg = isDark ? "hsl(0,0%,8%)" : "hsl(0,0%,100%)";
-  const border = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
+  const border = visited ? `${VISITED_COLOR}` : (isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)");
+  const ring = visited ? `box-shadow:0 0 0 2px ${VISITED_COLOR}55, 0 0 18px ${color}66, 0 4px 12px rgba(0,0,0,0.35);` : `box-shadow:0 0 16px ${color}40, 0 4px 12px rgba(0,0,0,0.3);`;
   return L.divIcon({
     className: "custom-category-pin",
-    html: `<div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:${bg};border:2px solid ${border};box-shadow:0 0 16px ${color}40, 0 4px 12px rgba(0,0,0,0.3);cursor:pointer;transition:transform 0.2s;">
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:${bg};border:2px solid ${border};${ring}cursor:pointer;transition:transform 0.2s;">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="color:${color};">${typeSvgPaths[type]}</svg>
     </div>`,
     iconSize: [36, 36],
@@ -53,6 +65,7 @@ interface LeafletMapProps {
   pathPins?: MapPin[];
   onMapReady?: (map: L.Map) => void;
   highlightedPin?: MapPin | null;
+  visitedCities?: VisitedCityRegion[];
 }
 
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
@@ -68,6 +81,7 @@ export default function LeafletMap({
   pathPins,
   onMapReady,
   highlightedPin,
+  visitedCities,
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<L.Map | null>(null);
@@ -141,9 +155,9 @@ export default function LeafletMap({
 
     pins.forEach((pin) => {
       const marker = L.marker([pin.lat, pin.lng], {
-        icon: createCategoryIcon(pin.type, isDark),
+        icon: createCategoryIcon(pin.type, isDark, pin.visited),
       });
-      marker.bindTooltip(pin.label, {
+      marker.bindTooltip(pin.visited ? `✓ ${pin.label}` : pin.label, {
         direction: "top",
         offset: [0, -18],
         opacity: 1,
@@ -265,6 +279,49 @@ export default function LeafletMap({
     }
   }, [highlightedPin]);
 
+  // Visited city regions — translucent green circles + labels
+  const visitedCityLayersRef = useRef<L.Layer[] | null>(null);
+  useEffect(() => {
+    const map = leafletMap.current;
+    if (!map) return;
+
+    if (visitedCityLayersRef.current) {
+      visitedCityLayersRef.current.forEach((l) => map.removeLayer(l));
+      visitedCityLayersRef.current = null;
+    }
+
+    if (visitedCities && visitedCities.length) {
+      const layers: L.Layer[] = [];
+      visitedCities.forEach((city) => {
+        const radius = (city.radiusKm ?? 6) * 1000;
+        const circle = L.circle([city.lat, city.lng], {
+          radius,
+          color: VISITED_COLOR,
+          weight: 1.5,
+          opacity: 0.75,
+          fillColor: VISITED_COLOR,
+          fillOpacity: 0.12,
+          dashArray: "4, 6",
+          interactive: false,
+        }).addTo(map);
+        layers.push(circle);
+
+        const label = L.marker([city.lat, city.lng], {
+          interactive: false,
+          icon: L.divIcon({
+            className: "visited-city-label",
+            html: `<div style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:9999px;background:${VISITED_COLOR};color:hsl(0,0%,8%);font-weight:700;font-size:10px;font-family:Inter,sans-serif;letter-spacing:0.04em;text-transform:uppercase;box-shadow:0 2px 8px ${VISITED_COLOR}66;white-space:nowrap;">✓ ${city.name}${city.count ? ` · ${city.count}` : ""}</div>`,
+            iconSize: [0, 0],
+            iconAnchor: [0, 0],
+          }),
+        }).addTo(map);
+        layers.push(label);
+      });
+      visitedCityLayersRef.current = layers;
+    }
+  }, [visitedCities]);
+
+
   return (
     <div className={`relative rounded-2xl overflow-hidden border border-border ${className}`}>
       <div ref={mapRef} className="w-full h-full" />
@@ -282,6 +339,10 @@ export default function LeafletMap({
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "hsl(270, 60%, 70%)" }} />
             <span className="text-xs text-muted-foreground">Book</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: VISITED_COLOR }} />
+            <span className="text-xs text-muted-foreground">Been here</span>
           </div>
         </div>
       </div>
