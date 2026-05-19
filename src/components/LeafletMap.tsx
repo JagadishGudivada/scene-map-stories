@@ -40,13 +40,14 @@ const typeSvgPaths: Record<MediaType, string> = {
   Book: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
 
-function createCategoryIcon(type: MediaType, isDark: boolean) {
-  const color = typeColors[type];
+function createCategoryIcon(type: MediaType, isDark: boolean, visited = false) {
+  const color = visited ? VISITED_COLOR : typeColors[type];
   const bg = isDark ? "hsl(0,0%,8%)" : "hsl(0,0%,100%)";
-  const border = isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
+  const border = visited ? `${VISITED_COLOR}` : (isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)");
+  const ring = visited ? `box-shadow:0 0 0 2px ${VISITED_COLOR}55, 0 0 18px ${color}66, 0 4px 12px rgba(0,0,0,0.35);` : `box-shadow:0 0 16px ${color}40, 0 4px 12px rgba(0,0,0,0.3);`;
   return L.divIcon({
     className: "custom-category-pin",
-    html: `<div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:${bg};border:2px solid ${border};box-shadow:0 0 16px ${color}40, 0 4px 12px rgba(0,0,0,0.3);cursor:pointer;transition:transform 0.2s;">
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:${bg};border:2px solid ${border};${ring}cursor:pointer;transition:transform 0.2s;">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="color:${color};">${typeSvgPaths[type]}</svg>
     </div>`,
     iconSize: [36, 36],
