@@ -65,6 +65,7 @@ interface LeafletMapProps {
   pathPins?: MapPin[];
   onMapReady?: (map: L.Map) => void;
   highlightedPin?: MapPin | null;
+  visitedCities?: VisitedCityRegion[];
 }
 
 const DARK_TILES = "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
