@@ -340,6 +340,10 @@ export default function LeafletMap({
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "hsl(270, 60%, 70%)" }} />
             <span className="text-xs text-muted-foreground">Book</span>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: VISITED_COLOR }} />
+            <span className="text-xs text-muted-foreground">Been here</span>
+          </div>
         </div>
       </div>
     </div>
