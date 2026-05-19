@@ -245,7 +245,7 @@ export default function Profile() {
                 <p className="text-sm text-muted-foreground mb-4">
                   {visitedMapPins.length} locations pinned across {visitedCountriesCount} countries
                 </p>
-                <LeafletMap pins={visitedMapPins} className="h-80" />
+                <LeafletMap pins={visitedMapPins} visitedCities={visitedCities} className="h-80" />
                 {visitedSpotsLoading ? (
                   <div className="glass rounded-2xl border border-border p-8 text-center mt-6">
                     <p className="text-muted-foreground text-sm">Loading your visited spots…</p>
