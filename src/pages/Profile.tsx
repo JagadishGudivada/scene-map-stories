@@ -1,12 +1,25 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X } from "lucide-react";
+import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X, Pencil, Plus, Globe, Trash2 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
+import EditProfileDialog, { type ProfileRow } from "@/components/EditProfileDialog";
+import CreatePostDialog from "@/components/CreatePostDialog";
+import { Button } from "@/components/ui/button";
 import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots, useAllWatchedTitles } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+
+type PostRow = {
+  id: string;
+  user_id: string;
+  content: string;
+  image_url: string | null;
+  title_slug: string | null;
+  spot_slug: string | null;
+  created_at: string;
+};
 
 type Tab = "map" | "saved" | "posts" | "lists";
 
