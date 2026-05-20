@@ -558,9 +558,67 @@ export default function Profile() {
             )}
 
             {activeTab === "posts" && (
-              <div className="glass rounded-2xl border border-border p-10 text-center">
-                <Grid3X3 className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm">No posts yet. Sharing your scene photos and trip notes is coming soon.</p>
+              <div>
+                {isOwnProfile && (
+                  <button
+                    onClick={() => setPostOpen(true)}
+                    className="w-full glass rounded-2xl border border-dashed border-border p-4 mb-4 flex items-center gap-3 text-left hover:border-amber/60 transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber/10 flex items-center justify-center text-amber">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Share a scene, memory, or recommendation…</span>
+                  </button>
+                )}
+                {posts.length === 0 ? (
+                  <div className="glass rounded-2xl border border-border p-10 text-center">
+                    <Grid3X3 className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No posts yet.{isOwnProfile && " Tap “Post” to share your first one."}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {posts.map((p, i) => (
+                      <motion.article
+                        key={p.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04 }}
+                        className="glass rounded-2xl border border-border overflow-hidden"
+                      >
+                        {p.image_url && (
+                          <img src={p.image_url} alt="" className="w-full max-h-96 object-cover" />
+                        )}
+                        <div className="p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed flex-1">{p.content}</p>
+                            {isOwnProfile && (
+                              <button
+                                onClick={() => handleDeletePost(p.id)}
+                                className="text-muted-foreground hover:text-red-400 transition-colors"
+                                title="Delete post"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                            {p.title_slug && (
+                              <Link to={`/title/${p.title_slug}`} className="px-2 py-0.5 rounded-full bg-amber/10 text-amber capitalize">
+                                {prettifySlug(p.title_slug)}
+                              </Link>
+                            )}
+                            {p.spot_slug && (
+                              <Link to={`/spot/${p.spot_slug}`} className="px-2 py-0.5 rounded-full bg-teal/10 text-teal capitalize">
+                                {p.spot_slug.replace(/-/g, " ")}
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      </motion.article>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -573,6 +631,14 @@ export default function Profile() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      <EditProfileDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        profile={profile}
+        onSaved={(p) => setProfile(p)}
+      />
+      <CreatePostDialog open={postOpen} onOpenChange={setPostOpen} onPosted={loadPosts} />
     </div>
   );
 }
