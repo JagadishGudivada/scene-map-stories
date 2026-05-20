@@ -1,12 +1,25 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X } from "lucide-react";
+import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X, Pencil, Plus, Globe, Trash2 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
+import EditProfileDialog, { type ProfileRow } from "@/components/EditProfileDialog";
+import CreatePostDialog from "@/components/CreatePostDialog";
+import { Button } from "@/components/ui/button";
 import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots, useAllWatchedTitles } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+
+type PostRow = {
+  id: string;
+  user_id: string;
+  content: string;
+  image_url: string | null;
+  title_slug: string | null;
+  spot_slug: string | null;
+  created_at: string;
+};
 
 type Tab = "map" | "saved" | "posts" | "lists";
 
@@ -32,13 +45,49 @@ export default function Profile() {
   const { slugs: visitedSpotSlugs, spots: visitedSpots, loading: visitedSpotsLoading, refresh: refreshVisitedSpots } = useAllVisitedSpots();
   const { slugs: watchedTitleSlugs, loading: watchedTitlesLoading } = useAllWatchedTitles();
 
-  // Derive real user identity from auth metadata
+  // Load profile row (own or by username param)
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [posts, setPosts] = useState<PostRow[]>([]);
+  const [editOpen, setEditOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
+
+  const loadProfile = useCallback(async () => {
+    let query = supabase.from("profiles").select("*").limit(1);
+    if (routeUsername) query = query.eq("username", routeUsername);
+    else if (authUser) query = query.eq("user_id", authUser.id);
+    else return;
+    const { data } = await query.maybeSingle();
+    if (data) setProfile(data as ProfileRow);
+  }, [routeUsername, authUser]);
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  const profileUserId = profile?.user_id ?? authUser?.id ?? null;
+  const isOwnProfile = !!authUser && (!routeUsername || profile?.user_id === authUser.id);
+
+  const loadPosts = useCallback(async () => {
+    if (!profileUserId) return;
+    const { data } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("user_id", profileUserId)
+      .order("created_at", { ascending: false });
+    setPosts((data ?? []) as PostRow[]);
+  }, [profileUserId]);
+
+  useEffect(() => { loadPosts(); }, [loadPosts]);
+
+  // Derive identity preferring profile row, falling back to auth metadata
   const meta = (authUser?.user_metadata ?? {}) as Record<string, any>;
   const displayName: string =
-    meta.full_name || meta.name || meta.user_name || authUser?.email?.split("@")[0] || "Your Profile";
+    profile?.display_name || meta.full_name || meta.name || meta.user_name || authUser?.email?.split("@")[0] || "Your Profile";
   const username: string =
-    routeUsername || meta.user_name || meta.preferred_username || authUser?.email?.split("@")[0] || "you";
-  const avatarUrl: string | undefined = meta.avatar_url || meta.picture;
+    profile?.username || routeUsername || meta.user_name || meta.preferred_username || authUser?.email?.split("@")[0] || "you";
+  const avatarUrl: string | undefined = profile?.avatar_url || meta.avatar_url || meta.picture;
+  const coverUrl: string | undefined = profile?.cover_url || undefined;
+  const bio: string | undefined = profile?.bio || undefined;
+  const userLocation: string | undefined = profile?.location || undefined;
+  const website: string | undefined = profile?.website || undefined;
   const initials = displayName
     .split(/\s+/)
     .map((p) => p[0])
@@ -46,6 +95,13 @@ export default function Profile() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const handleDeletePost = async (id: string) => {
+    if (!authUser) return;
+    await supabase.from("posts").delete().eq("id", id).eq("user_id", authUser.id);
+    toast({ title: "Post deleted" });
+    loadPosts();
+  };
 
   const visitedSpotsData = useMemo(
     () =>
@@ -154,6 +210,7 @@ export default function Profile() {
     <div className="min-h-screen bg-background pb-24 md:pb-8">
       {/* Cover */}
       <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-gradient-to-br from-amber/20 via-background to-teal/20">
+        {coverUrl && <img src={coverUrl} alt="" className="w-full h-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
       </div>
 
@@ -175,29 +232,50 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {isOwnProfile && (
+                <>
+                  <Button size="sm" onClick={() => setPostOpen(true)} className="rounded-xl">
+                    <Plus className="w-4 h-4" /> Post
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="rounded-xl">
+                    <Pencil className="w-4 h-4" /> Edit profile
+                  </Button>
+                </>
+              )}
               <button
                 onClick={handleShare}
                 className="h-9 px-4 rounded-xl glass border border-border text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
               >
                 <Share2 className="w-4 h-4" /> Share
               </button>
-              <Link
-                to="/auth"
-                className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                title="Account settings"
-              >
-                <Settings className="w-4 h-4" />
-              </Link>
+              {isOwnProfile && (
+                <Link
+                  to="/auth"
+                  className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  title="Account settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
 
-          {authUser?.email && (
-            <div className="mt-4 flex items-center gap-1.5 text-muted-foreground text-sm">
-              <MapPin className="w-4 h-4 text-amber" />
-              <span>{authUser.email}</span>
-            </div>
-          )}
+          {bio && <p className="mt-4 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{bio}</p>}
+
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-muted-foreground text-sm">
+            {userLocation && (
+              <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-amber" />{userLocation}</span>
+            )}
+            {website && (
+              <a href={website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-foreground">
+                <Globe className="w-4 h-4 text-teal" />{website.replace(/^https?:\/\//, "")}
+              </a>
+            )}
+            {isOwnProfile && authUser?.email && (
+              <span className="flex items-center gap-1.5 opacity-70">{authUser.email}</span>
+            )}
+          </div>
 
           {/* Stats */}
           <div className="flex items-center gap-0 mt-5 glass rounded-2xl border border-border divide-x divide-border overflow-hidden">
@@ -480,9 +558,67 @@ export default function Profile() {
             )}
 
             {activeTab === "posts" && (
-              <div className="glass rounded-2xl border border-border p-10 text-center">
-                <Grid3X3 className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm">No posts yet. Sharing your scene photos and trip notes is coming soon.</p>
+              <div>
+                {isOwnProfile && (
+                  <button
+                    onClick={() => setPostOpen(true)}
+                    className="w-full glass rounded-2xl border border-dashed border-border p-4 mb-4 flex items-center gap-3 text-left hover:border-amber/60 transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-amber/10 flex items-center justify-center text-amber">
+                      <Plus className="w-5 h-5" />
+                    </div>
+                    <span className="text-sm text-muted-foreground">Share a scene, memory, or recommendation…</span>
+                  </button>
+                )}
+                {posts.length === 0 ? (
+                  <div className="glass rounded-2xl border border-border p-10 text-center">
+                    <Grid3X3 className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">No posts yet.{isOwnProfile && " Tap “Post” to share your first one."}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {posts.map((p, i) => (
+                      <motion.article
+                        key={p.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04 }}
+                        className="glass rounded-2xl border border-border overflow-hidden"
+                      >
+                        {p.image_url && (
+                          <img src={p.image_url} alt="" className="w-full max-h-96 object-cover" />
+                        )}
+                        <div className="p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed flex-1">{p.content}</p>
+                            {isOwnProfile && (
+                              <button
+                                onClick={() => handleDeletePost(p.id)}
+                                className="text-muted-foreground hover:text-red-400 transition-colors"
+                                title="Delete post"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                            <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                            {p.title_slug && (
+                              <Link to={`/title/${p.title_slug}`} className="px-2 py-0.5 rounded-full bg-amber/10 text-amber capitalize">
+                                {prettifySlug(p.title_slug)}
+                              </Link>
+                            )}
+                            {p.spot_slug && (
+                              <Link to={`/spot/${p.spot_slug}`} className="px-2 py-0.5 rounded-full bg-teal/10 text-teal capitalize">
+                                {p.spot_slug.replace(/-/g, " ")}
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      </motion.article>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
@@ -495,6 +631,14 @@ export default function Profile() {
           </motion.div>
         </AnimatePresence>
       </div>
+
+      <EditProfileDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        profile={profile}
+        onSaved={(p) => setProfile(p)}
+      />
+      <CreatePostDialog open={postOpen} onOpenChange={setPostOpen} onPosted={loadPosts} />
     </div>
   );
 }
