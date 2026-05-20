@@ -210,6 +210,7 @@ export default function Profile() {
     <div className="min-h-screen bg-background pb-24 md:pb-8">
       {/* Cover */}
       <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-gradient-to-br from-amber/20 via-background to-teal/20">
+        {coverUrl && <img src={coverUrl} alt="" className="w-full h-full object-cover" />}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
       </div>
 
@@ -231,29 +232,50 @@ export default function Profile() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {isOwnProfile && (
+                <>
+                  <Button size="sm" onClick={() => setPostOpen(true)} className="rounded-xl">
+                    <Plus className="w-4 h-4" /> Post
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="rounded-xl">
+                    <Pencil className="w-4 h-4" /> Edit profile
+                  </Button>
+                </>
+              )}
               <button
                 onClick={handleShare}
                 className="h-9 px-4 rounded-xl glass border border-border text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
               >
                 <Share2 className="w-4 h-4" /> Share
               </button>
-              <Link
-                to="/auth"
-                className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                title="Account settings"
-              >
-                <Settings className="w-4 h-4" />
-              </Link>
+              {isOwnProfile && (
+                <Link
+                  to="/auth"
+                  className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                  title="Account settings"
+                >
+                  <Settings className="w-4 h-4" />
+                </Link>
+              )}
             </div>
           </div>
 
-          {authUser?.email && (
-            <div className="mt-4 flex items-center gap-1.5 text-muted-foreground text-sm">
-              <MapPin className="w-4 h-4 text-amber" />
-              <span>{authUser.email}</span>
-            </div>
-          )}
+          {bio && <p className="mt-4 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{bio}</p>}
+
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-muted-foreground text-sm">
+            {userLocation && (
+              <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-amber" />{userLocation}</span>
+            )}
+            {website && (
+              <a href={website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-foreground">
+                <Globe className="w-4 h-4 text-teal" />{website.replace(/^https?:\/\//, "")}
+              </a>
+            )}
+            {isOwnProfile && authUser?.email && (
+              <span className="flex items-center gap-1.5 opacity-70">{authUser.email}</span>
+            )}
+          </div>
 
           {/* Stats */}
           <div className="flex items-center gap-0 mt-5 glass rounded-2xl border border-border divide-x divide-border overflow-hidden">
