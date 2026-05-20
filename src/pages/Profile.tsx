@@ -45,13 +45,49 @@ export default function Profile() {
   const { slugs: visitedSpotSlugs, spots: visitedSpots, loading: visitedSpotsLoading, refresh: refreshVisitedSpots } = useAllVisitedSpots();
   const { slugs: watchedTitleSlugs, loading: watchedTitlesLoading } = useAllWatchedTitles();
 
-  // Derive real user identity from auth metadata
+  // Load profile row (own or by username param)
+  const [profile, setProfile] = useState<ProfileRow | null>(null);
+  const [posts, setPosts] = useState<PostRow[]>([]);
+  const [editOpen, setEditOpen] = useState(false);
+  const [postOpen, setPostOpen] = useState(false);
+
+  const loadProfile = useCallback(async () => {
+    let query = supabase.from("profiles").select("*").limit(1);
+    if (routeUsername) query = query.eq("username", routeUsername);
+    else if (authUser) query = query.eq("user_id", authUser.id);
+    else return;
+    const { data } = await query.maybeSingle();
+    if (data) setProfile(data as ProfileRow);
+  }, [routeUsername, authUser]);
+
+  useEffect(() => { loadProfile(); }, [loadProfile]);
+
+  const profileUserId = profile?.user_id ?? authUser?.id ?? null;
+  const isOwnProfile = !!authUser && (!routeUsername || profile?.user_id === authUser.id);
+
+  const loadPosts = useCallback(async () => {
+    if (!profileUserId) return;
+    const { data } = await supabase
+      .from("posts")
+      .select("*")
+      .eq("user_id", profileUserId)
+      .order("created_at", { ascending: false });
+    setPosts((data ?? []) as PostRow[]);
+  }, [profileUserId]);
+
+  useEffect(() => { loadPosts(); }, [loadPosts]);
+
+  // Derive identity preferring profile row, falling back to auth metadata
   const meta = (authUser?.user_metadata ?? {}) as Record<string, any>;
   const displayName: string =
-    meta.full_name || meta.name || meta.user_name || authUser?.email?.split("@")[0] || "Your Profile";
+    profile?.display_name || meta.full_name || meta.name || meta.user_name || authUser?.email?.split("@")[0] || "Your Profile";
   const username: string =
-    routeUsername || meta.user_name || meta.preferred_username || authUser?.email?.split("@")[0] || "you";
-  const avatarUrl: string | undefined = meta.avatar_url || meta.picture;
+    profile?.username || routeUsername || meta.user_name || meta.preferred_username || authUser?.email?.split("@")[0] || "you";
+  const avatarUrl: string | undefined = profile?.avatar_url || meta.avatar_url || meta.picture;
+  const coverUrl: string | undefined = profile?.cover_url || undefined;
+  const bio: string | undefined = profile?.bio || undefined;
+  const userLocation: string | undefined = profile?.location || undefined;
+  const website: string | undefined = profile?.website || undefined;
   const initials = displayName
     .split(/\s+/)
     .map((p) => p[0])
@@ -59,6 +95,13 @@ export default function Profile() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const handleDeletePost = async (id: string) => {
+    if (!authUser) return;
+    await supabase.from("posts").delete().eq("id", id).eq("user_id", authUser.id);
+    toast({ title: "Post deleted" });
+    loadPosts();
+  };
 
   const visitedSpotsData = useMemo(
     () =>
