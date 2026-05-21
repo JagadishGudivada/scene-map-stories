@@ -7,17 +7,12 @@ import Logo from "@/components/Logo";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
+import { supabase } from "@/integrations/supabase/client";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen } as const;
 
 const navLinks = [
   { label: "Map", href: "/map", icon: MapPin },
-];
-
-const mobileLinks = [
-  { label: "Home", href: "/", icon: Film },
-  { label: "Map", href: "/map", icon: MapPin },
-  { label: "Profile", href: "/u/elenarossi", icon: User },
 ];
 
 export default function Navigation() {
