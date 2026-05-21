@@ -18,12 +18,40 @@ const navLinks = [
 export default function Navigation() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { user, signOut } = useAuth();
   const { results: aiResults, isSearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Resolve the logged-in user's profile slug for the profile link
+  useEffect(() => {
+    let active = true;
+    if (!user) { setProfileUsername(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!active) return;
+      const fallback = (user.user_metadata as any)?.user_name
+        || (user.user_metadata as any)?.preferred_username
+        || user.email?.split("@")[0]
+        || "me";
+      setProfileUsername(data?.username || fallback);
+    })();
+    return () => { active = false; };
+  }, [user]);
+
+  const profileHref = profileUsername ? `/u/${profileUsername}` : "/auth";
+  const mobileLinks = [
+    { label: "Home", href: "/", icon: Film },
+    { label: "Map", href: "/map", icon: MapPin },
+    { label: "Profile", href: profileHref, icon: User },
+  ];
 
   // Trigger AI title search as user types
   useEffect(() => {
