@@ -246,7 +246,7 @@ export default function Navigation() {
               {/* Auth-dependent UI */}
               {user ? (
                 <div className="flex items-center gap-2">
-                  <Link to="/u/elenarossi" className="shrink-0">
+                  <Link to={profileHref} className="shrink-0">
                     <div className="w-9 h-9 rounded-full amber-ring overflow-hidden">
                       <img
                         src={user.user_metadata?.avatar_url || `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.email}`}
