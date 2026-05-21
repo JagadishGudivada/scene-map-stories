@@ -52,18 +52,40 @@ export default function Profile() {
   const [postOpen, setPostOpen] = useState(false);
 
   const loadProfile = useCallback(async () => {
-    let query = supabase.from("profiles").select("*").limit(1);
-    if (routeUsername) query = query.eq("username", routeUsername);
-    else if (authUser) query = query.eq("user_id", authUser.id);
-    else return;
-    const { data } = await query.maybeSingle();
-    if (data) setProfile(data as ProfileRow);
+    if (routeUsername) {
+      const { data } = await supabase.from("profiles").select("*").eq("username", routeUsername).maybeSingle();
+      if (data) { setProfile(data as ProfileRow); return; }
+      // Fallback: route username didn't match any profile. If the viewer is logged in
+      // and the route looks like their own derived username, load their profile by user_id.
+      if (authUser) {
+        const meta = (authUser.user_metadata ?? {}) as Record<string, any>;
+        const derived = (meta.user_name || meta.preferred_username || authUser.email?.split("@")[0] || "").toLowerCase();
+        if (derived && derived === routeUsername.toLowerCase()) {
+          const { data: own } = await supabase.from("profiles").select("*").eq("user_id", authUser.id).maybeSingle();
+          if (own) setProfile(own as ProfileRow);
+        }
+      }
+      return;
+    }
+    if (authUser) {
+      const { data } = await supabase.from("profiles").select("*").eq("user_id", authUser.id).maybeSingle();
+      if (data) setProfile(data as ProfileRow);
+    }
   }, [routeUsername, authUser]);
 
   useEffect(() => { loadProfile(); }, [loadProfile]);
 
-  const profileUserId = profile?.user_id ?? authUser?.id ?? null;
-  const isOwnProfile = !!authUser && (!routeUsername || profile?.user_id === authUser.id);
+  const profileUserId = profile?.user_id ?? (routeUsername ? null : authUser?.id) ?? null;
+  // Own profile when: viewing own loaded profile, OR viewing route that has no profile yet but matches the logged-in user.
+  const isOwnProfile = !!authUser && (
+    (profile && profile.user_id === authUser.id) ||
+    (!routeUsername) ||
+    (!profile && (() => {
+      const meta = (authUser.user_metadata ?? {}) as Record<string, any>;
+      const derived = (meta.user_name || meta.preferred_username || authUser.email?.split("@")[0] || "").toLowerCase();
+      return !!derived && derived === routeUsername.toLowerCase();
+    })())
+  );
 
   const loadPosts = useCallback(async () => {
     if (!profileUserId) return;
