@@ -14,6 +14,7 @@ type TmdbMovie = {
   genre_ids: number[];
   poster_path: string | null;
   backdrop_path: string | null;
+  original_language?: string;
 };
 
 type TmdbImageConfig = {
@@ -118,13 +119,15 @@ serve(async (req) => {
     const url = new URL("https://api.themoviedb.org/3/discover/movie");
     url.searchParams.set("api_key", TMDB_API_KEY);
     url.searchParams.set("language", "en-US");
+    url.searchParams.set("with_original_language", "en");
+    url.searchParams.set("region", "US");
     url.searchParams.set("include_adult", "false");
     url.searchParams.set("include_video", "false");
     url.searchParams.set("primary_release_year", String(year));
     url.searchParams.set("release_date.lte", today);
-    url.searchParams.set("vote_average.gte", "7.0");
-    url.searchParams.set("vote_count.gte", "80");
-    url.searchParams.set("sort_by", "vote_average.desc");
+    url.searchParams.set("vote_average.gte", "6.5");
+    url.searchParams.set("vote_count.gte", "200");
+    url.searchParams.set("sort_by", "popularity.desc");
     url.searchParams.set("page", "1");
 
     const tmdbRes = await fetch(url.toString());
@@ -140,11 +143,13 @@ serve(async (req) => {
       const relaxedUrl = new URL("https://api.themoviedb.org/3/discover/movie");
       relaxedUrl.searchParams.set("api_key", TMDB_API_KEY);
       relaxedUrl.searchParams.set("language", "en-US");
+      relaxedUrl.searchParams.set("with_original_language", "en");
+      relaxedUrl.searchParams.set("region", "US");
       relaxedUrl.searchParams.set("include_adult", "false");
       relaxedUrl.searchParams.set("include_video", "false");
       relaxedUrl.searchParams.set("primary_release_year", String(year));
       relaxedUrl.searchParams.set("release_date.lte", today);
-      relaxedUrl.searchParams.set("vote_count.gte", "20");
+      relaxedUrl.searchParams.set("vote_count.gte", "100");
       relaxedUrl.searchParams.set("sort_by", "popularity.desc");
       relaxedUrl.searchParams.set("page", "1");
 
@@ -165,7 +170,8 @@ serve(async (req) => {
     }
 
     const mapped = movies
-      .filter((m) => m.poster_path && m.release_date)
+      .filter((m) => m.poster_path && m.release_date && (!m.original_language || m.original_language === "en"))
+      .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
       .slice(0, 12)
       .map((m) => {
         const movieYear = Number((m.release_date || "").slice(0, 4)) || year;
