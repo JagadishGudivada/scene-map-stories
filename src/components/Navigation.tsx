@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen } as const;
 
 const navLinks = [
+  { label: "Explore", href: "/explore", icon: Compass },
   { label: "Map", href: "/map", icon: MapPin },
 ];
 
@@ -49,6 +50,7 @@ export default function Navigation() {
   const profileHref = profileUsername ? `/u/${profileUsername}` : "/auth";
   const mobileLinks = [
     { label: "Home", href: "/", icon: Film },
+    { label: "Explore", href: "/explore", icon: Compass },
     { label: "Map", href: "/map", icon: MapPin },
     { label: "Profile", href: profileHref, icon: User },
   ];
