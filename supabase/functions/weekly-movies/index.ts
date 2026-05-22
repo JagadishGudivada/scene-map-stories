@@ -14,6 +14,7 @@ type TmdbMovie = {
   genre_ids: number[];
   poster_path: string | null;
   backdrop_path: string | null;
+  original_language?: string;
 };
 
 type TmdbImageConfig = {
