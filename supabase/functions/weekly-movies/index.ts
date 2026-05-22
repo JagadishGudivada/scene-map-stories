@@ -142,11 +142,13 @@ serve(async (req) => {
       const relaxedUrl = new URL("https://api.themoviedb.org/3/discover/movie");
       relaxedUrl.searchParams.set("api_key", TMDB_API_KEY);
       relaxedUrl.searchParams.set("language", "en-US");
+      relaxedUrl.searchParams.set("with_original_language", "en");
+      relaxedUrl.searchParams.set("region", "US");
       relaxedUrl.searchParams.set("include_adult", "false");
       relaxedUrl.searchParams.set("include_video", "false");
       relaxedUrl.searchParams.set("primary_release_year", String(year));
       relaxedUrl.searchParams.set("release_date.lte", today);
-      relaxedUrl.searchParams.set("vote_count.gte", "20");
+      relaxedUrl.searchParams.set("vote_count.gte", "100");
       relaxedUrl.searchParams.set("sort_by", "popularity.desc");
       relaxedUrl.searchParams.set("page", "1");
 
