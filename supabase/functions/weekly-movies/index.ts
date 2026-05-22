@@ -114,7 +114,11 @@ serve(async (req) => {
     const posterSize = getLargestNonOriginalSize(imageConfig.poster_sizes, "w780");
     const backdropSize = getLargestNonOriginalSize(imageConfig.backdrop_sizes, "w1280");
 
-    const today = new Date().toISOString().slice(0, 10);
+    const todayDate = new Date();
+    const today = todayDate.toISOString().slice(0, 10);
+    const fromDate = new Date(todayDate);
+    fromDate.setMonth(fromDate.getMonth() - 24);
+    const fromStr = fromDate.toISOString().slice(0, 10);
 
     const url = new URL("https://api.themoviedb.org/3/discover/movie");
     url.searchParams.set("api_key", TMDB_API_KEY);
@@ -123,10 +127,10 @@ serve(async (req) => {
     url.searchParams.set("region", "US");
     url.searchParams.set("include_adult", "false");
     url.searchParams.set("include_video", "false");
-    url.searchParams.set("primary_release_year", String(year));
+    url.searchParams.set("release_date.gte", fromStr);
     url.searchParams.set("release_date.lte", today);
     url.searchParams.set("vote_average.gte", "6.5");
-    url.searchParams.set("vote_count.gte", "200");
+    url.searchParams.set("vote_count.gte", "1000");
     url.searchParams.set("sort_by", "popularity.desc");
     url.searchParams.set("page", "1");
 
@@ -147,9 +151,9 @@ serve(async (req) => {
       relaxedUrl.searchParams.set("region", "US");
       relaxedUrl.searchParams.set("include_adult", "false");
       relaxedUrl.searchParams.set("include_video", "false");
-      relaxedUrl.searchParams.set("primary_release_year", String(year));
+      relaxedUrl.searchParams.set("release_date.gte", fromStr);
       relaxedUrl.searchParams.set("release_date.lte", today);
-      relaxedUrl.searchParams.set("vote_count.gte", "100");
+      relaxedUrl.searchParams.set("vote_count.gte", "500");
       relaxedUrl.searchParams.set("sort_by", "popularity.desc");
       relaxedUrl.searchParams.set("page", "1");
 
