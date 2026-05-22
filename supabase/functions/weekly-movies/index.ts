@@ -156,6 +156,7 @@ serve(async (req) => {
       relaxedUrl.searchParams.set("release_date.lte", today);
       relaxedUrl.searchParams.set("vote_count.gte", "500");
       relaxedUrl.searchParams.set("sort_by", "popularity.desc");
+      relaxedUrl.searchParams.set("without_genres", "16,99");
       relaxedUrl.searchParams.set("page", "1");
 
       const relaxedRes = await fetch(relaxedUrl.toString());
