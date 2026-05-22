@@ -132,6 +132,7 @@ serve(async (req) => {
     url.searchParams.set("vote_average.gte", "6.5");
     url.searchParams.set("vote_count.gte", "1000");
     url.searchParams.set("sort_by", "popularity.desc");
+    url.searchParams.set("without_genres", "16,99");
     url.searchParams.set("page", "1");
 
     const tmdbRes = await fetch(url.toString());
