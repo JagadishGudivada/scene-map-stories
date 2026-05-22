@@ -170,7 +170,8 @@ serve(async (req) => {
     }
 
     const mapped = movies
-      .filter((m) => m.poster_path && m.release_date)
+      .filter((m) => m.poster_path && m.release_date && (!m.original_language || m.original_language === "en"))
+      .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
       .slice(0, 12)
       .map((m) => {
         const movieYear = Number((m.release_date || "").slice(0, 4)) || year;
