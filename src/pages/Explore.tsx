@@ -1,227 +1,185 @@
-import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, Sparkles, TrendingUp, Hash } from "lucide-react";
-import { mockTitles, mockPosts, type MediaType } from "@/lib/mockData";
-import CinemaCard from "@/components/CinemaCard";
-import PostCard from "@/components/PostCard";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Compass, MapPin, Film, Loader2, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
-const genres = ["All", "Drama", "Romance", "Crime", "Mystery", "Musical", "Fantasy", "Self-help"];
-const countries = ["All", "Japan", "UK", "USA", "Greece", "Scotland", "Italy", "France"];
-const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
-const eras = ["All", "2000s", "2010s", "Pre-2000"];
+type PostRow = {
+  id: string;
+  user_id: string;
+  content: string;
+  image_url: string | null;
+  location_slug: string | null;
+  title_slug: string | null;
+  spot_slug: string | null;
+  created_at: string;
+};
 
-const trendingTags = [
-  { tag: "#TokyoFilmSpots", count: "2.4k" },
-  { tag: "#LondonOnScreen", count: "1.8k" },
-  { tag: "#CinemaTravel", count: "5.1k" },
-  { tag: "#ScottishHighlands", count: "980" },
-  { tag: "#GreekIslands", count: "1.3k" },
-  { tag: "#FilmPilgrimage", count: "3.2k" },
-  { tag: "#BookLocations", count: "720" },
-  { tag: "#RomeEternal", count: "1.1k" },
-];
+type ProfileRow = {
+  user_id: string;
+  username: string | null;
+  display_name: string | null;
+  avatar_url: string | null;
+};
+
+function timeAgo(iso: string) {
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 7) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString();
+}
 
 export default function Explore() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedGenre, setSelectedGenre] = useState("All");
-  const [selectedCountry, setSelectedCountry] = useState("All");
-  const [selectedType, setSelectedType] = useState<"All" | MediaType>("All");
-  const [selectedEra, setSelectedEra] = useState("All");
+  const { user } = useAuth();
+  const [posts, setPosts] = useState<PostRow[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, ProfileRow>>({});
+  const [loading, setLoading] = useState(true);
 
-  const filteredTitles = useMemo(() => {
-    return mockTitles.filter((t) => {
-      if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-      if (selectedType !== "All" && t.type !== selectedType) return false;
-      if (selectedGenre !== "All" && !t.genres.includes(selectedGenre)) return false;
-      if (selectedEra !== "All") {
-        if (selectedEra === "2000s" && (t.year < 2000 || t.year >= 2010)) return false;
-        if (selectedEra === "2010s" && (t.year < 2010 || t.year >= 2020)) return false;
-        if (selectedEra === "Pre-2000" && t.year >= 2000) return false;
-      }
-      return true;
-    });
-  }, [searchQuery, selectedType, selectedGenre, selectedEra]);
+  const load = async () => {
+    setLoading(true);
+    const { data: postData, error } = await supabase
+      .from("posts")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
 
-  const hasActiveFilters = selectedGenre !== "All" || selectedCountry !== "All" || selectedType !== "All" || selectedEra !== "All";
+    if (error) {
+      toast({ title: "Failed to load posts", description: error.message, variant: "destructive" });
+      setLoading(false);
+      return;
+    }
 
-  const clearFilters = () => {
-    setSelectedGenre("All");
-    setSelectedCountry("All");
-    setSelectedType("All");
-    setSelectedEra("All");
+    const rows = (postData || []) as PostRow[];
+    setPosts(rows);
+
+    const userIds = Array.from(new Set(rows.map((p) => p.user_id)));
+    if (userIds.length > 0) {
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("user_id, username, display_name, avatar_url")
+        .in("user_id", userIds);
+      const map: Record<string, ProfileRow> = {};
+      (profileData || []).forEach((p: any) => { map[p.user_id] = p; });
+      setProfiles(map);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const handleDelete = async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase.from("posts").delete().eq("id", id).eq("user_id", user.id);
+    if (error) {
+      toast({ title: "Could not delete", description: error.message, variant: "destructive" });
+      return;
+    }
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+    toast({ title: "Post deleted" });
   };
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-24">
-        {/* Header */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-24">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
-          <h1 className="font-serif text-4xl text-foreground mb-2">Explore</h1>
-          <p className="text-muted-foreground text-sm">Discover filming locations from titles you love</p>
+          <div className="flex items-center gap-2 mb-2">
+            <Compass className="w-5 h-5 text-amber" />
+            <h1 className="font-serif text-4xl text-foreground">Explore</h1>
+          </div>
+          <p className="text-muted-foreground text-sm">Latest memories shared by the community</p>
         </motion.div>
 
-        {/* Expanding Search Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mb-6"
-        >
-          <div
-            className={`relative transition-all duration-300 ${
-              searchFocused ? "ring-2 ring-amber/50" : ""
-            } rounded-2xl`}
-          >
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground z-10" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => setSearchFocused(true)}
-              onBlur={() => setSearchFocused(false)}
-              placeholder="Search titles, locations, users, lists..."
-              className="w-full h-14 pl-12 pr-24 rounded-2xl bg-card text-foreground text-sm border border-border outline-none placeholder:text-muted-foreground transition-all"
-            />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              {searchQuery && (
-                <button onClick={() => setSearchQuery("")} className="p-1.5 rounded-lg hover:bg-muted/50">
-                  <X className="w-4 h-4 text-muted-foreground" />
-                </button>
-              )}
-              <button
-                onClick={() => setShowFilters(!showFilters)}
-                className={`p-2 rounded-xl transition-all ${
-                  showFilters || hasActiveFilters
-                    ? "bg-amber/10 text-amber border border-amber/30"
-                    : "glass border border-border text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-              </button>
-            </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-6 h-6 text-amber animate-spin" />
           </div>
-        </motion.div>
-
-        {/* Filter Panels */}
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden mb-6"
-            >
-              <div className="glass rounded-2xl p-5 border border-border space-y-4">
-                {/* Media Type */}
-                <FilterRow label="Type" options={mediaTypes} selected={selectedType} onSelect={setSelectedType} />
-                <FilterRow label="Genre" options={genres} selected={selectedGenre} onSelect={setSelectedGenre} />
-                <FilterRow label="Country" options={countries} selected={selectedCountry} onSelect={setSelectedCountry} />
-                <FilterRow label="Era" options={eras} selected={selectedEra} onSelect={setSelectedEra} />
-
-                {hasActiveFilters && (
-                  <button onClick={clearFilters} className="text-xs text-amber hover:underline mt-2">
-                    Clear all filters
-                  </button>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Trending Hashtags */}
-        <section className="mb-10">
-          <div className="flex items-center gap-2 mb-4">
-            <Hash className="w-4 h-4 text-amber" />
-            <h2 className="font-serif text-lg text-foreground">Trending</h2>
+        ) : posts.length === 0 ? (
+          <div className="text-center py-16 glass rounded-2xl border border-border">
+            <p className="text-muted-foreground text-sm">No posts yet. Be the first to share!</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {trendingTags.map((t) => (
-              <button
-                key={t.tag}
-                onClick={() => setSearchQuery(t.tag.replace("#", ""))}
-                className="glass rounded-full px-4 py-2 border border-border text-sm text-foreground hover:border-amber/30 hover:text-amber transition-all group"
-              >
-                <span className="text-amber group-hover:text-amber">{t.tag}</span>
-                <span className="text-muted-foreground ml-1.5 text-xs">{t.count}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        ) : (
+          <div className="space-y-6">
+            {posts.map((post, i) => {
+              const profile = profiles[post.user_id];
+              const displayName = profile?.display_name || profile?.username || "Anonymous";
+              const username = profile?.username || "user";
+              const avatar = profile?.avatar_url || `https://api.dicebear.com/9.x/avataaars/svg?seed=${post.user_id}`;
+              const isOwn = user?.id === post.user_id;
 
-        {/* For You Recommendations */}
-        <section className="mb-12">
-          <div className="flex items-center gap-2 mb-5">
-            <Sparkles className="w-5 h-5 text-amber" />
-            <h2 className="font-serif text-2xl text-foreground">For You</h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {mockPosts.map((post, i) => (
-              <PostCard key={post.id} post={post} delay={i * 0.08} />
-            ))}
-          </div>
-        </section>
+              return (
+                <motion.article
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: i * 0.05 }}
+                  className="rounded-2xl overflow-hidden bg-card border border-border shadow-card"
+                >
+                  <div className="flex items-center gap-3 p-4">
+                    <Link to={`/u/${username}`} className="shrink-0">
+                      <div className="w-10 h-10 rounded-full overflow-hidden amber-ring">
+                        <img src={avatar} alt={displayName} className="w-full h-full object-cover bg-muted" />
+                      </div>
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <Link to={`/u/${username}`} className="font-semibold text-sm text-foreground hover:text-amber transition-colors">
+                        {displayName}
+                      </Link>
+                      <p className="text-xs text-muted-foreground">@{username} · {timeAgo(post.created_at)}</p>
+                    </div>
+                    {isOwn && (
+                      <button
+                        onClick={() => handleDelete(post.id)}
+                        className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        aria-label="Delete post"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
 
-        {/* Title Results */}
-        <section className="mb-12">
-          <div className="flex items-center gap-2 mb-5">
-            <TrendingUp className="w-5 h-5 text-teal" />
-            <h2 className="font-serif text-2xl text-foreground">
-              {searchQuery || hasActiveFilters ? "Results" : "All Titles"}
-            </h2>
-            <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-border">
-              {filteredTitles.length}
-            </span>
+                  {post.image_url && (
+                    <div className="relative overflow-hidden bg-muted">
+                      <img src={post.image_url} alt={post.content.slice(0, 60)} className="w-full max-h-[600px] object-cover" />
+                      {post.location_slug && (
+                        <div className="absolute bottom-3 left-3">
+                          <Link to={`/location/${post.location_slug}`} className="glass rounded-full px-3 py-1.5 flex items-center gap-1.5 hover:bg-amber/10 transition-colors">
+                            <MapPin className="w-3 h-3 text-amber" />
+                            <span className="text-xs font-medium text-foreground">{post.location_slug.replace(/-/g, " ")}</span>
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="px-4 py-3">
+                    <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{post.content}</p>
+                    <div className="flex flex-wrap items-center gap-3 mt-3">
+                      {post.location_slug && !post.image_url && (
+                        <Link to={`/location/${post.location_slug}`} className="flex items-center gap-1.5 text-xs text-amber hover:underline">
+                          <MapPin className="w-3 h-3" />
+                          {post.location_slug.replace(/-/g, " ")}
+                        </Link>
+                      )}
+                      {post.title_slug && (
+                        <Link to={`/title/${post.title_slug}`} className="flex items-center gap-1.5 text-xs text-teal hover:underline">
+                          <Film className="w-3 h-3" />
+                          {post.title_slug.replace(/-/g, " ")}
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                </motion.article>
+              );
+            })}
           </div>
-
-          {filteredTitles.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredTitles.map((title, i) => (
-                <CinemaCard key={title.id} title={title} size="md" delay={i * 0.06} />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-16 glass rounded-2xl border border-border">
-              <p className="text-muted-foreground text-sm">No titles match your filters</p>
-              <button onClick={clearFilters} className="mt-3 text-amber text-sm hover:underline">
-                Clear filters
-              </button>
-            </div>
-          )}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function FilterRow({
-  label,
-  options,
-  selected,
-  onSelect,
-}: {
-  label: string;
-  options: string[];
-  selected: string;
-  onSelect: (v: any) => void;
-}) {
-  return (
-    <div>
-      <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2 block">{label}</span>
-      <div className="flex flex-wrap gap-2">
-        {options.map((opt) => (
-          <button
-            key={opt}
-            onClick={() => onSelect(opt)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              selected === opt
-                ? "bg-amber/15 text-amber border border-amber/30"
-                : "bg-muted/50 text-muted-foreground border border-border hover:border-border hover:text-foreground"
-            }`}
-          >
-            {opt}
-          </button>
-        ))}
+        )}
       </div>
     </div>
   );
