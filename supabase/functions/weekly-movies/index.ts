@@ -118,13 +118,15 @@ serve(async (req) => {
     const url = new URL("https://api.themoviedb.org/3/discover/movie");
     url.searchParams.set("api_key", TMDB_API_KEY);
     url.searchParams.set("language", "en-US");
+    url.searchParams.set("with_original_language", "en");
+    url.searchParams.set("region", "US");
     url.searchParams.set("include_adult", "false");
     url.searchParams.set("include_video", "false");
     url.searchParams.set("primary_release_year", String(year));
     url.searchParams.set("release_date.lte", today);
-    url.searchParams.set("vote_average.gte", "7.0");
-    url.searchParams.set("vote_count.gte", "80");
-    url.searchParams.set("sort_by", "vote_average.desc");
+    url.searchParams.set("vote_average.gte", "6.5");
+    url.searchParams.set("vote_count.gte", "200");
+    url.searchParams.set("sort_by", "popularity.desc");
     url.searchParams.set("page", "1");
 
     const tmdbRes = await fetch(url.toString());
