@@ -132,6 +132,7 @@ serve(async (req) => {
     url.searchParams.set("vote_average.gte", "6.5");
     url.searchParams.set("vote_count.gte", "1000");
     url.searchParams.set("sort_by", "popularity.desc");
+    url.searchParams.set("without_genres", "16,99");
     url.searchParams.set("page", "1");
 
     const tmdbRes = await fetch(url.toString());
@@ -155,6 +156,7 @@ serve(async (req) => {
       relaxedUrl.searchParams.set("release_date.lte", today);
       relaxedUrl.searchParams.set("vote_count.gte", "500");
       relaxedUrl.searchParams.set("sort_by", "popularity.desc");
+      relaxedUrl.searchParams.set("without_genres", "16,99");
       relaxedUrl.searchParams.set("page", "1");
 
       const relaxedRes = await fetch(relaxedUrl.toString());
@@ -174,7 +176,7 @@ serve(async (req) => {
     }
 
     const mapped = movies
-      .filter((m) => m.poster_path && m.release_date && (!m.original_language || m.original_language === "en"))
+      .filter((m) => m.poster_path && m.release_date && (!m.original_language || m.original_language === "en") && !(m.genre_ids || []).includes(16) && !(m.genre_ids || []).includes(99))
       .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
       .slice(0, 12)
       .map((m) => {
