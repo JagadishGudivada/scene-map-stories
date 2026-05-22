@@ -176,7 +176,7 @@ serve(async (req) => {
     }
 
     const mapped = movies
-      .filter((m) => m.poster_path && m.release_date && (!m.original_language || m.original_language === "en"))
+      .filter((m) => m.poster_path && m.release_date && (!m.original_language || m.original_language === "en") && !(m.genre_ids || []).includes(16) && !(m.genre_ids || []).includes(99))
       .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
       .slice(0, 12)
       .map((m) => {
