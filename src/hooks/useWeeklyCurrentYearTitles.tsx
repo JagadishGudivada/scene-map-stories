@@ -25,7 +25,7 @@ type TitleResult = {
   genres?: string[];
 };
 
-const CACHE_KEY = "weekly-current-year-titles-v6";
+const CACHE_KEY = "weekly-current-year-titles-v7";
 
 function getNumericWidth(size: string): number | null {
   const match = /^w(\d+)$/.exec(size);
