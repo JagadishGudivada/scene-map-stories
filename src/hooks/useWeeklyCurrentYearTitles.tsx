@@ -25,7 +25,7 @@ type TitleResult = {
   genres?: string[];
 };
 
-const CACHE_KEY = "weekly-current-year-titles-v5";
+const CACHE_KEY = "weekly-current-year-titles-v6";
 
 function getNumericWidth(size: string): number | null {
   const match = /^w(\d+)$/.exec(size);
@@ -210,14 +210,13 @@ export function useWeeklyCurrentYearTitles() {
           genres: Array.isArray(item.genres) ? item.genres.map((g: unknown) => String(g)).slice(0, 3) : undefined,
         }));
 
-        const currentYearTitles = apiTitles.filter((item) => item.year === currentYear);
-        const topRatedCurrentYear = currentYearTitles
-          .filter((item) => (item.rating ?? 0) >= 7.0)
+        const recentHits = apiTitles
+          .filter((item) => item.year >= currentYear - 2 && (item.rating ?? 0) >= 6.5)
           .slice(0, 8);
 
-        const selectedTitles = (topRatedCurrentYear.length > 0 ? topRatedCurrentYear : currentYearTitles).slice(0, 8);
+        const selectedTitles = (recentHits.length > 0 ? recentHits : apiTitles).slice(0, 8);
         if (selectedTitles.length === 0) {
-          throw new Error("No current-year titles returned");
+          throw new Error("No recent hit titles returned");
         }
 
         const mapped = selectedTitles.map((item) => mapToTitleCard(item));
