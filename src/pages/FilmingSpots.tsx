@@ -5,7 +5,7 @@ import {
   MapPin, Search, X, ArrowRight, ChevronRight, Film, Tv, BookOpen, Camera, Navigation2,
 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
-import type { MapPin as MapPinType } from "@/components/LeafletMap";
+import type { AppMap, MapPin as MapPinType } from "@/components/LeafletMap";
 import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
@@ -24,7 +24,7 @@ export default function FilmingSpots() {
   const [spotSearch, setSpotSearch] = useState("");
   const [activeSpot, setActiveSpot] = useState<number | null>(null);
   const [selectedSpot, setSelectedSpot] = useState<FilmingSpotData | null>(null);
-  const [mapInstance, setMapInstance] = useState<L.Map | null>(null);
+  const [mapInstance, setMapInstance] = useState<AppMap | null>(null);
 
   const filteredSpots = useMemo(() => {
     if (!spotSearch.trim()) return city.spots;
@@ -58,7 +58,7 @@ export default function FilmingSpots() {
   function handleSpotClick(spot: FilmingSpotData) {
     setSelectedSpot(spot);
     setActiveSpot(spot.id);
-    mapInstance?.flyTo([spot.lat, spot.lng], 16, { duration: 1.2 });
+    mapInstance?.flyTo({ center: [spot.lng, spot.lat], zoom: 16, duration: 1200 });
   }
 
   function handlePinClick(pin: MapPinType) {

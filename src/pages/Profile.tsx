@@ -315,12 +315,13 @@ export default function Profile() {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border mb-6 overflow-x-auto no-scrollbar">
+        <div className="relative z-20 flex border-b border-border mb-6 overflow-x-auto no-scrollbar bg-background">
           {tabs.map((tab) => (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap ${
+              className={`touch-manipulation flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap ${
                 activeTab === tab.id
                   ? "border-amber text-amber"
                   : "border-transparent text-muted-foreground hover:text-foreground"

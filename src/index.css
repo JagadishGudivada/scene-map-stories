@@ -248,46 +248,28 @@
     border: 1px solid hsl(270 40% 50% / 0.3);
   }
 
-  /* Leaflet dark theme overrides */
-  .leaflet-popup-content-wrapper {
+  /* MapLibre dark theme overrides */
+  .maplibregl-popup-content {
     background: transparent !important;
     box-shadow: none !important;
     border-radius: 8px !important;
     padding: 0 !important;
-  }
-  .leaflet-popup-tip {
-    background: hsl(var(--card)) !important;
-  }
-  .leaflet-popup-content {
     margin: 0 !important;
   }
-  .sarevista-popup .leaflet-popup-content-wrapper {
+  .maplibregl-popup-tip {
+    background: hsl(var(--card)) !important;
+  }
+  .sarevista-popup .maplibregl-popup-content {
     background: transparent !important;
   }
-  .leaflet-control-zoom a {
+  .maplibregl-ctrl-group button {
     background: hsl(var(--card)) !important;
     color: hsl(var(--foreground)) !important;
     border-color: hsl(var(--border)) !important;
   }
-  .leaflet-control-zoom a:hover {
+  .maplibregl-ctrl-group button:hover {
     background: hsl(var(--muted)) !important;
   }
-}
-
-/* Override default leaflet.markercluster styles */
-.marker-cluster-small,
-.marker-cluster-medium,
-.marker-cluster-large {
-  background: transparent !important;
-}
-.marker-cluster-small div,
-.marker-cluster-medium div,
-.marker-cluster-large div {
-  background: transparent !important;
-}
-.custom-cluster-icon {
-  background: transparent !important;
-  border: none !important;
 }
 
 /* Highlight pulse ring for search fly-to */

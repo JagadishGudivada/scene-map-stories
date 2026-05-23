@@ -2,8 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
-import L from "leaflet";
-import LeafletMap, { type MapPin as MapPinType } from "@/components/LeafletMap";
+import LeafletMap, { type AppMap, type MapPin as MapPinType } from "@/components/LeafletMap";
 import MapSidePanel from "@/components/MapSidePanel";
 import { allMapPins } from "@/lib/mapData";
 import type { MediaType } from "@/lib/mockData";
@@ -29,7 +28,7 @@ export default function MapPage() {
   const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
   const [pathMode, setPathMode] = useState(false);
   const [highlightedPin, setHighlightedPin] = useState<MapPinType | null>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
+  const mapInstanceRef = useRef<AppMap | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
   const { pins: weeklyPins, loading: weeklyLoading } = useWeeklyReleaseLocations();
@@ -53,7 +52,7 @@ export default function MapPage() {
       const lat = parseFloat(urlLat);
       const lng = parseFloat(urlLng);
       if (!isNaN(lat) && !isNaN(lng) && mapInstanceRef.current) {
-        mapInstanceRef.current.flyTo([lat, lng], 14, { duration: 1.5 });
+        mapInstanceRef.current.flyTo({ center: [lng, lat], zoom: 14, duration: 1500 });
       }
     }
   }, [searchParams, searchLocations]);
@@ -66,7 +65,7 @@ export default function MapPage() {
       const lat = parseFloat(urlLat);
       const lng = parseFloat(urlLng);
       if (!isNaN(lat) && !isNaN(lng)) {
-        mapInstanceRef.current.flyTo([lat, lng], 14, { duration: 1.5 });
+        mapInstanceRef.current.flyTo({ center: [lng, lat], zoom: 14, duration: 1500 });
       }
     }
   }, [searchParams]);
@@ -127,8 +126,25 @@ export default function MapPage() {
   // When AI results come in, fit map to show them
   useEffect(() => {
     if (aiResults.length > 0 && mapInstanceRef.current) {
-      const bounds = L.latLngBounds(aiResults.map((p) => [p.lat, p.lng]));
-      mapInstanceRef.current.flyToBounds(bounds, { padding: [60, 60], duration: 1.5 });
+      let minLat = aiResults[0].lat;
+      let maxLat = aiResults[0].lat;
+      let minLng = aiResults[0].lng;
+      let maxLng = aiResults[0].lng;
+
+      aiResults.forEach((point) => {
+        minLat = Math.min(minLat, point.lat);
+        maxLat = Math.max(maxLat, point.lat);
+        minLng = Math.min(minLng, point.lng);
+        maxLng = Math.max(maxLng, point.lng);
+      });
+
+      mapInstanceRef.current.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        { padding: 60, duration: 1500 }
+      );
     }
   }, [aiResults]);
 
@@ -149,7 +165,7 @@ export default function MapPage() {
     clearResults();
     setSelectedPin(pin);
     setHighlightedPin(pin);
-    mapInstanceRef.current?.flyTo([pin.lat, pin.lng], 14, { duration: 1.5 });
+    mapInstanceRef.current?.flyTo({ center: [pin.lng, pin.lat], zoom: 14, duration: 1500 });
     setTimeout(() => setHighlightedPin(null), 2500);
   }, [clearResults]);
 
@@ -158,7 +174,7 @@ export default function MapPage() {
     setHighlightedPin(null);
   }, []);
 
-  const handleMapReady = useCallback((map: L.Map) => {
+  const handleMapReady = useCallback((map: AppMap) => {
     mapInstanceRef.current = map;
   }, []);
 
