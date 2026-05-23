@@ -35,12 +35,6 @@ const typeColors: Record<MediaType, string> = {
   Book: "hsl(270, 60%, 70%)",
 };
 
-const typeSvgPaths: Record<MediaType, string> = {
-  Movie: `<path d="M7 4v16l6-4 6 4V4a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><rect x="9" y="6" width="2" height="2" rx=".5" fill="currentColor"/><rect x="13" y="6" width="2" height="2" rx=".5" fill="currentColor"/><rect x="9" y="10" width="2" height="2" rx=".5" fill="currentColor"/><rect x="13" y="10" width="2" height="2" rx=".5" fill="currentColor"/>`,
-  Series: `<rect x="2" y="7" width="20" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/><polyline points="17 2 12 7 7 2" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
-  Book: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
-};
-
 interface LeafletMapProps {
   pins: MapPin[];
   className?: string;
@@ -96,33 +90,6 @@ function getMapStyle(isDark: boolean): StyleSpecification {
   };
 }
 
-function createCategoryMarkerElement(type: MediaType, isDark: boolean, visited = false, country?: string) {
-  const visitedColor = getCountryColor(country);
-  const color = visited ? visitedColor : typeColors[type];
-  const bg = isDark ? "hsl(0,0%,8%)" : "hsl(0,0%,100%)";
-  const border = visited ? visitedColor : isDark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.12)";
-  const ring = visited
-    ? `0 0 0 2px ${visitedColor}55, 0 0 18px ${color}66, 0 4px 12px rgba(0,0,0,0.35)`
-    : `0 0 16px ${color}40, 0 4px 12px rgba(0,0,0,0.3)`;
-
-  const el = document.createElement("button");
-  el.type = "button";
-  el.className = "custom-category-pin";
-  el.style.display = "flex";
-  el.style.alignItems = "center";
-  el.style.justifyContent = "center";
-  el.style.width = "36px";
-  el.style.height = "36px";
-  el.style.borderRadius = "12px";
-  el.style.background = bg;
-  el.style.border = `2px solid ${border}`;
-  el.style.boxShadow = ring;
-  el.style.cursor = "pointer";
-  el.style.transition = "transform 0.2s";
-  el.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" style="color:${color};">${typeSvgPaths[type]}</svg>`;
-  return el;
-}
-
 function removeLayerAndSource(map: AppMap, layerId: string, sourceId: string) {
   try {
     if (map.getLayer(layerId)) map.removeLayer(layerId);
@@ -155,8 +122,8 @@ export default function LeafletMap({
 }: LeafletMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<AppMap | null>(null);
-  const pinMarkersRef = useRef<maplibregl.Marker[]>([]);
   const visitedLabelsRef = useRef<maplibregl.Marker[]>([]);
+  const mapPopupRef = useRef<maplibregl.Popup | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
@@ -176,8 +143,8 @@ export default function LeafletMap({
     onMapReady?.(map);
 
     return () => {
-      pinMarkersRef.current.forEach((marker) => marker.remove());
-      pinMarkersRef.current = [];
+      mapPopupRef.current?.remove();
+      mapPopupRef.current = null;
       visitedLabelsRef.current.forEach((marker) => marker.remove());
       visitedLabelsRef.current = [];
       map.remove();
@@ -189,26 +156,213 @@ export default function LeafletMap({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    pinMarkersRef.current.forEach((marker) => marker.remove());
-    pinMarkersRef.current = [];
+    const SOURCE_ID = "pins-source";
+    const CLUSTER_LAYER_ID = "pins-clusters-layer";
+    const CLUSTER_COUNT_LAYER_ID = "pins-cluster-count-layer";
+    const UNCLUSTERED_LAYER_ID = "pins-unclustered-layer";
 
-    pins.forEach((pin) => {
-      const el = createCategoryMarkerElement(pin.type, isDark, pin.visited, pin.country);
-      const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: true, offset: 16 }).setHTML(
-        `<span>${pin.visited ? "✓ " : ""}${pin.label}</span>`
-      );
+    const clearPinLayers = () => {
+      mapPopupRef.current?.remove();
+      mapPopupRef.current = null;
 
-      if (onPinClick) {
-        el.addEventListener("click", () => onPinClick(pin));
+      try {
+        if (map.getLayer(CLUSTER_COUNT_LAYER_ID)) map.removeLayer(CLUSTER_COUNT_LAYER_ID);
+        if (map.getLayer(CLUSTER_LAYER_ID)) map.removeLayer(CLUSTER_LAYER_ID);
+        if (map.getLayer(UNCLUSTERED_LAYER_ID)) map.removeLayer(UNCLUSTERED_LAYER_ID);
+        if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+      } catch {
+        // Map/style can already be disposed during theme swap unmount.
+      }
+    };
+
+    const handleClusterClick = (event: any) => {
+      const features = map.queryRenderedFeatures(event.point, { layers: [CLUSTER_LAYER_ID, CLUSTER_COUNT_LAYER_ID] });
+      if (!features.length) return;
+
+      const feature = features[0];
+      const clusterId = feature.properties?.cluster_id;
+      if (clusterId == null) return;
+
+      const source = map.getSource(SOURCE_ID) as any;
+      source?.getClusterExpansionZoom(clusterId, (err: Error | null, expansionZoom: number) => {
+        if (err) return;
+        const geometry = feature.geometry as any;
+        if (!geometry?.coordinates) return;
+        map.easeTo({ center: geometry.coordinates, zoom: expansionZoom + 0.4, duration: 500 });
+      });
+    };
+
+    const handleUnclusteredPinClick = (event: any) => {
+      const features = map.queryRenderedFeatures(event.point, { layers: [UNCLUSTERED_LAYER_ID] });
+      const feature = features[0];
+      if (!feature) return;
+    const handleMapClick = (event: any) => {
+      const clusterFeatures = map.queryRenderedFeatures(event.point, { layers: [CLUSTER_LAYER_ID, CLUSTER_COUNT_LAYER_ID] });
+      if (clusterFeatures.length) {
+        handleClusterClick(event);
+        return;
       }
 
-      const marker = new maplibregl.Marker({ element: el, anchor: "center" })
-        .setLngLat([pin.lng, pin.lat])
-        .setPopup(popup)
-        .addTo(map);
+      const pointFeatures = map.queryRenderedFeatures(event.point, { layers: [UNCLUSTERED_LAYER_ID] });
+      if (pointFeatures.length) {
+        handleUnclusteredPinClick(event);
+      }
+    };
 
-      pinMarkersRef.current.push(marker);
-    });
+
+      const pinIndex = Number(feature.properties?.pinIndex);
+      const pin = Number.isFinite(pinIndex) ? pins[pinIndex] : null;
+      if (!pin) return;
+
+      onPinClick?.(pin);
+
+      const coordinates = (feature.geometry as any)?.coordinates;
+      if (!coordinates) return;
+
+      mapPopupRef.current?.remove();
+      mapPopupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: true, offset: 14, className: "sarevista-popup" })
+        .setLngLat(coordinates)
+        .setHTML(`<div class="sarevista-map-popup">${pin.visited ? "✓ " : ""}${pin.label}</div>`)
+        .addTo(map);
+    };
+
+    const handleMapClick = (event: any) => {
+      const clusterFeatures = map.queryRenderedFeatures(event.point, { layers: [CLUSTER_LAYER_ID, CLUSTER_COUNT_LAYER_ID] });
+      if (clusterFeatures.length) {
+        handleClusterClick(event);
+        return;
+      }
+
+      const pointFeatures = map.queryRenderedFeatures(event.point, { layers: [UNCLUSTERED_LAYER_ID] });
+      if (pointFeatures.length) {
+        handleUnclusteredPinClick(event);
+      }
+    };
+
+    const onMouseEnter = () => {
+      map.getCanvas().style.cursor = "pointer";
+    };
+
+    const onMouseLeave = () => {
+      map.getCanvas().style.cursor = "";
+    };
+
+    const renderPinLayers = () => {
+      clearPinLayers();
+      if (!pins.length) return;
+
+      map.addSource(SOURCE_ID, {
+        type: "geojson",
+        data: {
+          type: "FeatureCollection",
+          features: pins.map((pin, pinIndex) => ({
+            type: "Feature",
+            geometry: {
+              type: "Point",
+              coordinates: [pin.lng, pin.lat],
+            },
+            properties: {
+              pinIndex,
+              type: pin.type,
+              visited: pin.visited ? 1 : 0,
+              countryColor: getCountryColor(pin.country),
+            },
+          })),
+        },
+        cluster: true,
+        clusterMaxZoom: 12,
+        clusterRadius: 54,
+      });
+
+      map.addLayer({
+        id: CLUSTER_LAYER_ID,
+        type: "circle",
+        source: SOURCE_ID,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": [
+            "step",
+            ["get", "point_count"],
+            isDark ? "rgba(10, 10, 10, 0.92)" : "rgba(255, 255, 255, 0.95)",
+            8,
+            "rgba(245, 158, 11, 0.92)",
+            20,
+            "rgba(20, 184, 166, 0.92)",
+          ],
+          "circle-radius": [
+            "step",
+            ["get", "point_count"],
+            18,
+            8,
+            22,
+            20,
+            28,
+          ],
+          "circle-stroke-width": 2,
+          "circle-stroke-color": isDark ? "rgba(255,255,255,0.22)" : "rgba(15, 23, 42, 0.16)",
+          "circle-stroke-opacity": 1,
+        },
+      });
+
+      map.addLayer({
+        id: CLUSTER_COUNT_LAYER_ID,
+        type: "symbol",
+        source: SOURCE_ID,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["to-string", ["get", "point_count"]],
+          "text-font": ["Noto Serif Bold", "Noto Serif Regular", "Arial Unicode MS Bold"],
+          "text-size": 13,
+          "text-letter-spacing": 0.02,
+        },
+        paint: {
+          "text-color": "hsl(38, 80%, 56%)",
+          "text-halo-color": isDark ? "rgba(13, 13, 13, 0.92)" : "rgba(248, 245, 240, 0.95)",
+          "text-halo-width": 1.2,
+        },
+      });
+
+      map.addLayer({
+        id: UNCLUSTERED_LAYER_ID,
+        type: "circle",
+        source: SOURCE_ID,
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-radius": 10,
+          "circle-color": [
+            "case",
+            ["==", ["get", "visited"], 1],
+            ["get", "countryColor"],
+            ["match", ["get", "type"], "Movie", typeColors.Movie, "Series", typeColors.Series, "Book", typeColors.Book, typeColors.Movie],
+          ],
+          "circle-stroke-width": 2,
+          "circle-stroke-color": isDark ? "hsl(0,0%,8%)" : "hsl(0,0%,100%)",
+          "circle-stroke-opacity": 0.95,
+        },
+      });
+
+      map.on("click", handleMapClick);
+      map.on("mouseenter", CLUSTER_LAYER_ID, onMouseEnter);
+      map.on("mouseenter", CLUSTER_COUNT_LAYER_ID, onMouseEnter);
+      map.on("mouseenter", UNCLUSTERED_LAYER_ID, onMouseEnter);
+      map.on("mouseleave", CLUSTER_LAYER_ID, onMouseLeave);
+      map.on("mouseleave", CLUSTER_COUNT_LAYER_ID, onMouseLeave);
+      map.on("mouseleave", UNCLUSTERED_LAYER_ID, onMouseLeave);
+    };
+
+    if (map.isStyleLoaded()) renderPinLayers();
+    else map.once("load", renderPinLayers);
+
+    return () => {
+      map.off("click", handleMapClick);
+      map.off("mouseenter", CLUSTER_LAYER_ID, onMouseEnter);
+      map.off("mouseenter", CLUSTER_COUNT_LAYER_ID, onMouseEnter);
+      map.off("mouseenter", UNCLUSTERED_LAYER_ID, onMouseEnter);
+      map.off("mouseleave", CLUSTER_LAYER_ID, onMouseLeave);
+      map.off("mouseleave", CLUSTER_COUNT_LAYER_ID, onMouseLeave);
+      map.off("mouseleave", UNCLUSTERED_LAYER_ID, onMouseLeave);
+      clearPinLayers();
+    };
   }, [pins, isDark, onPinClick]);
 
   useEffect(() => {

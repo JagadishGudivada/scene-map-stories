@@ -1,15 +1,63 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getCached, setCached } from "../_shared/aiCache.ts";
 import { resolveTitleImage } from "../_shared/images.ts";
 import { getTitle, upsertTitle } from "../_shared/store.ts";
-
-const CACHE_VERSION = "v2:";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+class HttpError extends Error {
+  status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+function jsonResponse(body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function sseResponse(
+  run: (send: (event: string, data: unknown) => void) => Promise<void>
+): Response {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const send = (event: string, data: unknown) => {
+        controller.enqueue(
+          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
+        );
+      };
+
+      try {
+        await run(send);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        send("error", { error: message });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
+  });
+}
 
 function isTruthyEnv(value: string | undefined, defaultValue: boolean): boolean {
   if (value == null) return defaultValue;
@@ -32,30 +80,16 @@ serve(async (req) => {
   try {
     const { slug, title: hintTitle, year: hintYear } = await req.json();
     if (!slug || typeof slug !== "string") {
-      return new Response(JSON.stringify({ error: "slug required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "slug required" }, 400);
     }
 
     // Persistent table read-through (preferred)
     const stored = await getTitle(slug);
     if (stored) {
-      return new Response(JSON.stringify(stored), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse(stored);
     }
 
-    // Legacy ai_cache fallback (30 days)
-    const cacheKey = CACHE_VERSION + slug;
-    const cached = await getCached<Record<string, unknown>>("title-details", cacheKey);
-    if (cached) {
-      // Migrate cached payload into the new table
-      upsertTitle(slug, cached as Record<string, any>).catch(() => {});
-      return new Response(JSON.stringify(cached), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const cacheKey = slug;
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
@@ -172,35 +206,45 @@ serve(async (req) => {
       return lastResp ?? new Response("upstream unavailable", { status: 502 });
     };
 
-    let response = await callAi(AI_ENABLE_GOOGLE_GROUNDING ? withGrounding : basePayload);
+    const generateDetails = async () => {
+      let response = await callAi(AI_ENABLE_GOOGLE_GROUNDING ? withGrounding : basePayload);
 
-    if (!response.ok && AI_ENABLE_GOOGLE_GROUNDING) {
-      response = await callAi(basePayload);
-    }
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, please try again shortly." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+      if (!response.ok && AI_ENABLE_GOOGLE_GROUNDING) {
+        response = await callAi(basePayload);
       }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new HttpError(429, "Rate limited, please try again shortly.");
+        }
+        if (response.status === 402) {
+          throw new HttpError(402, "AI credits exhausted.");
+        }
+        console.error("AI provider error:", response.status, await response.text());
+        throw new HttpError(502, "AI provider error");
       }
-      console.error("AI provider error:", response.status, await response.text());
-      throw new Error("AI provider error");
-    }
 
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    if (toolCall?.function?.arguments) {
-      const parsed = JSON.parse(toolCall.function.arguments);
+      const data = await response.json();
+      const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall?.function?.arguments) {
+        throw new HttpError(502, "No details returned");
+      }
 
-      // Fetch authoritative imagery (TMDB for movies/series, OpenLibrary for books)
+      return JSON.parse(toolCall.function.arguments);
+    };
+
+    return sseResponse(async (send) => {
+      send("meta", {
+        slug,
+        title: slugTitle,
+        year: slugYear,
+        stage: "ai_started",
+      });
+
+      const parsed = await generateDetails();
+      send("details", parsed);
+
+      // Resolve imagery after core details so UI can render immediately.
       const { coverImage, backdropImage } = await resolveTitleImage({
         title: parsed.title,
         year: parsed.year,
@@ -210,23 +254,18 @@ serve(async (req) => {
       if (coverImage) parsed.coverImage = coverImage;
       if (backdropImage) parsed.backdropImage = backdropImage;
 
-      // Persist to canonical table + legacy cache
       upsertTitle(slug, parsed).catch(() => {});
-      setCached("title-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
 
-      return new Response(JSON.stringify(parsed), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    return new Response(JSON.stringify({ error: "No details returned" }), {
-      status: 502,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      send("complete", parsed);
     });
   } catch (e) {
     console.error("title-details error:", e);
-    return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    if (e instanceof HttpError) {
+      return jsonResponse({ error: e.message }, e.status);
+    }
+    return jsonResponse(
+      { error: e instanceof Error ? e.message : "Unknown error" },
+      500
     );
   }
 });

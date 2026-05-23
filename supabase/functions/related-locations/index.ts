@@ -1,8 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getCached, setCached, normalizeKey } from "../_shared/aiCache.ts";
+import { normalizeKey } from "../_shared/aiCache.ts";
 import { resolveLocationImage } from "../_shared/images.ts";
-
-const CACHE_VERSION = "v2:";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -26,13 +24,7 @@ serve(async (req) => {
       });
     }
 
-    const cacheKey = CACHE_VERSION + normalizeKey(slug);
-    const cached = await getCached<{ locations: any[] }>("related-locations", cacheKey);
-    if (cached) {
-      return new Response(JSON.stringify(cached), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const cacheKey = normalizeKey(slug);
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_URL =
@@ -145,7 +137,6 @@ serve(async (req) => {
     }));
 
     const payload = { locations };
-    setCached("related-locations", cacheKey, payload, 60 * 60 * 24 * 30).catch(() => {});
 
     return new Response(JSON.stringify(payload), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -25,7 +25,7 @@ type TitleResult = {
   genres?: string[];
 };
 
-const CACHE_KEY = "weekly-current-year-titles-v7";
+const CACHE_KEY = "weekly-current-year-titles-v8";
 
 function getNumericWidth(size: string): number | null {
   const match = /^w(\d+)$/.exec(size);
@@ -155,6 +155,16 @@ function parseCache(raw: string | null): WeeklyCache | null {
   }
 }
 
+function extractLocationCount(payload: unknown): number | null {
+  if (!payload || typeof payload !== "object") return null;
+  const raw = payload as Record<string, unknown>;
+  const nested = (raw.data || raw.result || raw.payload) as Record<string, unknown> | undefined;
+  const p = nested && typeof nested === "object" ? nested : raw;
+  if (!Array.isArray(p.locations)) return null;
+  const count = p.locations.length;
+  return count > 0 ? count : null;
+}
+
 export function useWeeklyCurrentYearTitles() {
   const [titles, setTitles] = useState<Title[]>([]);
   const [loading, setLoading] = useState(true);
@@ -220,17 +230,66 @@ export function useWeeklyCurrentYearTitles() {
         }
 
         const mapped = selectedTitles.map((item) => mapToTitleCard(item));
+        const slugs = mapped.map((item) => slugifyTitle(item.title, item.year));
+
+        const countsBySlug = new Map<string, number>();
+        if (slugs.length > 0) {
+          try {
+            const { data: cacheRows } = await supabase
+              .from("ai_cache")
+              .select("cache_key, payload, created_at")
+              .eq("function_name", "title-details")
+              .in("cache_key", slugs)
+              .order("created_at", { ascending: false });
+
+            (cacheRows || []).forEach((row) => {
+              if (countsBySlug.has(row.cache_key)) return;
+              const count = extractLocationCount(row.payload);
+              if (typeof count === "number" && count > 0) {
+                countsBySlug.set(row.cache_key, count);
+              }
+            });
+          } catch {
+            // If cache lookup fails, keep generated counts so cards still render.
+          }
+        }
+
+        const missingSlugs = slugs.filter((s) => !countsBySlug.has(s));
+        if (missingSlugs.length > 0) {
+          try {
+            await Promise.all(
+              missingSlugs.map(async (missingSlug) => {
+                const { data } = await supabase.functions.invoke("title-details", {
+                  body: { slug: missingSlug },
+                });
+                const count = extractLocationCount(data);
+                if (typeof count === "number" && count > 0) {
+                  countsBySlug.set(missingSlug, count);
+                }
+              })
+            );
+          } catch {
+            // Keep existing counts if function lookups fail.
+          }
+        }
+
+        const normalized = mapped.map((item) => {
+          const override = countsBySlug.get(slugifyTitle(item.title, item.year));
+          if (typeof override !== "number") return item;
+          return { ...item, locationCount: override };
+        });
+
         const payload: WeeklyCache = {
           weekKey,
           year: currentYear,
           updatedAt: new Date().toISOString(),
-          titles: mapped,
+          titles: normalized,
         };
 
         localStorage.setItem(cacheKey, JSON.stringify(payload));
 
         if (!cancelled) {
-          setTitles(mapped);
+          setTitles(normalized);
           setUpdatedAt(payload.updatedAt);
         }
       } catch (e) {

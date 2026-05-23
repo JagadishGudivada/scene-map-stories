@@ -125,6 +125,24 @@ const transitTips = [
 
 const filterOptions = ["All", "Movies", "Series", "Books", "Classics (pre-1980)", "Recent (2010+)"];
 
+type LocationStreamEventName = "meta" | "details" | "complete" | "error";
+
+function slugToCityName(value?: string) {
+  if (!value) return "";
+  return value
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
+function mergeLocationData(prev: any, patch: any, slug?: string) {
+  return {
+    ...(prev || {}),
+    ...(patch || {}),
+    name: patch?.name || prev?.name || slugToCityName(slug),
+  };
+}
+
 function slugifyTitle(title: string, year: number) {
   return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "")}-${year}`;
 }
@@ -145,6 +163,7 @@ export default function LocationDetail() {
   const [relatedLoading, setRelatedLoading] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   const titleGridRef = useRef<HTMLDivElement>(null);
+  const showExplorerPhotos = false;
 
   useEffect(() => {
     if (!slug) return;
@@ -152,19 +171,105 @@ export default function LocationDetail() {
     setAiLoading(true);
     setAiError(null);
     setAiData(null);
-    import("@/lib/aiClientCache")
-      .then(({ invokeCached }) => invokeCached("location-details", { slug }, slug))
-      .then((data: any) => {
-        if (!active) return;
-        if (data?.error) setAiError(data.error);
-        else setAiData(data);
-      })
-      .catch((err: any) => {
+    (async () => {
+      try {
+        const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/location-details`;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const response = await fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify({ slug }),
+        });
+
+        if (!response.ok) {
+          const fallback = await response.json().catch(() => null);
+          throw new Error(fallback?.error || "Failed to load location.");
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("text/event-stream")) {
+          const data = await response.json().catch(() => null);
+          if (!active) return;
+          if (data?.error) {
+            setAiError(data.error);
+          } else {
+            setAiData((prev: any) => mergeLocationData(prev, data, slug));
+          }
+          setAiLoading(false);
+          return;
+        }
+
+        if (!response.body) {
+          throw new Error("Streaming unavailable");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        const processEvent = (raw: string) => {
+          const lines = raw.split("\n").filter(Boolean);
+          let eventName: LocationStreamEventName | "message" = "message";
+          const dataLines: string[] = [];
+
+          for (const line of lines) {
+            if (line.startsWith("event:")) eventName = line.slice(6).trim() as LocationStreamEventName;
+            if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+          }
+
+          if (!dataLines.length || !active) return;
+
+          let payload: any = null;
+          try {
+            payload = JSON.parse(dataLines.join("\n"));
+          } catch {
+            return;
+          }
+
+          if (eventName === "meta") {
+            setAiData((prev: any) => mergeLocationData(prev, payload, slug));
+            return;
+          }
+
+          if (eventName === "details" || eventName === "complete") {
+            setAiData((prev: any) => mergeLocationData(prev, payload, slug));
+            if (eventName === "complete") setAiLoading(false);
+            return;
+          }
+
+          if (eventName === "error") {
+            setAiError(payload?.error || "Failed to load location.");
+            setAiLoading(false);
+          }
+        };
+
+        while (active) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const chunks = buffer.split("\n\n");
+          buffer = chunks.pop() || "";
+          for (const chunk of chunks) processEvent(chunk);
+        }
+
+        if (active) setAiLoading(false);
+      } catch (err: any) {
         if (!active) return;
         const msg = err?.message || "";
-        setAiError(msg.includes("429") ? "Too many requests, please retry shortly." : msg.includes("402") ? "AI credits exhausted." : "Failed to load location.");
-      })
-      .finally(() => active && setAiLoading(false));
+        setAiError(
+          msg.includes("429")
+            ? "Too many requests, please retry shortly."
+            : msg.includes("402")
+            ? "AI credits exhausted."
+            : "Failed to load location."
+        );
+        setAiLoading(false);
+      }
+    })();
     return () => { active = false; };
   }, [slug]);
 
@@ -843,6 +948,7 @@ export default function LocationDetail() {
           </motion.div>
 
           {/* Card C: Crowd Status */}
+          
           <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -904,87 +1010,91 @@ export default function LocationDetail() {
         </div>
       </section>
 
-      {/* SECTION 6: COMMUNITY PHOTOS */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
-        <h2 className="font-serif italic text-3xl text-foreground mb-1">Explorer Photos from {cityData.name}</h2>
-        <p className="text-sm text-muted-foreground mb-8">Shot by Sarevista explorers at real filming locations</p>
+      {showExplorerPhotos && (
+        <>
+          {/* SECTION 6: COMMUNITY PHOTOS */}
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+            <h2 className="font-serif italic text-3xl text-foreground mb-1">Explorer Photos from {cityData.name}</h2>
+            <p className="text-sm text-muted-foreground mb-8">Shot by Sarevista explorers at real filming locations</p>
 
-        {hasCommunityPhotos ? (
-          <div className="columns-2 md:columns-4 gap-3 space-y-3">
-            {communityPhotosData.map((photo: { id: string; user: string; match: number; likes: number }, i: number) => {
-              const isUpload = photo.user === "upload";
-              const heights = [320, 400, 360, 280, 440, 340, 380, 300];
-              const h = heights[i % heights.length];
+            {hasCommunityPhotos ? (
+              <div className="columns-2 md:columns-4 gap-3 space-y-3">
+                {communityPhotosData.map((photo: { id: string; user: string; match: number; likes: number }, i: number) => {
+                  const isUpload = photo.user === "upload";
+                  const heights = [320, 400, 360, 280, 440, 340, 380, 300];
+                  const h = heights[i % heights.length];
 
-              if (isUpload) {
-                return (
-                  <motion.div
-                    key={photo.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true, margin: "-50px" }}
-                    transition={{ delay: i * 0.06 }}
-                    className="break-inside-avoid rounded-2xl border-2 border-dashed border-amber/40 flex flex-col items-center justify-center gap-3 p-6 cursor-pointer hover:border-amber hover:bg-amber/5 transition-all"
-                    style={{ height: h }}
-                  >
-                    <Camera className="w-10 h-10 text-amber" />
-                    <span className="text-sm font-medium text-foreground text-center">Share your {cityData.name} discovery</span>
-                    <button className="px-4 py-2 rounded-full border border-amber/40 text-amber text-xs font-semibold hover:bg-amber/10 transition-colors">
-                      Upload Photo
-                    </button>
-                  </motion.div>
-                );
-              }
+                  if (isUpload) {
+                    return (
+                      <motion.div
+                        key={photo.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, margin: "-50px" }}
+                        transition={{ delay: i * 0.06 }}
+                        className="break-inside-avoid rounded-2xl border-2 border-dashed border-amber/40 flex flex-col items-center justify-center gap-3 p-6 cursor-pointer hover:border-amber hover:bg-amber/5 transition-all"
+                        style={{ height: h }}
+                      >
+                        <Camera className="w-10 h-10 text-amber" />
+                        <span className="text-sm font-medium text-foreground text-center">Share your {cityData.name} discovery</span>
+                        <button className="px-4 py-2 rounded-full border border-amber/40 text-amber text-xs font-semibold hover:bg-amber/10 transition-colors">
+                          Upload Photo
+                        </button>
+                      </motion.div>
+                    );
+                  }
 
-              return (
-                <motion.div
-                  key={photo.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-50px" }}
-                  transition={{ delay: i * 0.06 }}
-                  className="break-inside-avoid relative rounded-2xl overflow-hidden group cursor-pointer"
-                  style={{ height: h }}
-                >
-                  <img
-                    src={[heroRomeAlt, londonImg, santoriniImg, nycImg, kyotoImg, tokyoImg, heroRomeImg][i % 7]}
-                    alt={`Photo by ${photo.user}`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                  />
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
-                    <div className="flex items-center gap-2 mb-1.5">
+                  return (
+                    <motion.div
+                      key={photo.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true, margin: "-50px" }}
+                      transition={{ delay: i * 0.06 }}
+                      className="break-inside-avoid relative rounded-2xl overflow-hidden group cursor-pointer"
+                      style={{ height: h }}
+                    >
                       <img
-                        src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${photo.user}`}
-                        alt={photo.user}
-                        className="w-6 h-6 rounded-full"
+                        src={[heroRomeAlt, londonImg, santoriniImg, nycImg, kyotoImg, tokyoImg, heroRomeImg][i % 7]}
+                        alt={`Photo by ${photo.user}`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                       />
-                      <span className="text-xs text-foreground font-medium">@{photo.user}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-amber font-semibold">🎯 {photo.match}% Match</span>
-                      <span className="text-xs text-muted-foreground">❤️ {photo.likes}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </div>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="glass rounded-2xl border border-amber/30 p-8 flex flex-col items-center text-center gap-4"
-          >
-            <Camera className="w-10 h-10 text-amber" />
-            <h3 className="text-xl font-semibold text-foreground">No explorer photos yet</h3>
-            <p className="text-sm text-muted-foreground">Be the first to share a shot from {cityData.name}.</p>
-            <button className="px-5 py-2.5 rounded-full border border-amber/40 text-amber text-sm font-semibold hover:bg-amber/10 transition-colors">
-              Upload Photo
-            </button>
-          </motion.div>
-        )}
-      </section>
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <img
+                            src={`https://api.dicebear.com/9.x/avataaars/svg?seed=${photo.user}`}
+                            alt={photo.user}
+                            className="w-6 h-6 rounded-full"
+                          />
+                          <span className="text-xs text-foreground font-medium">@{photo.user}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-amber font-semibold">🎯 {photo.match}% Match</span>
+                          <span className="text-xs text-muted-foreground">❤️ {photo.likes}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass rounded-2xl border border-amber/30 p-8 flex flex-col items-center text-center gap-4"
+              >
+                <Camera className="w-10 h-10 text-amber" />
+                <h3 className="text-xl font-semibold text-foreground">No explorer photos yet</h3>
+                <p className="text-sm text-muted-foreground">Be the first to share a shot from {cityData.name}.</p>
+                <button className="px-5 py-2.5 rounded-full border border-amber/40 text-amber text-sm font-semibold hover:bg-amber/10 transition-colors">
+                  Upload Photo
+                </button>
+              </motion.div>
+            )}
+          </section>
+        </>
+      )}
 
       {/* SECTION 7: RELATED LOCATIONS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">

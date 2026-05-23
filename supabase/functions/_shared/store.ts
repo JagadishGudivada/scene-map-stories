@@ -13,12 +13,6 @@ export function db() {
   return _client;
 }
 
-const FRESH_DAYS = 90;
-function isFresh(iso: string | null | undefined): boolean {
-  if (!iso) return false;
-  return Date.now() - new Date(iso).getTime() < FRESH_DAYS * 24 * 60 * 60 * 1000;
-}
-
 // ============ TITLES ============
 export async function getTitle(slug: string): Promise<Record<string, unknown> | null> {
   try {
@@ -28,7 +22,6 @@ export async function getTitle(slug: string): Promise<Record<string, unknown> | 
       .eq("slug", slug)
       .maybeSingle();
     if (error || !data) return null;
-    if (!data.verified && !isFresh(data.last_fetched_at as string)) return null;
     return hydrateTitle(data);
   } catch (e) {
     console.error("getTitle error", e);
@@ -83,7 +76,6 @@ export async function getLocation(slug: string): Promise<Record<string, unknown>
       .eq("slug", slug)
       .maybeSingle();
     if (error || !data) return null;
-    if (!data.verified && !isFresh(data.last_fetched_at as string)) return null;
     return hydrateLocation(data);
   } catch (e) {
     console.error("getLocation error", e);
@@ -135,7 +127,6 @@ export async function getSpot(slug: string): Promise<Record<string, unknown> | n
       .eq("slug", slug)
       .maybeSingle();
     if (error || !data) return null;
-    if (!data.verified && !isFresh(data.last_fetched_at as string)) return null;
     return hydrateSpot(data);
   } catch (e) {
     console.error("getSpot error", e);

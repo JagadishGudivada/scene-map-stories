@@ -16,6 +16,8 @@ interface CinemaCardProps {
   showAiBadge?: boolean;
   /** Confidence percentage 0-100. Defaults to a stable random value 88-97. */
   aiConfidence?: number;
+  /** Show location name chips below the count pill. */
+  showLocationNames?: boolean;
 }
 
 const typeBadgeClass: Record<string, string> = {
@@ -37,6 +39,7 @@ export default function CinemaCard({
   delay = 0,
   showAiBadge = false,
   aiConfidence,
+  showLocationNames = true,
 }: CinemaCardProps) {
   const [saved, setSaved] = useState(false);
   const confidence = aiConfidence ?? defaultConfidence(`${title.title}-${title.year}`);
@@ -126,7 +129,7 @@ export default function CinemaCard({
             <MapPin className="w-3 h-3 text-amber" />
             <span className="text-xs text-foreground font-medium">{title.locationCount} locations</span>
           </div>
-          {title.locations.slice(0, 2).map((loc) => (
+          {showLocationNames && title.locations.slice(0, 2).map((loc) => (
             <span key={loc} className="glass text-xs text-muted-foreground px-2.5 py-1 rounded-full">
               {loc}
             </span>

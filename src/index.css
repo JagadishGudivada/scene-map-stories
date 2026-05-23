@@ -262,6 +262,19 @@
   .sarevista-popup .maplibregl-popup-content {
     background: transparent !important;
   }
+  .sarevista-map-popup {
+    background: hsl(var(--card) / 0.96);
+    color: hsl(var(--foreground));
+    border: 1px solid hsl(var(--border));
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.2;
+    box-shadow: 0 10px 30px hsl(0 0% 0% / 0.35);
+    max-width: 220px;
+    white-space: normal;
+  }
   .maplibregl-ctrl-group button {
     background: hsl(var(--card)) !important;
     color: hsl(var(--foreground)) !important;

@@ -51,7 +51,12 @@ export default function TrendingRow({ titles }: TrendingRowProps) {
           <Link
             key={title.id}
             to={`/title/${slugifyTitle(title.title, title.year)}`}
-            state={{ title: title.title, year: title.year, type: title.type }}
+            state={{
+              title: title.title,
+              year: title.year,
+              type: title.type,
+              locationCount: title.locationCount,
+            }}
             className="flex-shrink-0 w-48 block"
           >
             <motion.div

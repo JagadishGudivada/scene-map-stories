@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getCached, setCached, normalizeKey } from "../_shared/aiCache.ts";
+import { normalizeKey } from "../_shared/aiCache.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,14 +35,7 @@ serve(async (req) => {
       });
     }
 
-    // Cache lookup (24h TTL for autocomplete results)
     const cacheKey = normalizeKey(query);
-    const cached = await getCached<{ titles: unknown[] }>("search-titles", cacheKey);
-    if (cached) {
-      return new Response(JSON.stringify(cached), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
@@ -190,8 +183,6 @@ serve(async (req) => {
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
       const result = { titles: parsed.titles || [] };
-      // 24h cache for autocomplete
-      setCached("search-titles", cacheKey, result, 60 * 60 * 24).catch(() => {});
       return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

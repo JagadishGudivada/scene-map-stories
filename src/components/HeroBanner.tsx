@@ -19,12 +19,14 @@ type HeroSlide = {
   title: string;
   year: number;
   type: Title["type"];
+  locationCount: number;
   coverImage?: string;
   image: string;
   imageSrcSet?: string;
   imageDesktopSrcSet?: string;
   imageMobileSrcSet?: string;
   imageSizes?: string;
+  imagePosition?: string;
   locationTag: string;
   tagline: string;
 };
@@ -45,12 +47,14 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
         title: title.title,
         year: title.year,
         type: title.type,
+        locationCount: title.locationCount,
         coverImage: title.coverImage,
         image: title.heroImage || title.coverImage,
         imageSrcSet: title.heroImageSrcSet,
         imageDesktopSrcSet: title.heroImageDesktopSrcSet || title.heroImageSrcSet,
         imageMobileSrcSet: title.heroImageMobileSrcSet,
         imageSizes: title.heroImageSizes,
+        imagePosition: (title as { heroImagePosition?: string }).heroImagePosition,
         locationTag: title.locations?.[0] || "Filming locations",
         tagline: `${title.locationCount} filming locations discovered`,
       }));
@@ -91,11 +95,14 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
   };
 
   const slide = slides[current];
+  const foregroundImagePositionClass = slide.type === "Movie"
+    ? "object-[center_20%] sm:object-[center_28%] lg:object-center"
+    : "object-center";
 
   if (!slide) return null;
 
   return (
-    <div className="relative h-[55vh] min-h-[380px] max-h-[600px] rounded-2xl overflow-hidden shadow-float">
+    <div className="relative h-[48vh] sm:h-[55vh] min-h-[300px] sm:min-h-[380px] max-h-[640px] rounded-2xl overflow-hidden shadow-float">
       {/* Background Slides */}
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
@@ -135,7 +142,8 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               srcSet={slide.imageSrcSet}
               sizes={slide.imageSizes || "100vw"}
               alt={slide.title}
-              className="relative z-10 w-full h-full object-cover sm:object-contain pointer-events-none select-none"
+              className={`relative z-10 w-full h-full object-cover ${foregroundImagePositionClass} pointer-events-none select-none`}
+              style={slide.imagePosition ? { objectPosition: slide.imagePosition } : undefined}
             />
           </picture>
           {/* Gradient layers */}
@@ -184,7 +192,12 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               <button
                 onClick={() => {
                   navigate(`/title/${slugifyTitle(slide.title, slide.year)}`, {
-                    state: { title: slide.title, year: slide.year, type: slide.type },
+                    state: {
+                      title: slide.title,
+                      year: slide.year,
+                      type: slide.type,
+                      locationCount: slide.locationCount,
+                    },
                   });
                 }}
                 className="px-5 py-2.5 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:opacity-90 transition-opacity shadow-amber"

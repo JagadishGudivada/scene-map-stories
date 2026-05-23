@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getCached, setCached } from "../_shared/aiCache.ts";
+import { getCached } from "../_shared/aiCache.ts";
 import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
 import { getLocation, upsertLocation } from "../_shared/store.ts";
 
@@ -290,7 +290,6 @@ serve(async (req) => {
     }
 
     upsertLocation(slug, parsed).catch(() => {});
-    setCached("location-details", cacheKey, parsed, 60 * 60 * 24 * 30).catch(() => {});
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

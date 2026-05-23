@@ -68,9 +68,18 @@ export default function Index() {
   const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
 
   const homepageTitles = useMemo(() => {
-    if (weeklyTitles.length > 0) return weeklyTitles;
-    return [];
-  }, [weeklyTitles]);
+    if (weeklyTitles.length === 0) return [];
+
+    const recentCountBySlug = new Map(
+      recentTitles.map((title) => [slugifyTitle(title.title, title.year), title.locationCount])
+    );
+
+    return weeklyTitles.map((title) => {
+      const overrideCount = recentCountBySlug.get(slugifyTitle(title.title, title.year));
+      if (typeof overrideCount !== "number" || overrideCount <= 0) return title;
+      return { ...title, locationCount: overrideCount };
+    });
+  }, [weeklyTitles, recentTitles]);
 
   const featuredTiles = useMemo(() => {
     const source = recentTitles.length > 0 ? recentTitles : homepageTitles;
@@ -408,27 +417,27 @@ export default function Index() {
                         <>
                           {featuredTiles[0] && (
                             <div className="col-span-2 row-span-2">
-                              <CinemaCard title={featuredTiles[0]} size="lg" delay={0} />
+                              <CinemaCard title={featuredTiles[0]} size="lg" delay={0} showLocationNames={false} />
                             </div>
                           )}
                           {featuredTiles[1] && (
                             <div className="col-span-1">
-                              <CinemaCard title={featuredTiles[1]} size="md" delay={0.1} />
+                              <CinemaCard title={featuredTiles[1]} size="md" delay={0.1} showLocationNames={false} />
                             </div>
                           )}
                           {featuredTiles[2] && (
                             <div className="col-span-1">
-                              <CinemaCard title={featuredTiles[2]} size="md" delay={0.15} />
+                              <CinemaCard title={featuredTiles[2]} size="md" delay={0.15} showLocationNames={false} />
                             </div>
                           )}
                           {featuredTiles[3] && (
                             <div className="col-span-1">
-                              <CinemaCard title={featuredTiles[3]} size="md" delay={0.2} />
+                              <CinemaCard title={featuredTiles[3]} size="md" delay={0.2} showLocationNames={false} />
                             </div>
                           )}
                           {featuredTiles[4] && (
                             <div className="col-span-1">
-                              <CinemaCard title={featuredTiles[4]} size="md" delay={0.25} />
+                              <CinemaCard title={featuredTiles[4]} size="md" delay={0.25} showLocationNames={false} />
                             </div>
                           )}
                         </>

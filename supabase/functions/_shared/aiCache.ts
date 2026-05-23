@@ -13,16 +13,44 @@ function client() {
   return _client;
 }
 
+function stripLegacyVersionPrefix(cacheKey: string): string {
+  return cacheKey.trim().replace(/^(?:v\d+:)+/i, "");
+}
+
+async function queryCache<T = unknown>(functionName: string, cacheKey: string): Promise<T | null> {
+  const { data, error } = await client()
+    .from("ai_cache")
+    .select("payload, expires_at")
+    .eq("function_name", functionName)
+    .eq("cache_key", cacheKey)
+    .maybeSingle();
+  if (error || !data) return null;
+  if (new Date(data.expires_at as string).getTime() < Date.now()) return null;
+  return data.payload as T;
+}
+
 export async function getCached<T = unknown>(
   functionName: string,
   cacheKey: string
 ): Promise<T | null> {
   try {
+    const normalizedKey = stripLegacyVersionPrefix(cacheKey);
+
+    const exact = await queryCache<T>(functionName, normalizedKey);
+    if (exact) return exact;
+
+    if (normalizedKey !== cacheKey) {
+      const raw = await queryCache<T>(functionName, cacheKey);
+      if (raw) return raw;
+    }
+
     const { data, error } = await client()
       .from("ai_cache")
       .select("payload, expires_at")
       .eq("function_name", functionName)
-      .eq("cache_key", cacheKey)
+      .ilike("cache_key", `%${normalizedKey}%`)
+      .order("expires_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
     if (error || !data) return null;
     if (new Date(data.expires_at as string).getTime() < Date.now()) return null;
@@ -30,30 +58,6 @@ export async function getCached<T = unknown>(
   } catch (e) {
     console.error("ai-cache get error:", e);
     return null;
-  }
-}
-
-export async function setCached(
-  functionName: string,
-  cacheKey: string,
-  payload: unknown,
-  ttlSeconds: number
-): Promise<void> {
-  try {
-    const expiresAt = new Date(Date.now() + ttlSeconds * 1000).toISOString();
-    await client()
-      .from("ai_cache")
-      .upsert(
-        {
-          function_name: functionName,
-          cache_key: cacheKey,
-          payload: payload as never,
-          expires_at: expiresAt,
-        },
-        { onConflict: "function_name,cache_key" }
-      );
-  } catch (e) {
-    console.error("ai-cache set error:", e);
   }
 }
 

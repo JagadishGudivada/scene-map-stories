@@ -7,13 +7,14 @@ import {
 } from "lucide-react";
 import { mockTitles, mockPosts } from "@/lib/mockData";
 import { titleLocationPins } from "@/lib/mapData";
-import LeafletMap, { type MapPin as LeafletMapPin } from "@/components/LeafletMap";
+import LeafletMap, { type AppMap, type MapPin as LeafletMapPin } from "@/components/LeafletMap";
 import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
 import ShareMenu from "@/components/ShareMenu";
 import ReportInfoDialog from "@/components/ReportInfoDialog";
 import AddLocationDialog from "@/components/AddLocationDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { useSavedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
@@ -30,13 +31,42 @@ type AIDetails = {
   title: string;
   year: number;
   type: "Movie" | "Series" | "Book";
-  rating: number;
-  synopsis: string;
+  rating?: number;
+  synopsis?: string;
   creator?: string;
-  genres: string[];
-  locations: AILocation[];
+  genres?: string[];
+  locations?: AILocation[];
   coverImage?: string;
 };
+
+type StreamEventName = "meta" | "details" | "complete" | "error";
+
+function resolveTitleType(type?: string): "Movie" | "Series" | "Book" {
+  if (type === "Series" || type === "Book") return type;
+  return "Movie";
+}
+
+function applyTitlePatch(
+  patch: Partial<AIDetails>,
+  previous: AIDetails | null,
+  fallback: { title?: string; year?: number; type?: string }
+): AIDetails {
+  const baseTitle = patch.title || previous?.title || fallback.title || "Untitled";
+  const baseYear = Number(patch.year ?? previous?.year ?? fallback.year ?? 0) || new Date().getFullYear();
+  const baseType = resolveTitleType(String(patch.type ?? previous?.type ?? fallback.type ?? "Movie"));
+
+  return {
+    title: baseTitle,
+    year: baseYear,
+    type: baseType,
+    rating: patch.rating ?? previous?.rating,
+    synopsis: patch.synopsis ?? previous?.synopsis,
+    creator: patch.creator ?? previous?.creator,
+    genres: patch.genres ?? previous?.genres ?? [],
+    locations: patch.locations ?? previous?.locations ?? [],
+    coverImage: patch.coverImage ?? previous?.coverImage,
+  };
+}
 
 function slugifySpot(label: string) {
   return label
@@ -50,7 +80,7 @@ export default function TitleDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const navState = useLocation().state as
-    | { title?: string; year?: number; type?: string; creator?: string }
+    | { title?: string; year?: number; type?: string; creator?: string; locationCount?: number }
     | null;
 
   const mockTitle = useMemo(
@@ -60,11 +90,28 @@ export default function TitleDetail() {
 
   const [aiDetails, setAiDetails] = useState<AIDetails | null>(null);
   const [loading, setLoading] = useState(false);
+  const [streamStage, setStreamStage] = useState<"idle" | "ai_started" | "details" | "complete">("idle");
   const [error, setError] = useState<string | null>(null);
   const [selectedLocationPin, setSelectedLocationPin] = useState<LeafletMapPin | null>(null);
+  const [titleMap, setTitleMap] = useState<AppMap | null>(null);
   const [userLocations, setUserLocations] = useState<AILocation[]>([]);
   const [relatedTitlesData, setRelatedTitlesData] = useState<any[] | null>(null);
   const [relatedLoading, setRelatedLoading] = useState(false);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [slug]);
+
+  const openRelatedTitle = (t: any) => {
+    navigate(`/title/${slugify(t.title, t.year)}`, {
+      state: {
+        title: t.title,
+        year: t.year,
+        type: t.type,
+        locationCount: t.locationCount ?? t.spots,
+      },
+    });
+  };
 
   useEffect(() => {
     if (!slug) return;
@@ -94,25 +141,106 @@ export default function TitleDetail() {
     if (mockTitle || !slug) return;
     let cancelled = false;
     setLoading(true);
+    setStreamStage("idle");
     setError(null);
     setAiDetails(null);
     (async () => {
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("title-details", {
-          body: { slug, title: navState?.title, year: navState?.year },
+        const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/title-details`;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const response = await fetch(functionUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: anonKey,
+            Authorization: `Bearer ${anonKey}`,
+          },
+          body: JSON.stringify({ slug, title: navState?.title, year: navState?.year }),
         });
-        if (cancelled) return;
-        if (fnError) {
-          setError("Failed to load title details");
-          return;
+
+        if (!response.ok) {
+          const fallback = await response.json().catch(() => null);
+          throw new Error(fallback?.error || "Failed to load title details");
         }
-        if (data?.error) {
-          setError(data.error);
-          return;
+
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("text/event-stream")) {
+          const data = await response.json().catch(() => null);
+          if (!data?.error) {
+            setAiDetails((prev) => applyTitlePatch(data || {}, prev, navState || {}));
+            setStreamStage("complete");
+            setLoading(false);
+            return;
+          }
+          throw new Error(data?.error || "Failed to load title details");
         }
-        setAiDetails(data as AIDetails);
+
+        if (!response.body) {
+          throw new Error("Streaming unavailable");
+        }
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+
+        const processEvent = (raw: string) => {
+          const lines = raw.split("\n").filter(Boolean);
+          let eventName: StreamEventName | "message" = "message";
+          const dataLines: string[] = [];
+
+          for (const line of lines) {
+            if (line.startsWith("event:")) eventName = line.slice(6).trim() as StreamEventName;
+            if (line.startsWith("data:")) dataLines.push(line.slice(5).trim());
+          }
+
+          if (!dataLines.length) return;
+          let payload: any = null;
+          try {
+            payload = JSON.parse(dataLines.join("\n"));
+          } catch {
+            return;
+          }
+
+          if (cancelled) return;
+          if (eventName === "meta") {
+            setStreamStage("ai_started");
+            setAiDetails((prev) => applyTitlePatch(payload, prev, navState || {}));
+            return;
+          }
+          if (eventName === "details") {
+            setStreamStage("details");
+            setAiDetails((prev) => applyTitlePatch(payload, prev, navState || {}));
+            return;
+          }
+          if (eventName === "complete") {
+            setStreamStage("complete");
+            setAiDetails((prev) => applyTitlePatch(payload, prev, navState || {}));
+            setLoading(false);
+            return;
+          }
+          if (eventName === "error") {
+            setError(payload?.error || "Failed to load title details");
+            setLoading(false);
+          }
+        };
+
+        while (!cancelled) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const chunks = buffer.split("\n\n");
+          buffer = chunks.pop() || "";
+          for (const chunk of chunks) processEvent(chunk);
+        }
+
+        if (!cancelled && loading) {
+          setLoading(false);
+        }
       } catch (e) {
-        if (!cancelled) setError("Failed to load title details");
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Failed to load title details");
+          setLoading(false);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -162,18 +290,48 @@ export default function TitleDetail() {
         locationCount: merged.length,
       };
     }
+
+    if (navState?.title && navState?.year) {
+      const merged = [...extra];
+      return {
+        source: "ai" as const,
+        title: navState.title,
+        year: Number(navState.year),
+        type: resolveTitleType(navState.type),
+        rating: 0,
+        synopsis: undefined as string | undefined,
+        creator: navState.creator,
+        genres: [] as string[],
+        coverImage: heroRomeImg,
+        locations: merged,
+        locationCount: merged.length,
+      };
+    }
+
     return null;
-  }, [mockTitle, aiDetails, userLocations]);
+  }, [mockTitle, aiDetails, userLocations, navState]);
+
+  const relatedSeed = useMemo(() => {
+    if (view) return { title: view.title, year: view.year, type: view.type };
+    if (navState?.title && navState?.year) {
+      return {
+        title: navState.title,
+        year: Number(navState.year),
+        type: resolveTitleType(navState.type),
+      };
+    }
+    return null;
+  }, [view, navState]);
 
   // Fetch related titles from TMDB
   useEffect(() => {
-    if (!view) return;
+    if (!relatedSeed) return;
     let cancelled = false;
     setRelatedLoading(true);
     (async () => {
       try {
         const { data } = await supabase.functions.invoke("related-titles", {
-          body: { title: view.title, year: view.year, type: view.type },
+          body: { title: relatedSeed.title, year: relatedSeed.year, type: relatedSeed.type },
         });
         if (cancelled) return;
         const titles = Array.isArray(data?.titles) ? data.titles : [];
@@ -185,31 +343,114 @@ export default function TitleDetail() {
       }
     })();
     return () => { cancelled = true; };
-  }, [view?.title, view?.year, view?.type]);
+  }, [relatedSeed]);
 
   // titleSlug and saved state must be computed before any conditional returns (Rules of Hooks)
   const titleSlug = view ? slugify(view.title, view.year) : "";
   const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
 
-  // Loading state
-  if (!mockTitle && loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center max-w-md px-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-amber/30 text-amber text-xs mb-4">
-            <Sparkles className="w-3.5 h-3.5" /> AI is mapping locations
-          </div>
-          <Loader2 className="w-8 h-8 text-amber animate-spin mx-auto mb-3" />
-          <p className="font-serif text-xl text-foreground">Discovering filming locations…</p>
-          <p className="text-muted-foreground text-sm mt-1">
-            Gemini is gathering real-world spots for this title.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const validPins = view ? view.locations.filter((l) => l.lat !== 0 || l.lng !== 0) : [];
+  const mapCenter: [number, number] = validPins.length
+    ? [
+        validPins.reduce((s, p) => s + p.lat, 0) / validPins.length,
+        validPins.reduce((s, p) => s + p.lng, 0) / validPins.length,
+      ]
+    : [30, 10];
+  const mapZoom = validPins.length ? (validPins.length === 1 ? 6 : 4) : 2;
+
+  const mapPins: LeafletMapPin[] = view
+    ? validPins.map((p) => ({
+        label: p.label,
+        lat: p.lat,
+        lng: p.lng,
+        type: view.type,
+        title: view.title,
+      }))
+    : [];
+
+  const displayLocationCount = mapPins.length;
+
+  const loadingProgress = useMemo(() => {
+    if (!loading) return 100;
+    if (streamStage === "details") return 88;
+    if (streamStage === "ai_started") return 58;
+    return 24;
+  }, [loading, streamStage]);
+
+  const loadingMessage =
+    streamStage === "details"
+      ? "Finalizing title media..."
+      : streamStage === "ai_started"
+      ? "AI is mapping locations..."
+      : "Preparing title details...";
+
+  useEffect(() => {
+    if (!titleMap || !mapPins.length) return;
+
+    const focusMapOnPins = () => {
+      if (mapPins.length === 1) {
+        const pin = mapPins[0];
+        titleMap.flyTo({
+          center: [pin.lng, pin.lat],
+          zoom: 9,
+          duration: 500,
+          essential: true,
+        });
+        return;
+      }
+
+      const lats = mapPins.map((p) => p.lat);
+      const lngs = mapPins.map((p) => p.lng);
+      const minLat = Math.min(...lats);
+      const maxLat = Math.max(...lats);
+      const minLng = Math.min(...lngs);
+      const maxLng = Math.max(...lngs);
+
+      titleMap.fitBounds(
+        [
+          [minLng, minLat],
+          [maxLng, maxLat],
+        ],
+        {
+          padding: 64,
+          duration: 500,
+          maxZoom: 9,
+          essential: true,
+        }
+      );
+    };
+
+    if (titleMap.isStyleLoaded()) {
+      focusMapOnPins();
+    } else {
+      titleMap.once("load", focusMapOnPins);
+    }
+  }, [titleMap, mapPins]);
 
   if (!view) {
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <div className="text-center max-w-md px-6 w-full">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-amber/30 text-amber text-xs mb-4">
+              <Sparkles className="w-3.5 h-3.5" /> {loadingMessage}
+            </div>
+            <Loader2 className="w-8 h-8 text-amber animate-spin mx-auto mb-3" />
+            <p className="font-serif text-xl text-foreground">Discovering filming locations...</p>
+            <p className="text-muted-foreground text-sm mt-1">
+              Gemini is gathering real-world spots for this title.
+            </p>
+            <div className="mt-5 text-left">
+              <Progress value={loadingProgress} className="h-1.5 bg-muted" />
+              <p className="text-xs text-muted-foreground mt-2">
+                {Math.round(loadingProgress)}% complete
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center px-6">
@@ -222,23 +463,6 @@ export default function TitleDetail() {
   }
 
   const TypeIcon = typeIcons[view.type];
-
-  const validPins = view.locations.filter((l) => l.lat !== 0 || l.lng !== 0);
-  const mapCenter: [number, number] = validPins.length
-    ? [
-        validPins.reduce((s, p) => s + p.lat, 0) / validPins.length,
-        validPins.reduce((s, p) => s + p.lng, 0) / validPins.length,
-      ]
-    : [30, 10];
-  const mapZoom = validPins.length ? (validPins.length === 1 ? 6 : 4) : 2;
-
-  const mapPins = validPins.map((p) => ({
-    label: p.label,
-    lat: p.lat,
-    lng: p.lng,
-    type: view.type,
-    title: view.title,
-  }));
 
   const fallbackRelated = mockTitles
     .filter((t) => slugify(t.title, t.year) !== titleSlug)
@@ -302,13 +526,20 @@ export default function TitleDetail() {
                   <Clock className="w-4 h-4" /> {view.year}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Star className="w-4 h-4 text-amber" /> {view.rating?.toFixed(1)}
+                  <Star className="w-4 h-4 text-amber" /> {view.rating ? view.rating.toFixed(1) : "-"}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-teal" /> {view.locationCount} locations
+                  <MapPin className="w-4 h-4 text-teal" /> {displayLocationCount} locations
                 </span>
                 {view.creator && <span className="hidden sm:inline">· {view.creator}</span>}
               </div>
+
+              {!mockTitle && loading && (
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-amber/30 text-amber text-xs mb-4">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  {streamStage === "details" ? "Finalizing title media" : "AI is mapping locations"}
+                </div>
+              )}
 
               {view.genres.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-5">
@@ -339,7 +570,7 @@ export default function TitleDetail() {
                 <AddLocationDialog titleSlug={titleSlug} titleName={view.title} />
                 <ShareMenu
                   title={view.title}
-                  text={`Explore ${view.locationCount} filming locations from ${view.title} (${view.year})`}
+                  text={`Explore ${displayLocationCount} filming locations from ${view.title} (${view.year})`}
                 />
               </div>
               <div className="mt-2">
@@ -376,6 +607,7 @@ export default function TitleDetail() {
                 pins={mapPins}
                 center={mapCenter}
                 zoom={mapZoom}
+                onMapReady={setTitleMap}
                 className="h-[420px] rounded-xl"
               />
             </div>
@@ -459,11 +691,7 @@ export default function TitleDetail() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ delay: i * 0.08, duration: 0.5 }}
-                  onClick={() =>
-                    navigate(`/title/${slugify(t.title, t.year)}`, {
-                      state: { title: t.title, year: t.year, type: t.type },
-                    })
-                  }
+                  onClick={() => openRelatedTitle(t)}
                   className="relative h-64 w-44 shrink-0 rounded-2xl overflow-hidden group cursor-pointer shadow-card"
                 >
                   <img
@@ -486,10 +714,6 @@ export default function TitleDetail() {
                       <span className="text-xs text-muted-foreground ml-1">{t.year}</span>
                     </div>
                     <h3 className="font-serif text-foreground text-base leading-tight mb-1">{t.title}</h3>
-                    <div className="flex items-center gap-1 text-amber/80">
-                      <MapPin className="w-3 h-3" />
-                      <span className="text-xs">{t.locationCount ?? t.spots ?? 0} spots</span>
-                    </div>
                   </div>
                 </motion.div>
               ))}
