@@ -15,37 +15,29 @@ export type RecentSpot = {
   createdAt: string;
 };
 
-function slugifySpot(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
+type SpotRow = {
+  id: string;
+  slug: string;
+  name: string;
+  city: string | null;
+  country: string | null;
+  flag: string | null;
+  image_url: string | null;
+  description: string | null;
+  lat: number | null;
+  lng: number | null;
+  created_at: string;
+};
 
-function mapRow(cacheKey: string, payload: unknown, createdAt: string): RecentSpot | null {
-  if (!payload || typeof payload !== "object") return null;
-  const p = payload as Record<string, unknown>;
-  const name = typeof p.name === "string" ? p.name.trim() : "";
-  if (!name) return null;
-  const baseSlug = cacheKey.split("|")[0]?.trim() || slugifySpot(name);
+type TitleSpotRow = {
+  spot_id: string;
+  title_id: string;
+};
 
-  const titlesRaw = Array.isArray(p.titles) ? p.titles : [];
-  const titles = titlesRaw.filter((t): t is string => typeof t === "string");
-
-  return {
-    slug: baseSlug,
-    name,
-    city: typeof p.city === "string" ? p.city : "",
-    country: typeof p.country === "string" ? p.country : "",
-    flag: typeof p.flag === "string" ? p.flag : undefined,
-    image: typeof p.image === "string" ? p.image : undefined,
-    description: typeof p.description === "string" ? p.description : undefined,
-    titles: titles.slice(0, 4),
-    lat: typeof p.lat === "number" ? p.lat : undefined,
-    lng: typeof p.lng === "number" ? p.lng : undefined,
-    createdAt,
-  };
-}
+type TitleRow = {
+  id: string;
+  title: string;
+};
 
 export function useRecentVisitedSpots(limit = 6) {
   const [spots, setSpots] = useState<RecentSpot[]>([]);
@@ -58,25 +50,65 @@ export function useRecentVisitedSpots(limit = 6) {
       setLoading(true);
       setError(null);
       try {
-        const { data, error: qErr } = await supabase
-          .from("ai_cache")
-          .select("cache_key, payload, created_at")
-          .eq("function_name", "spot-details")
+        const { data, error: spotsError } = await supabase
+          .from("spots")
+          .select("id, slug, name, city, country, flag, image_url, description, lat, lng, created_at")
           .order("created_at", { ascending: false })
-          .limit(limit * 4);
-        if (qErr) throw qErr;
-        const mapped = (data || [])
-          .map((r) => mapRow(r.cache_key, r.payload, r.created_at as string))
-          .filter((s): s is RecentSpot => Boolean(s));
-        const seen = new Set<string>();
-        const deduped: RecentSpot[] = [];
-        for (const s of mapped) {
-          if (seen.has(s.slug)) continue;
-          seen.add(s.slug);
-          deduped.push(s);
-          if (deduped.length >= limit) break;
+          .limit(limit);
+        if (spotsError) throw spotsError;
+
+        const recentSpots = (data || []) as SpotRow[];
+
+        if (recentSpots.length === 0) {
+          if (!cancelled) setSpots([]);
+          return;
         }
-        if (!cancelled) setSpots(deduped);
+
+        const spotIds = recentSpots.map((spot) => spot.id);
+
+        const { data: titleSpotRows, error: titleSpotsError } = await supabase
+          .from("title_spots")
+          .select("spot_id, title_id")
+          .in("spot_id", spotIds);
+        if (titleSpotsError) throw titleSpotsError;
+
+        const titleIds = Array.from(new Set((titleSpotRows || []).map((row) => row.title_id)));
+
+        let titlesById = new Map<string, string>();
+        if (titleIds.length > 0) {
+          const { data: titleRows, error: titlesError } = await supabase
+            .from("titles")
+            .select("id, title")
+            .in("id", titleIds);
+          if (titlesError) throw titlesError;
+          titlesById = new Map(((titleRows || []) as TitleRow[]).map((row) => [row.id, row.title]));
+        }
+
+        const titleLinksBySpotId = new Map<string, string[]>();
+        for (const row of (titleSpotRows || []) as TitleSpotRow[]) {
+          const title = titlesById.get(row.title_id);
+          if (!title) continue;
+          const existing = titleLinksBySpotId.get(row.spot_id) || [];
+          if (existing.includes(title)) continue;
+          existing.push(title);
+          titleLinksBySpotId.set(row.spot_id, existing);
+        }
+
+        const mapped: RecentSpot[] = recentSpots.map((spot) => ({
+          slug: spot.slug,
+          name: spot.name,
+          city: spot.city || "",
+          country: spot.country || "",
+          flag: spot.flag || undefined,
+          image: spot.image_url || undefined,
+          description: spot.description || undefined,
+          titles: (titleLinksBySpotId.get(spot.id) || []).slice(0, 4),
+          lat: spot.lat ?? undefined,
+          lng: spot.lng ?? undefined,
+          createdAt: spot.created_at,
+        }));
+
+        if (!cancelled) setSpots(mapped);
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Unable to load recent spots");

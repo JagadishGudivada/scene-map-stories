@@ -152,6 +152,7 @@ export default function TitleDetail() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Accept: "text/event-stream",
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
           },
@@ -370,6 +371,7 @@ export default function TitleDetail() {
 
   const displayLocationCount = mapPins.length;
 
+  const isInitialLoading = loading && !mockTitle && !aiDetails;
   const loadingProgress = useMemo(() => {
     if (!loading) return 100;
     if (streamStage === "details") return 88;
@@ -427,25 +429,27 @@ export default function TitleDetail() {
     }
   }, [titleMap, mapPins]);
 
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md px-6 w-full">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-amber/30 text-amber text-xs mb-4">
+            <Sparkles className="w-3.5 h-3.5" /> {loadingMessage}
+          </div>
+          <Loader2 className="w-8 h-8 text-amber animate-spin mx-auto mb-3" />
+          <p className="font-serif text-xl text-foreground">Discovering filming locations...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!view) {
     if (loading) {
       return (
-        <div className="min-h-screen bg-background flex items-center justify-center">
-          <div className="text-center max-w-md px-6 w-full">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-amber/30 text-amber text-xs mb-4">
-              <Sparkles className="w-3.5 h-3.5" /> {loadingMessage}
-            </div>
-            <Loader2 className="w-8 h-8 text-amber animate-spin mx-auto mb-3" />
-            <p className="font-serif text-xl text-foreground">Discovering filming locations...</p>
-            <p className="text-muted-foreground text-sm mt-1">
-              Gemini is gathering real-world spots for this title.
-            </p>
-            <div className="mt-5 text-left">
-              <Progress value={loadingProgress} className="h-1.5 bg-muted" />
-              <p className="text-xs text-muted-foreground mt-2">
-                {Math.round(loadingProgress)}% complete
-              </p>
-            </div>
+        <div className="min-h-screen bg-background flex items-center justify-center px-4">
+          <div className="glass rounded-2xl px-6 py-5 flex items-center gap-3 text-foreground">
+            <Loader2 className="w-5 h-5 text-amber animate-spin" />
+            <span className="text-sm font-medium">Loading title details...</span>
           </div>
         </div>
       );
@@ -653,7 +657,7 @@ export default function TitleDetail() {
           </div>
         </section>
 
-        {/* Community Photos */}
+        {/* Community Photos 
         <section className="mb-12">
           <div className="flex items-center gap-3 mb-5">
             <Camera className="w-5 h-5 text-teal" />
@@ -671,7 +675,7 @@ export default function TitleDetail() {
               <p className="text-muted-foreground text-sm">No community photos yet. Be the first!</p>
             </div>
           )}
-        </section>
+        </section> */}
 
         {/* Related Titles */}
         <section className="mb-12">

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { mockTitles, type MediaType, type Title } from "@/lib/mockData";
-import { slugifyTitle } from "@/hooks/useAITitleSearch";
 
 function normalizeMediaType(value: unknown): MediaType {
   if (value === "Series" || value === "Book") return value;
@@ -27,59 +26,57 @@ function toLocationLabels(value: unknown): string[] {
     .filter((item): item is string => Boolean(item));
 }
 
-function parseFromCacheKey(cacheKey: string): { title: string; year: number | null } {
-  const trimmed = cacheKey.trim();
-  const match = trimmed.match(/^(.*?)-(\d{4})$/);
-  if (!match) {
-    const titleOnly = trimmed
-      .split("-")
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(" ");
-    return { title: titleOnly, year: null };
-  }
+function mapTitleRowToCard(row: {
+  id: string;
+  title: string;
+  year: number | null;
+  type: unknown;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  rating: number | null;
+  genres: string[] | null;
+  data: unknown;
+}): Title | null {
+  const payload = row.data && typeof row.data === "object"
+    ? (row.data as Record<string, unknown>)
+    : {};
 
-  const title = match[1]
-    .split("-")
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
-  const year = Number(match[2]);
-  return { title, year: Number.isFinite(year) ? year : null };
-}
+  const title = typeof row.title === "string" && row.title.trim().length > 0
+    ? row.title.trim()
+    : typeof payload.title === "string" && payload.title.trim().length > 0
+    ? payload.title.trim()
+    : "";
+  const parsedYear = typeof row.year === "number" ? row.year : Number(payload.year);
+  if (!title || !Number.isFinite(parsedYear)) return null;
 
-function mapCachePayloadToTitle(cacheKey: string, payload: unknown): Title | null {
-  if (!payload || typeof payload !== "object") return null;
-
-  const raw = payload as Record<string, unknown>;
-  const nested = (raw.data || raw.result || raw.payload) as Record<string, unknown> | undefined;
-  const p = nested && typeof nested === "object" ? nested : raw;
-  const fromKey = parseFromCacheKey(cacheKey);
-  const title = typeof p.title === "string" && p.title.trim().length > 0 ? p.title.trim() : fromKey.title;
-  const parsedYear = typeof p.year === "number" ? p.year : Number(p.year);
-  const year = Number.isFinite(parsedYear) ? parsedYear : fromKey.year;
-  if (!title || !Number.isFinite(year)) return null;
-
-  const type = normalizeMediaType(p.type);
-  const locations = toLocationLabels(p.locations);
-  const genres = toStringArray(p.genres);
+  const type = normalizeMediaType(row.type);
+  const locations = toLocationLabels(payload.locations);
+  const genres = row.genres && row.genres.length > 0 ? row.genres : toStringArray(payload.genres);
   const coverImage =
-    (typeof p.coverImage === "string" && p.coverImage) ||
-    (typeof p.posterUrl === "string" && p.posterUrl) ||
-    (typeof p.heroImage === "string" && p.heroImage) ||
-    (typeof p.backdropUrl === "string" && p.backdropUrl) ||
+    row.poster_url ||
+    (typeof payload.coverImage === "string" && payload.coverImage) ||
+    (typeof payload.posterUrl === "string" && payload.posterUrl) ||
+    row.backdrop_url ||
+    (typeof payload.heroImage === "string" && payload.heroImage) ||
+    (typeof payload.backdropUrl === "string" && payload.backdropUrl) ||
     mockTitles[0]?.coverImage ||
     "";
+  const heroImage =
+    row.backdrop_url ||
+    (typeof payload.backdropImage === "string" && payload.backdropImage) ||
+    (typeof payload.heroImage === "string" && payload.heroImage) ||
+    (typeof payload.backdropUrl === "string" && payload.backdropUrl) ||
+    coverImage;
 
   return {
-    id: `recent-${cacheKey}`,
+    id: row.id,
     title,
-    year,
+    year: parsedYear,
     type,
     coverImage,
-    heroImage: (typeof p.heroImage === "string" && p.heroImage) || (typeof p.backdropUrl === "string" && p.backdropUrl) || coverImage,
+    heroImage,
     locationCount: locations.length || 1,
-    rating: typeof p.rating === "number" ? p.rating : Number(p.rating) || 7.5,
+    rating: typeof row.rating === "number" ? row.rating : Number(payload.rating) || 7.5,
     locations: locations.length > 0 ? locations.slice(0, 3) : ["Featured locations"],
     genres: genres.length > 0 ? genres.slice(0, 3) : ["Drama"],
   };
@@ -99,25 +96,18 @@ export function useRecentTitleDetails(limit = 8) {
 
       try {
         const { data, error: queryError } = await supabase
-          .from("ai_cache")
-          .select("cache_key, payload, created_at, expires_at")
-          .eq("function_name", "title-details")
+          .from("titles")
+          .select("id, title, year, type, poster_url, backdrop_url, rating, genres, data, created_at")
           .order("created_at", { ascending: false })
-          .order("expires_at", { ascending: false })
-          .limit(limit * 4);
+          .limit(limit);
 
         if (queryError) throw queryError;
 
         const mapped = (data || [])
-          .map((row) => mapCachePayloadToTitle(row.cache_key, row.payload))
+          .map((row) => mapTitleRowToCard(row))
           .filter((item): item is Title => Boolean(item));
 
-        const deduped = mapped.filter((item, index, arr) => {
-          const key = slugifyTitle(item.title, item.year);
-          return arr.findIndex((candidate) => slugifyTitle(candidate.title, candidate.year) === key) === index;
-        }).slice(0, limit);
-
-        if (!cancelled) setTitles(deduped);
+        if (!cancelled) setTitles(mapped);
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Unable to load recently added titles");

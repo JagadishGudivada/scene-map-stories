@@ -173,12 +173,13 @@ export default function LocationDetail() {
     setAiData(null);
     (async () => {
       try {
-        const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/location-details`;
+        const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/location-details?stream=1`;
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const response = await fetch(functionUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Accept: "text/event-stream",
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
           },
