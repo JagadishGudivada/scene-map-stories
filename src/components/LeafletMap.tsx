@@ -184,12 +184,28 @@ export default function LeafletMap({
       if (clusterId == null) return;
 
       const source = map.getSource(SOURCE_ID) as any;
-      source?.getClusterExpansionZoom(clusterId, (err: Error | null, expansionZoom: number) => {
-        if (err) return;
-        const geometry = feature.geometry as any;
-        if (!geometry?.coordinates) return;
+      if (!source) return;
+      const geometry = feature.geometry as any;
+      if (!geometry?.coordinates) return;
+
+      const flyToZoom = (expansionZoom: number) => {
         map.easeTo({ center: geometry.coordinates, zoom: expansionZoom + 0.4, duration: 500 });
-      });
+      };
+
+      try {
+        const result = source.getClusterExpansionZoom(clusterId, (err: Error | null, expansionZoom: number) => {
+          if (err) return;
+          flyToZoom(expansionZoom);
+        });
+        // MapLibre v3+ returns a Promise instead of using the callback
+        if (result && typeof result.then === "function") {
+          result.then(flyToZoom).catch(() => {
+            map.easeTo({ center: geometry.coordinates, zoom: map.getZoom() + 2, duration: 500 });
+          });
+        }
+      } catch {
+        map.easeTo({ center: geometry.coordinates, zoom: map.getZoom() + 2, duration: 500 });
+      }
     };
 
     const handleUnclusteredPinClick = (event: any) => {
