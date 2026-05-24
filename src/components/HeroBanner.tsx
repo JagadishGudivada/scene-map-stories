@@ -60,7 +60,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
       }));
     }
 
-    return heroSlides;
+    return heroSlides.map((s) => ({ ...s, locationCount: 0 })) as HeroSlide[];
   }, [titles]);
 
   useEffect(() => {

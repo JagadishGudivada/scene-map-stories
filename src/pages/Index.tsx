@@ -10,6 +10,7 @@ import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import Footer from "@/components/Footer";
 import Seo from "@/components/Seo";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
+import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
 import { useRecentTitleDetails } from "@/hooks/useRecentTitleDetails";
 import { mockPosts, type MediaType } from "@/lib/mockData";
@@ -66,6 +67,7 @@ export default function Index() {
   } = useRecentTitleDetails(5);
 
   const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
+  const { aiResults: locResults, isSearching: isLocSearching, searchLocations, clearResults: clearLocations } = useAILocationSearch();
 
   const homepageTitles = useMemo(() => {
     if (weeklyTitles.length === 0) return [];
@@ -101,12 +103,14 @@ export default function Index() {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     searchTitles(value);
+    searchLocations(value);
     setShowAIDropdown(value.trim().length >= 2);
   };
 
   const handleClearSearch = () => {
     setSearchQuery("");
     clearResults();
+    clearLocations();
     setShowAIDropdown(false);
   };
 
@@ -224,9 +228,9 @@ export default function Index() {
             )}
           </AnimatePresence>
 
-          {/* AI Location Results Dropdown */}
+          {/* AI Search Results Dropdown */}
           <AnimatePresence>
-            {showAIDropdown && aiResults.length > 0 && (
+            {showAIDropdown && (aiResults.length > 0 || locResults.length > 0 || isAISearching || isLocSearching) && (
               <motion.div
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -235,43 +239,73 @@ export default function Index() {
               >
                 <div className="flex items-center gap-2 px-4 py-2.5 border-b border-border">
                   <Sparkles className="w-3.5 h-3.5 text-amber" />
-                  <span className="text-xs font-medium text-amber">AI-powered titles</span>
-                  <span className="ml-auto text-xs text-muted-foreground">{aiResults.length} title{aiResults.length === 1 ? "" : "s"}</span>
+                  <span className="text-xs font-medium text-amber">AI-powered results</span>
+                  <span className="ml-auto text-xs text-muted-foreground">
+                    {aiResults.length + locResults.length} result{aiResults.length + locResults.length === 1 ? "" : "s"}
+                  </span>
                 </div>
-                <div className="max-h-72 overflow-y-auto">
-                  {aiResults.map((t, i) => (
-                    <button
-                      key={`${t.title}-${t.year}-${i}`}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
-                      onClick={() => {
-                        setShowAIDropdown(false);
-                        navigate(`/title/${slugifyTitle(t.title, t.year)}`, { state: { title: t.title, year: t.year, type: t.type, creator: t.creator } });
-                      }}
-                    >
-                      <Film className="w-4 h-4 text-amber shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-sm text-foreground truncate">{t.title} <span className="text-muted-foreground">({t.year})</span></p>
-                        {t.creator && <p className="text-xs text-muted-foreground truncate">{t.creator}</p>}
+                <div className="max-h-96 overflow-y-auto">
+                  {aiResults.length > 0 && (
+                    <>
+                      <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium bg-muted/30">
+                        Titles
                       </div>
-                      <span className="ml-auto text-[10px] uppercase tracking-wider text-muted-foreground font-medium shrink-0">
-                        {t.type}
-                      </span>
-                    </button>
-                  ))}
+                      {aiResults.map((t, i) => (
+                        <button
+                          key={`title-${t.title}-${t.year}-${i}`}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
+                          onClick={() => {
+                            setShowAIDropdown(false);
+                            navigate(`/title/${slugifyTitle(t.title, t.year)}`, { state: { title: t.title, year: t.year, type: t.type, creator: t.creator } });
+                          }}
+                        >
+                          <Film className="w-4 h-4 text-amber shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-foreground truncate">{t.title} <span className="text-muted-foreground">({t.year})</span></p>
+                            {t.creator && <p className="text-xs text-muted-foreground truncate">{t.creator}</p>}
+                          </div>
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium shrink-0">
+                            {t.type}
+                          </span>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  {locResults.length > 0 && (
+                    <>
+                      <div className="px-4 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground font-medium bg-muted/30">
+                        Locations
+                      </div>
+                      {locResults.map((l, i) => (
+                        <button
+                          key={`loc-${l.label}-${i}`}
+                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
+                          onClick={() => {
+                            setShowAIDropdown(false);
+                            navigate(`/map?search=${encodeURIComponent(l.label)}&lat=${l.lat}&lng=${l.lng}`);
+                          }}
+                        >
+                          <MapPin className="w-4 h-4 text-amber shrink-0" />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm text-foreground truncate">{l.label}</p>
+                            {l.title && <p className="text-xs text-muted-foreground truncate">{l.title}</p>}
+                          </div>
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium shrink-0">
+                            {l.type}
+                          </span>
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  {!isAISearching && !isLocSearching && aiResults.length === 0 && locResults.length === 0 && (
+                    <div className="px-4 py-6 text-center text-sm text-muted-foreground">No matches</div>
+                  )}
+                  {(isAISearching || isLocSearching) && aiResults.length === 0 && locResults.length === 0 && (
+                    <div className="px-4 py-6 text-center text-sm text-muted-foreground flex items-center justify-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin" /> Searching…
+                    </div>
+                  )}
                 </div>
-                <button
-                  onClick={() => {
-                    setShowAIDropdown(false);
-                    if (aiResults[0]) {
-                      const t = aiResults[0];
-                      navigate(`/title/${slugifyTitle(t.title, t.year)}`, { state: { title: t.title, year: t.year, type: t.type, creator: t.creator } });
-                    }
-                  }}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-t border-border text-sm text-amber hover:bg-muted/50 transition-colors"
-                >
-                  Open top result
-                  <ArrowRight className="w-4 h-4" />
-                </button>
               </motion.div>
             )}
           </AnimatePresence>
