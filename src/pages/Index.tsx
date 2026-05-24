@@ -10,6 +10,7 @@ import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import Footer from "@/components/Footer";
 import Seo from "@/components/Seo";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
+import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
 import { useRecentTitleDetails } from "@/hooks/useRecentTitleDetails";
 import { mockPosts, type MediaType } from "@/lib/mockData";
