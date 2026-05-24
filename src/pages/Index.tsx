@@ -103,12 +103,14 @@ export default function Index() {
   const handleSearchChange = (value: string) => {
     setSearchQuery(value);
     searchTitles(value);
+    searchLocations(value);
     setShowAIDropdown(value.trim().length >= 2);
   };
 
   const handleClearSearch = () => {
     setSearchQuery("");
     clearResults();
+    clearLocations();
     setShowAIDropdown(false);
   };
 
