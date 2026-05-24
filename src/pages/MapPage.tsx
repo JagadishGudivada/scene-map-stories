@@ -4,7 +4,6 @@ import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkl
 import { useSearchParams } from "react-router-dom";
 import LeafletMap, { type AppMap, type MapPin as MapPinType } from "@/components/LeafletMap";
 import MapSidePanel from "@/components/MapSidePanel";
-import { allMapPins } from "@/lib/mapData";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
@@ -33,8 +32,8 @@ export default function MapPage() {
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
   const { pins: weeklyPins, loading: weeklyLoading } = useWeeklyReleaseLocations();
 
-  // Base pins shown on the map: weekly release locations when available, else static fallback
-  const basePins = weeklyPins.length > 0 ? weeklyPins : allMapPins;
+  // Base pins shown on the map: weekly release locations only
+  const basePins = weeklyPins;
 
   // Handle URL search params from homepage
   useEffect(() => {

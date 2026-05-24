@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { X, MapPin, Film, Tv, BookOpen, ExternalLink, Bookmark, Camera, Navigation } from "lucide-react";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
@@ -6,6 +6,7 @@ import type { MediaType } from "@/lib/mockData";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const typeColorMap: Record<MediaType, string> = {
   Movie: "bg-amber/15 text-amber",
@@ -42,6 +43,7 @@ interface MapSidePanelProps {
 export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: MapSidePanelProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [locationImage, setLocationImage] = useState<string | null>(null);
 
   const nearbyLocations = useMemo(() => {
     return allPins
@@ -56,6 +58,44 @@ export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: Map
     const seed = pin.label.charCodeAt(0) + pin.label.length;
     return Array.from({ length: 6 }, (_, i) => visitorPhotos[(seed + i) % visitorPhotos.length]);
   }, [pin.label]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadLocationImage = async () => {
+      setLocationImage(null);
+
+      try {
+        const { data, error } = await supabase.functions.invoke("location-photo", {
+          body: {
+            label: pin.label,
+            city: pin.city,
+            country: pin.country,
+          },
+        });
+
+        if (error) throw error;
+
+        const imageUrl = data && typeof data === "object" && "imageUrl" in data
+          ? (data.imageUrl as string | null)
+          : null;
+
+        if (!cancelled) {
+          setLocationImage(imageUrl || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setLocationImage(null);
+        }
+      }
+    };
+
+    loadLocationImage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pin.label, pin.city, pin.country]);
 
   const handleSaveToMap = () => {
     if (!user) {
@@ -90,7 +130,7 @@ export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: Map
       {/* Location image */}
       <div className="relative h-56 sm:h-60 shrink-0 overflow-hidden">
         <img
-          src={pin.image || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop"}
+          src={locationImage || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop"}
           alt={pin.label}
           className="w-full h-full object-cover"
         />

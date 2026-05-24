@@ -1,16 +1,99 @@
 import { useEffect, useState } from "react";
-import { invokeCached } from "@/lib/aiClientCache";
+import { supabase } from "@/integrations/supabase/client";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
+import { slugifyTitle } from "@/hooks/useAITitleSearch";
 import type { MapPin } from "@/components/LeafletMap";
 import type { MediaType } from "@/lib/mockData";
 
-const CACHE_KEY = "weekly-release-locations-v1";
+const CACHE_KEY = "weekly-release-locations-v3";
 
 type CachePayload = {
   weekKey: string;
   pins: MapPin[];
   updatedAt: string;
 };
+
+type TitleDataLocation = {
+  label?: string;
+  name?: string;
+  city?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
+  image?: string;
+  image_url?: string;
+};
+
+type TitleRow = {
+  id: string;
+  slug: string;
+  title: string;
+  type: string;
+  year: number | null;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  data: unknown;
+  created_at: string;
+};
+
+function normalizeMediaType(type: string | null | undefined): MediaType {
+  if (type === "Movie" || type === "Series" || type === "Book") return type;
+  if (type === "Series") return "Series";
+  if (type === "Book") return "Book";
+  return "Movie";
+}
+
+function toNumber(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toLocationArray(data: unknown): TitleDataLocation[] {
+  if (!data || typeof data !== "object") return [];
+  const payload = data as Record<string, unknown>;
+  const candidates = [payload.locations, payload.spots, payload.pins];
+  for (const value of candidates) {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is TitleDataLocation => Boolean(item && typeof item === "object"));
+    }
+  }
+  return [];
+}
+
+function mapRowToPins(row: TitleRow): MapPin[] {
+  const locations = toLocationArray(row.data);
+  const type = normalizeMediaType(row.type);
+
+  return locations
+    .map((loc) => {
+      const lat = toNumber(loc.lat);
+      const lng = toNumber(loc.lng);
+      if (lat === null || lng === null) return null;
+
+      const label =
+        (typeof loc.label === "string" && loc.label.trim()) ||
+        (typeof loc.name === "string" && loc.name.trim()) ||
+        [loc.city, loc.country].filter(Boolean).join(", ") ||
+        row.title;
+
+      return {
+        lat,
+        lng,
+        label,
+        title: row.title,
+        type,
+        image:
+          (typeof loc.image_url === "string" && loc.image_url) ||
+          (typeof loc.image === "string" && loc.image) ||
+          row.poster_url ||
+          row.backdrop_url ||
+          undefined,
+        city: typeof loc.city === "string" ? loc.city : undefined,
+        country: typeof loc.country === "string" ? loc.country : undefined,
+      } as MapPin;
+    })
+    .filter((pin): pin is MapPin => Boolean(pin));
+}
 
 function getIsoWeekKey(date = new Date()) {
   const utcDate = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
@@ -47,63 +130,71 @@ export function useWeeklyReleaseLocations() {
       /* ignore */
     }
 
-    if (titles.length === 0) {
-      setLoading(false);
-      return;
-    }
-
     const run = async () => {
       setLoading(true);
-      const collected: MapPin[] = [];
-      const seen = new Set<string>();
+      try {
+        const collected: MapPin[] = [];
+        const seen = new Set<string>();
 
-      // Run lookups in parallel for speed
-      const results = await Promise.allSettled(
-        titles.slice(0, 8).map(async (t) => {
-          const query = `${t.title} ${t.year}`;
-          const data = await invokeCached<any>(
-            "search-locations",
-            { query },
-            `weekly:${query.toLowerCase()}`,
-            { ttlSeconds: 60 * 60 * 24 * 7, persist: "session" }
-          );
-          const locs = Array.isArray(data?.locations) ? data.locations : [];
-          return locs.map((loc: any) => ({
-            lat: Number(loc.lat),
-            lng: Number(loc.lng),
-            label: String(loc.label || ""),
-            title: t.title,
-            type: (t.type as MediaType) || "Movie",
-            image: t.coverImage,
-          })) as MapPin[];
-        })
-      );
-
-      for (const r of results) {
-        if (r.status !== "fulfilled") continue;
-        for (const pin of r.value) {
-          if (!Number.isFinite(pin.lat) || !Number.isFinite(pin.lng)) continue;
-          const key = `${pin.lat.toFixed(3)}-${pin.lng.toFixed(3)}-${pin.title}`;
-          if (seen.has(key)) continue;
+        const addPin = (pin: MapPin) => {
+          if (!Number.isFinite(pin.lat) || !Number.isFinite(pin.lng)) return;
+          const key = `${pin.title || ""}-${pin.lat.toFixed(4)}-${pin.lng.toFixed(4)}`;
+          if (seen.has(key)) return;
           seen.add(key);
           collected.push(pin);
-        }
-      }
-
-      if (cancelled) return;
-
-      setPins(collected);
-      setLoading(false);
-
-      try {
-        const payload: CachePayload = {
-          weekKey,
-          pins: collected,
-          updatedAt: new Date().toISOString(),
         };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+
+        const slugs = titles.slice(0, 8).map((t) => slugifyTitle(t.title, t.year));
+
+        let weeklyRows: TitleRow[] = [];
+        if (slugs.length > 0) {
+          const { data, error } = await supabase
+            .from("titles")
+            .select("id, slug, title, type, year, poster_url, backdrop_url, data, created_at")
+            .in("slug", slugs);
+          if (error) throw error;
+          weeklyRows = (data || []) as TitleRow[];
+
+          const order = new Map(slugs.map((slug, index) => [slug, index]));
+          weeklyRows.sort((a, b) => (order.get(a.slug) ?? 999) - (order.get(b.slug) ?? 999));
+        }
+
+        // Fallback to most recent titles from DB when weekly slug matching is unavailable.
+        if (weeklyRows.length === 0) {
+          const { data, error } = await supabase
+            .from("titles")
+            .select("id, slug, title, type, year, poster_url, backdrop_url, data, created_at")
+            .order("created_at", { ascending: false })
+            .limit(8);
+          if (error) throw error;
+          weeklyRows = (data || []) as TitleRow[];
+        }
+
+        for (const row of weeklyRows) {
+          const pinsForTitle = mapRowToPins(row);
+          for (const pin of pinsForTitle) addPin(pin);
+        }
+
+        if (cancelled) return;
+
+        setPins(collected);
+        setLoading(false);
+
+        try {
+          const payload: CachePayload = {
+            weekKey,
+            pins: collected,
+            updatedAt: new Date().toISOString(),
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+        } catch {
+          /* ignore quota */
+        }
       } catch {
-        /* ignore quota */
+        if (!cancelled) {
+          setPins([]);
+          setLoading(false);
+        }
       }
     };
 
