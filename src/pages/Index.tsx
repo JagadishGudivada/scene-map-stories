@@ -67,6 +67,7 @@ export default function Index() {
   } = useRecentTitleDetails(5);
 
   const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
+  const { aiResults: locResults, isSearching: isLocSearching, searchLocations, clearResults: clearLocations } = useAILocationSearch();
 
   const homepageTitles = useMemo(() => {
     if (weeklyTitles.length === 0) return [];
