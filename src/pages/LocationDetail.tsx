@@ -152,7 +152,21 @@ function slugifyTitle(title: string, year: number) {
 export default function LocationDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { saved: locationSaved, toggle: toggleLocationSave, loading: locationSaveLoading } = useSavedLocation(slug || "rome");
+
+  const handleExploreOnMap = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to explore filming locations on the map.",
+      });
+      navigate(`/auth?redirect=${encodeURIComponent(`/map?search=${encodeURIComponent(cityData.name)}&lat=${cityData.coords.lat}&lng=${cityData.coords.lng}`)}`);
+      return;
+    }
+    navigate(`/map?search=${encodeURIComponent(cityData.name)}&lat=${cityData.coords.lat}&lng=${cityData.coords.lng}`);
+  };
+
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSpot, setActiveSpot] = useState<number | null>(null);
   const [spotSearch, setSpotSearch] = useState("");
