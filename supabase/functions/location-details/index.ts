@@ -293,6 +293,10 @@ Also include a Location at a Glance payload with: bestTime (monthly crowd levels
       }));
     }
 
+    // Enforce consistency: counts must match the arrays we actually return.
+    if (Array.isArray(parsed.spots)) parsed.totalLocations = parsed.spots.length;
+    if (Array.isArray(parsed.titles)) parsed.totalTitles = parsed.titles.length;
+
     upsertLocation(slug, parsed).catch(() => {});
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
