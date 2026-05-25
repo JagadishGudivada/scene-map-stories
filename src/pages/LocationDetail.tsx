@@ -781,12 +781,13 @@ export default function LocationDetail() {
               ))}
             </div>
 
-            <Link
-              to="/map"
-              className="mt-4 text-sm text-teal hover:text-teal/80 transition-colors"
+            <button
+              type="button"
+              onClick={handleExploreOnMap}
+              className="mt-4 text-left text-sm text-teal hover:text-teal/80 transition-colors"
             >
-              + 82 more locations — View all on full map
-            </Link>
+              View all {cityData.totalLocations} locations on full map →
+            </button>
           </div>
         </div>
       </section>
