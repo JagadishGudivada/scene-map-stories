@@ -8,6 +8,8 @@ import {
   Train, ArrowRight, Bell, Sparkles, ChevronRight, Search, X
 } from "lucide-react";
 import { useSavedLocation } from "@/hooks/useSaved";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 import LeafletMap from "@/components/LeafletMap";
 import SpotActionsModal from "@/components/SpotActionsModal";
 import ShareMenu from "@/components/ShareMenu";
@@ -150,7 +152,21 @@ function slugifyTitle(title: string, year: number) {
 export default function LocationDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { saved: locationSaved, toggle: toggleLocationSave, loading: locationSaveLoading } = useSavedLocation(slug || "rome");
+
+  const handleExploreOnMap = () => {
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to explore filming locations on the map.",
+      });
+      navigate(`/auth?redirect=${encodeURIComponent(`/map?search=${encodeURIComponent(cityData.name)}&lat=${cityData.coords.lat}&lng=${cityData.coords.lng}`)}`);
+      return;
+    }
+    navigate(`/map?search=${encodeURIComponent(cityData.name)}&lat=${cityData.coords.lat}&lng=${cityData.coords.lng}`);
+  };
+
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSpot, setActiveSpot] = useState<number | null>(null);
   const [spotSearch, setSpotSearch] = useState("");
@@ -566,12 +582,12 @@ export default function LocationDetail() {
             transition={{ delay: 0.8 }}
             className="flex flex-wrap gap-3"
           >
-            <Link
-              to="/map"
+            <button
+              onClick={handleExploreOnMap}
               className="px-6 py-3 rounded-full bg-gradient-amber text-charcoal font-bold text-sm hover:brightness-110 hover:scale-[1.02] transition-all shadow-amber"
             >
               Explore All Locations on Map
-            </Link>
+            </button>
             <button
               onClick={toggleLocationSave}
               disabled={locationSaveLoading}
@@ -765,12 +781,13 @@ export default function LocationDetail() {
               ))}
             </div>
 
-            <Link
-              to="/map"
-              className="mt-4 text-sm text-teal hover:text-teal/80 transition-colors"
+            <button
+              type="button"
+              onClick={handleExploreOnMap}
+              className="mt-4 text-left text-sm text-teal hover:text-teal/80 transition-colors"
             >
-              + 82 more locations — View all on full map
-            </Link>
+              View all {cityData.totalLocations} locations on full map →
+            </button>
           </div>
         </div>
       </section>
