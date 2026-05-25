@@ -582,12 +582,12 @@ export default function LocationDetail() {
             transition={{ delay: 0.8 }}
             className="flex flex-wrap gap-3"
           >
-            <Link
-              to="/map"
+            <button
+              onClick={handleExploreOnMap}
               className="px-6 py-3 rounded-full bg-gradient-amber text-charcoal font-bold text-sm hover:brightness-110 hover:scale-[1.02] transition-all shadow-amber"
             >
               Explore All Locations on Map
-            </Link>
+            </button>
             <button
               onClick={toggleLocationSave}
               disabled={locationSaveLoading}
