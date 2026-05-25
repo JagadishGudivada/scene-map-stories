@@ -23,3 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 supabase/.temp
+.eslintrc.js
+.prettier*
+.env
+config.toml
+.lovable/cloudflare.md
+supabase/.temp/*
+supabase/migrations/all_migrations_combined_single_transaction.sql
+supabase/config.toml
+supabase/.temp/cli-latest
+.env
