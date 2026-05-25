@@ -3,7 +3,7 @@ import { getCached } from "../_shared/aiCache.ts";
 import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
 import { getLocation, upsertLocation } from "../_shared/store.ts";
 
-const CACHE_VERSION = "v2:";
+const CACHE_VERSION = "v3:";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,7 +51,11 @@ serve(async (req) => {
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ");
 
-    const userPrompt = `Provide detailed information about the city "${cityName}" as a famous filming location for movies, TV series, and books. Include city name, country, ISO country code, country flag emoji, precise coordinates, a one-line poetic tagline (e.g. "The Eternal City — cinema's most enduring backdrop"), approximate count of titles filmed there, approximate count of distinct filming spots/locations, 6-8 famous titles filmed there with year/type/genres/rating/spotsCount, 5-7 iconic real filming spots with name/lat/lng/titles, and 3-4 hidden gems with name/film/note. Also include a Location at a Glance payload with: bestTime (monthly crowd levels Jan-Dec using level 1-5, best months, overcrowded months, short note, report count), transit (3-4 practical tips, short note, walkable cluster count, walkable titles count), and crowdStatus (overall label, levelPercent 0-100, 3-5 key spots with status labels, updated text). Respond ONLY via the return_location tool.`;
+    const userPrompt = `Provide detailed information about the city "${cityName}" as a famous filming location for movies, TV series, and books. Include city name, country, ISO country code, country flag emoji, precise coordinates, a one-line poetic tagline (e.g. "The Eternal City — cinema's most enduring backdrop"), 6-8 famous titles filmed there with year/type/genres/rating/spotsCount, and 3-4 hidden gems with name/film/note.
+
+CRITICAL — filming spots: Return as many real, verifiable filming spots as you can in the "spots" array, with name/lat/lng/titles. Aim for 15-25 spots for major filming hubs (Rome, London, Paris, NYC, LA, Tokyo, Santorini, Venice, Kyoto, etc.) and at least 8-12 for any other notable city. Each spot must be a real, distinct on-screen location with accurate coordinates — do not invent. The "totalLocations" field MUST equal the number of items in the "spots" array (no inflated estimates). Likewise "totalTitles" should equal the number of items in "titles".
+
+Also include a Location at a Glance payload with: bestTime (monthly crowd levels Jan-Dec using level 1-5, best months, overcrowded months, short note, report count), transit (3-4 practical tips, short note, walkable cluster count, walkable titles count), and crowdStatus (overall label, levelPercent 0-100, 3-5 key spots with status labels, updated text). Respond ONLY via the return_location tool.`;
 
     const response = await fetch(AI_CHAT_COMPLETIONS_URL, {
       method: "POST",
@@ -288,6 +292,10 @@ serve(async (req) => {
         image: spotImages[i],
       }));
     }
+
+    // Enforce consistency: counts must match the arrays we actually return.
+    if (Array.isArray(parsed.spots)) parsed.totalLocations = parsed.spots.length;
+    if (Array.isArray(parsed.titles)) parsed.totalTitles = parsed.titles.length;
 
     upsertLocation(slug, parsed).catch(() => {});
     return new Response(JSON.stringify(parsed), {
