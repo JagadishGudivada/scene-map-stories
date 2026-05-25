@@ -237,14 +237,22 @@ serve(async (req) => {
 
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    let aiTitles: TitleOut[] = [];
     if (toolCall?.function?.arguments) {
-      const parsed = JSON.parse(toolCall.function.arguments);
-      const result = { titles: parsed.titles || [] };
-      return new Response(JSON.stringify(result), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      try {
+        const parsed = JSON.parse(toolCall.function.arguments);
+        aiTitles = Array.isArray(parsed.titles) ? parsed.titles : [];
+      } catch (_) { aiTitles = []; }
     }
-    return new Response(JSON.stringify({ titles: [] }), {
+
+    // Always run TMDB multi-search in parallel-style to catch recent / brand-new titles
+    // that may not yet be in the AI model's training data (e.g. new Netflix releases).
+    const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
+    const tmdbTitles = TMDB_API_KEY ? await tmdbMultiSearch(TMDB_API_KEY, query.trim()) : [];
+
+    // Merge: TMDB first (authoritative for recency), then AI fills in books/older entries.
+    const merged = mergeTitles(tmdbTitles, aiTitles, query.trim());
+    return new Response(JSON.stringify({ titles: merged }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
