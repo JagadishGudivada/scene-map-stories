@@ -391,9 +391,7 @@ export default function MapPage() {
           {selectedPin && (
             <MapSidePanel
               pin={selectedPin}
-              allPins={displayPins}
               onClose={handleClosePanel}
-              onSelectPin={handlePinClick}
             />
           )}
         </AnimatePresence>

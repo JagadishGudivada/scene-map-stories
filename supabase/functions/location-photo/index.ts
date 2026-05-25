@@ -10,6 +10,21 @@ function clean(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function pickUrl(photo: unknown): string | null {
+  if (!photo || typeof photo !== "object") return null;
+
+  const src = "src" in photo ? (photo as { src?: Record<string, unknown> }).src : undefined;
+  if (!src || typeof src !== "object") return null;
+
+  return (
+    (typeof src.landscape === "string" && src.landscape) ||
+    (typeof src.large2x === "string" && src.large2x) ||
+    (typeof src.large === "string" && src.large) ||
+    (typeof src.original === "string" && src.original) ||
+    null
+  );
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -36,7 +51,7 @@ serve(async (req) => {
 
     const url = new URL("https://api.pexels.com/v1/search");
     url.searchParams.set("query", query);
-    url.searchParams.set("per_page", "1");
+    url.searchParams.set("per_page", "24");
     url.searchParams.set("orientation", "landscape");
 
     const pexelsRes = await fetch(url.toString(), {
@@ -52,15 +67,12 @@ serve(async (req) => {
     }
 
     const data = await pexelsRes.json();
-    const first = Array.isArray(data?.photos) ? data.photos[0] : null;
-    const imageUrl =
-      (typeof first?.src?.landscape === "string" && first.src.landscape) ||
-      (typeof first?.src?.large2x === "string" && first.src.large2x) ||
-      (typeof first?.src?.large === "string" && first.src.large) ||
-      (typeof first?.src?.original === "string" && first.src.original) ||
-      null;
+    const images = Array.isArray(data?.photos)
+      ? data.photos.map((photo: unknown) => pickUrl(photo)).filter((url: string | null): url is string => Boolean(url))
+      : [];
+    const imageUrl = images[0] ?? null;
 
-    return new Response(JSON.stringify({ imageUrl }), {
+    return new Response(JSON.stringify({ imageUrl, imageUrls: images }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

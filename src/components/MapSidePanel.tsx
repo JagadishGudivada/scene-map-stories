@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { X, MapPin, Film, Tv, BookOpen, ExternalLink, Bookmark, Camera, Navigation } from "lucide-react";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import type { MediaType } from "@/lib/mockData";
+import { allFilmingSpots } from "@/lib/filmingSpotsData";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,16 +15,7 @@ const typeColorMap: Record<MediaType, string> = {
   Book: "bg-purple-400/15 text-purple-400",
 };
 
-const visitorPhotos = [
-  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=200&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1534430480872-3498386e7856?w=200&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=200&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=200&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1506377585622-bedcbb5f6789?w=200&h=200&fit=crop",
-  "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=200&h=200&fit=crop",
-];
-
-function getDistance(a: MapPinType, b: MapPinType): number {
+function getDistance(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
   const R = 6371;
   const dLat = ((b.lat - a.lat) * Math.PI) / 180;
   const dLng = ((b.lng - a.lng) * Math.PI) / 180;
@@ -33,37 +25,55 @@ function getDistance(a: MapPinType, b: MapPinType): number {
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
-interface MapSidePanelProps {
-  pin: MapPinType;
-  allPins: MapPinType[];
-  onClose: () => void;
-  onSelectPin: (pin: MapPinType) => void;
+function normalizeText(value?: string): string {
+  return (value || "").trim().toLowerCase();
 }
 
-export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: MapSidePanelProps) {
+interface MapSidePanelProps {
+  pin: MapPinType;
+  onClose: () => void;
+}
+
+export default function MapSidePanel({ pin, onClose }: MapSidePanelProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [locationImage, setLocationImage] = useState<string | null>(null);
+  const [visitorPhotos, setVisitorPhotos] = useState<string[]>([]);
 
-  const nearbyLocations = useMemo(() => {
-    return allPins
-      .filter((p) => p !== pin && !(p.lat === pin.lat && p.lng === pin.lng))
-      .map((p) => ({ pin: p, distance: getDistance(pin, p) }))
-      .sort((a, b) => a.distance - b.distance)
-      .slice(0, 4);
-  }, [pin, allPins]);
+  const nearbySpots = useMemo(() => {
+    const maxCityDistanceKm = 80;
+    const maxCountryDistanceKm = 350;
+    const pinCity = normalizeText(pin.city);
+    const pinCountry = normalizeText(pin.country);
 
-  // Deterministic photo selection based on pin label
-  const photos = useMemo(() => {
-    const seed = pin.label.charCodeAt(0) + pin.label.length;
-    return Array.from({ length: 6 }, (_, i) => visitorPhotos[(seed + i) % visitorPhotos.length]);
-  }, [pin.label]);
+    const candidates = allFilmingSpots
+      .filter((spot) => !(spot.lat === pin.lat && spot.lng === pin.lng))
+      .map((spot) => ({ spot, distance: getDistance(pin, spot) }))
+      .sort((a, b) => a.distance - b.distance);
+
+    const sameCity = pinCity
+      ? candidates.filter(({ spot, distance }) => normalizeText(spot.city) === pinCity && distance <= maxCityDistanceKm)
+      : [];
+    if (sameCity.length > 0) {
+      return sameCity.slice(0, 4);
+    }
+
+    const sameCountry = pinCountry
+      ? candidates.filter(({ spot, distance }) => normalizeText(spot.country) === pinCountry && distance <= maxCountryDistanceKm)
+      : [];
+    if (sameCountry.length > 0) {
+      return sameCountry.slice(0, 4);
+    }
+
+    return [];
+  }, [pin]);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadLocationImage = async () => {
       setLocationImage(null);
+      setVisitorPhotos([]);
 
       try {
         const { data, error } = await supabase.functions.invoke("location-photo", {
@@ -79,13 +89,18 @@ export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: Map
         const imageUrl = data && typeof data === "object" && "imageUrl" in data
           ? (data.imageUrl as string | null)
           : null;
+        const imageUrls = data && typeof data === "object" && "imageUrls" in data && Array.isArray(data.imageUrls)
+          ? data.imageUrls.filter((url: unknown): url is string => typeof url === "string" && url.trim().length > 0)
+          : [];
 
         if (!cancelled) {
           setLocationImage(imageUrl || null);
+          setVisitorPhotos(imageUrls.slice(0, 6));
         }
       } catch {
         if (!cancelled) {
           setLocationImage(null);
+          setVisitorPhotos([]);
         }
       }
     };
@@ -184,10 +199,12 @@ export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: Map
           <div className="flex items-center gap-2 mb-3">
             <Camera className="w-4 h-4 text-amber" />
             <h3 className="text-sm font-medium text-foreground">Visitor Photos</h3>
-            <span className="text-xs text-muted-foreground ml-auto">24 photos</span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {visitorPhotos.length > 0 ? `${visitorPhotos.length} photos` : "No photos"}
+            </span>
           </div>
           <div className="grid grid-cols-3 gap-1.5">
-            {photos.map((src, i) => (
+            {visitorPhotos.map((src, i) => (
               <div
                 key={i}
                 className="aspect-square rounded-lg overflow-hidden group cursor-pointer"
@@ -199,31 +216,34 @@ export default function MapSidePanel({ pin, allPins, onClose, onSelectPin }: Map
                 />
               </div>
             ))}
+            {visitorPhotos.length === 0 && (
+              <p className="col-span-3 text-xs text-muted-foreground">No place photos available yet.</p>
+            )}
           </div>
         </div>
 
-        {/* Nearby Locations */}
-        {nearbyLocations.length > 0 && (
+        {/* Nearby Spots */}
+        {nearbySpots.length > 0 && (
           <div className="pt-3 border-t border-border">
             <div className="flex items-center gap-2 mb-3">
               <Navigation className="w-4 h-4 text-amber" />
-              <h3 className="text-sm font-medium text-foreground">Nearby Locations</h3>
+              <h3 className="text-sm font-medium text-foreground">Nearby Spots</h3>
             </div>
             <div className="space-y-1.5">
-              {nearbyLocations.map(({ pin: nearby, distance }, i) => {
-                const NearbyIcon = nearby.type === "Movie" ? Film : nearby.type === "Series" ? Tv : BookOpen;
+              {nearbySpots.map(({ spot, distance }, i) => {
+                const NearbyIcon = spot.type === "Movie" ? Film : spot.type === "Series" ? Tv : BookOpen;
                 return (
                   <button
-                    key={`${nearby.lat}-${nearby.lng}-${i}`}
-                    onClick={() => onSelectPin(nearby)}
+                    key={`${spot.slug}-${spot.lat}-${spot.lng}-${i}`}
+                    onClick={() => navigate(`/spot/${spot.slug}`)}
                     className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-left group"
                   >
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${typeColorMap[nearby.type]}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${typeColorMap[spot.type]}`}>
                       <NearbyIcon className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground truncate">{nearby.label}</p>
-                      <p className="text-xs text-muted-foreground truncate">{nearby.title}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{spot.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">{spot.titles[0] || spot.city}</p>
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">
                       {distance < 100 ? `${distance.toFixed(0)} km` : `${(distance / 1000).toFixed(1)}k km`}
