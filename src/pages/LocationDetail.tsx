@@ -8,6 +8,8 @@ import {
   Train, ArrowRight, Bell, Sparkles, ChevronRight, Search, X
 } from "lucide-react";
 import { useSavedLocation } from "@/hooks/useSaved";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 import LeafletMap from "@/components/LeafletMap";
 import SpotActionsModal from "@/components/SpotActionsModal";
 import ShareMenu from "@/components/ShareMenu";
