@@ -3,7 +3,7 @@ import { getCached } from "../_shared/aiCache.ts";
 import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
 import { getLocation, upsertLocation } from "../_shared/store.ts";
 
-const CACHE_VERSION = "v2:";
+const CACHE_VERSION = "v3:";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
