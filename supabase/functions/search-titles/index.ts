@@ -22,6 +22,63 @@ function resolveReasoningEffort(model: string, requested: string): "none" | "min
   return normalized as "none" | "minimal" | "low" | "medium" | "high";
 }
 
+type TitleOut = { title: string; year: number; type: "Movie" | "Series" | "Book"; creator?: string };
+
+async function tmdbMultiSearch(apiKey: string, query: string): Promise<TitleOut[]> {
+  try {
+    const url = new URL("https://api.themoviedb.org/3/search/multi");
+    url.searchParams.set("api_key", apiKey);
+    url.searchParams.set("query", query);
+    url.searchParams.set("include_adult", "false");
+    url.searchParams.set("language", "en-US");
+    const res = await fetch(url.toString(), { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const results: any[] = Array.isArray(data?.results) ? data.results : [];
+    return results
+      .filter((r) => (r.media_type === "movie" || r.media_type === "tv") && !r.adult)
+      .filter((r) => r.poster_path || r.backdrop_path || (r.popularity ?? 0) > 1)
+      .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0))
+      .slice(0, 8)
+      .map((r) => {
+        const date = r.release_date || r.first_air_date || "";
+        const y = Number(date.slice(0, 4)) || new Date().getFullYear();
+        return {
+          title: String(r.title || r.name || "").trim(),
+          year: y,
+          type: r.media_type === "tv" ? "Series" : "Movie",
+        } as TitleOut;
+      })
+      .filter((t) => t.title.length > 0);
+  } catch (e) {
+    console.error("tmdb multi-search error:", e);
+    return [];
+  }
+}
+
+function mergeTitles(primary: TitleOut[], secondary: TitleOut[], query: string): TitleOut[] {
+  const seen = new Set<string>();
+  const out: TitleOut[] = [];
+  const q = query.toLowerCase().trim();
+  // Boost exact-match titles to top
+  const score = (t: TitleOut) => {
+    const tl = t.title.toLowerCase();
+    if (tl === q) return 0;
+    if (tl.startsWith(q)) return 1;
+    if (tl.includes(q)) return 2;
+    return 3;
+  };
+  const all = [...primary, ...secondary].sort((a, b) => score(a) - score(b));
+  for (const t of all) {
+    const key = `${t.title.toLowerCase()}|${t.type}|${t.year}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(t);
+    if (out.length >= 8) break;
+  }
+  return out;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
