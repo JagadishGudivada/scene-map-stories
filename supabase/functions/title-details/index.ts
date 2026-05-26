@@ -116,7 +116,7 @@ serve(async (req) => {
 
     const userPrompt = `Provide detailed information about the title "${slugTitle}"${
       slugYear ? ` (${slugYear})` : ""
-    }. Include type (Movie / Series / Book), release year, IMDb-style rating, genres, a one-paragraph synopsis, and a comprehensive list of real filming locations (for Movies/Series) or real-world settings mentioned in the story (for Books). Use real-world coordinates. Respond ONLY via the return_title_details tool.`;
+    }. Include type (Movie / Series / Book), release year, IMDb-style rating, genres, a one-paragraph synopsis, and a comprehensive list of minimum 10 real filming locations (for Movies/Series) or real-world settings mentioned in the story (for Books). Use real-world coordinates. Respond ONLY via the return_title_details tool.`;
 
     const basePayload = {
         model: AI_MODEL,
