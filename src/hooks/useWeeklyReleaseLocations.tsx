@@ -5,7 +5,7 @@ import { slugifyTitle } from "@/hooks/useAITitleSearch";
 import type { MapPin } from "@/components/LeafletMap";
 import type { MediaType } from "@/lib/mockData";
 
-const CACHE_KEY = "weekly-release-locations-v3";
+const CACHE_KEY = "weekly-release-locations-v4";
 
 type CachePayload = {
   weekKey: string;
@@ -60,9 +60,9 @@ function toLocationArray(data: unknown): TitleDataLocation[] {
   return [];
 }
 
-function mapRowToPins(row: TitleRow): MapPin[] {
+function mapRowToPins(row: TitleRow, forcedType?: MediaType): MapPin[] {
   const locations = toLocationArray(row.data);
-  const type = normalizeMediaType(row.type);
+  const type = forcedType ?? normalizeMediaType(row.type);
 
   return locations
     .map((loc) => {
@@ -144,7 +144,9 @@ export function useWeeklyReleaseLocations() {
           collected.push(pin);
         };
 
-        const slugs = titles.slice(0, 8).map((t) => slugifyTitle(t.title, t.year));
+        const weeklyTitles = titles.slice(0, 8);
+        const slugs = weeklyTitles.map((t) => slugifyTitle(t.title, t.year));
+        const expectedTypeBySlug = new Map(slugs.map((slug, index) => [slug, weeklyTitles[index].type]));
 
         let weeklyRows: TitleRow[] = [];
         if (slugs.length > 0) {
@@ -171,7 +173,8 @@ export function useWeeklyReleaseLocations() {
         }
 
         for (const row of weeklyRows) {
-          const pinsForTitle = mapRowToPins(row);
+          const expectedType = expectedTypeBySlug.get(row.slug);
+          const pinsForTitle = mapRowToPins(row, expectedType);
           for (const pin of pinsForTitle) addPin(pin);
         }
 

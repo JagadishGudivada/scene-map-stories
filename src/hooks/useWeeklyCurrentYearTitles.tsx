@@ -25,7 +25,7 @@ type TitleResult = {
   genres?: string[];
 };
 
-const CACHE_KEY = "weekly-current-year-titles-v8";
+const CACHE_KEY = "weekly-current-year-titles-v10";
 
 function getNumericWidth(size: string): number | null {
   const match = /^w(\d+)$/.exec(size);
@@ -193,9 +193,7 @@ export function useWeeklyCurrentYearTitles() {
       }
 
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("weekly-movies", {
-          body: { year: currentYear },
-        });
+        const { data, error: fnError } = await supabase.functions.invoke("weekly-movies");
 
         if (fnError) {
           throw new Error("Unable to fetch latest movies");
@@ -204,7 +202,7 @@ export function useWeeklyCurrentYearTitles() {
         const apiTitles: TitleResult[] = (data?.movies || []).map((item: any) => ({
           title: String(item.title),
           year: Number(item.year),
-          type: "Movie",
+          type: item.type === "Series" ? "Series" : "Movie",
           rating: Number(item.rating),
           posterPath: item.posterPath ? String(item.posterPath) : undefined,
           posterUrl: item.posterUrl ? String(item.posterUrl) : undefined,
@@ -220,13 +218,9 @@ export function useWeeklyCurrentYearTitles() {
           genres: Array.isArray(item.genres) ? item.genres.map((g: unknown) => String(g)).slice(0, 3) : undefined,
         }));
 
-        const recentHits = apiTitles
-          .filter((item) => item.year >= currentYear - 2 && (item.rating ?? 0) >= 6.5)
-          .slice(0, 8);
-
-        const selectedTitles = (recentHits.length > 0 ? recentHits : apiTitles).slice(0, 8);
+        const selectedTitles = apiTitles.slice(0, 8);
         if (selectedTitles.length === 0) {
-          throw new Error("No recent hit titles returned");
+          throw new Error("No trending titles returned");
         }
 
         const mapped = selectedTitles.map((item) => mapToTitleCard(item));
@@ -293,9 +287,7 @@ export function useWeeklyCurrentYearTitles() {
           setUpdatedAt(payload.updatedAt);
         }
       } catch (e) {
-        const fallback = mockTitles
-          .filter((t) => t.year === currentYear)
-          .slice(0, 8);
+        const fallback = mockTitles.slice(0, 8);
         if (!cancelled) {
           if (fallback.length > 0) {
             setTitles(fallback);

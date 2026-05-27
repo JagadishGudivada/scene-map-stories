@@ -7,8 +7,11 @@ const corsHeaders = {
 };
 
 type TmdbMovie = {
+  media_type?: string;
   title: string;
+  name?: string;
   release_date: string;
+  first_air_date?: string;
   vote_average: number;
   vote_count: number;
   genre_ids: number[];
@@ -80,11 +83,18 @@ async function getTmdbImageConfig(apiKey: string): Promise<TmdbImageConfig> {
 const GENRE_MAP: Record<number, string> = {
   28: "Action",
   12: "Adventure",
-  //16: "Animation",
+  10759: "Action & Adventure",
   35: "Comedy",
   80: "Crime",
-  99: "Documentary",
   18: "Drama",
+  10751: "Family",
+  10762: "Kids",
+  10763: "News",
+  10764: "Reality",
+  10765: "Sci-Fi & Fantasy",
+  10766: "Soap",
+  10767: "Talk",
+  10768: "War & Politics",
   10751: "Family",
   14: "Fantasy",
   36: "History",
@@ -104,8 +114,7 @@ serve(async (req) => {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const year = Number(body?.year) || new Date().getFullYear();
+    await req.json().catch(() => ({}));
 
     const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
     if (!TMDB_API_KEY) throw new Error("TMDB_API_KEY is not configured");
@@ -114,30 +123,14 @@ serve(async (req) => {
     const posterSize = getLargestNonOriginalSize(imageConfig.poster_sizes, "w780");
     const backdropSize = getLargestNonOriginalSize(imageConfig.backdrop_sizes, "w1280");
 
-    const todayDate = new Date();
-    const today = todayDate.toISOString().slice(0, 10);
-    const fromDate = new Date(todayDate);
-    fromDate.setMonth(fromDate.getMonth() - 24);
-    const fromStr = fromDate.toISOString().slice(0, 10);
-
-    const url = new URL("https://api.themoviedb.org/3/discover/movie");
+    const url = new URL("https://api.themoviedb.org/3/trending/all/week");
     url.searchParams.set("api_key", TMDB_API_KEY);
     url.searchParams.set("language", "en-US");
-    url.searchParams.set("with_original_language", "en");
-    url.searchParams.set("region", "US");
-    url.searchParams.set("include_adult", "false");
-    url.searchParams.set("include_video", "false");
-    url.searchParams.set("release_date.gte", fromStr);
-    url.searchParams.set("release_date.lte", today);
-    url.searchParams.set("vote_average.gte", "6.5");
-    url.searchParams.set("vote_count.gte", "1000");
-    url.searchParams.set("sort_by", "popularity.desc");
-    url.searchParams.set("without_genres", "16,99");
     url.searchParams.set("page", "1");
 
     const tmdbRes = await fetch(url.toString());
     if (!tmdbRes.ok) {
-      console.error("TMDB discover error:", tmdbRes.status, await tmdbRes.text());
+      console.error("TMDB trending error:", tmdbRes.status, await tmdbRes.text());
       throw new Error("TMDB request failed");
     }
 
@@ -145,30 +138,25 @@ serve(async (req) => {
     let movies: TmdbMovie[] = Array.isArray(tmdbData?.results) ? tmdbData.results : [];
 
     if (movies.length < 8) {
-      const relaxedUrl = new URL("https://api.themoviedb.org/3/discover/movie");
-      relaxedUrl.searchParams.set("api_key", TMDB_API_KEY);
-      relaxedUrl.searchParams.set("language", "en-US");
-      relaxedUrl.searchParams.set("with_original_language", "en");
-      relaxedUrl.searchParams.set("region", "US");
-      relaxedUrl.searchParams.set("include_adult", "false");
-      relaxedUrl.searchParams.set("include_video", "false");
-      relaxedUrl.searchParams.set("release_date.gte", fromStr);
-      relaxedUrl.searchParams.set("release_date.lte", today);
-      relaxedUrl.searchParams.set("vote_count.gte", "500");
-      relaxedUrl.searchParams.set("sort_by", "popularity.desc");
-      relaxedUrl.searchParams.set("without_genres", "16,99");
-      relaxedUrl.searchParams.set("page", "1");
+      const page2Url = new URL("https://api.themoviedb.org/3/trending/all/week");
+      page2Url.searchParams.set("api_key", TMDB_API_KEY);
+      page2Url.searchParams.set("language", "en-US");
+      page2Url.searchParams.set("page", "2");
 
-      const relaxedRes = await fetch(relaxedUrl.toString());
-      if (relaxedRes.ok) {
-        const relaxedData = await relaxedRes.json();
-        const relaxedMovies: TmdbMovie[] = Array.isArray(relaxedData?.results) ? relaxedData.results : [];
+      const page2Res = await fetch(page2Url.toString());
+      if (page2Res.ok) {
+        const page2Data = await page2Res.json();
+        const page2Movies: TmdbMovie[] = Array.isArray(page2Data?.results) ? page2Data.results : [];
 
         const byTitle = new Map<string, TmdbMovie>();
-        for (const m of movies) byTitle.set(m.title, m);
-        for (const m of relaxedMovies) {
-          if (!byTitle.has(m.title)) {
-            byTitle.set(m.title, m);
+        for (const m of movies) {
+          const key = `${m.media_type || "movie"}:${m.title || m.name || ""}`;
+          byTitle.set(key, m);
+        }
+        for (const m of page2Movies) {
+          const key = `${m.media_type || "movie"}:${m.title || m.name || ""}`;
+          if (!byTitle.has(key)) {
+            byTitle.set(key, m);
           }
         }
         movies = Array.from(byTitle.values());
@@ -176,17 +164,26 @@ serve(async (req) => {
     }
 
     const mapped = movies
-      .filter((m) => m.poster_path && m.release_date && (!m.original_language || m.original_language === "en") && !(m.genre_ids || []).includes(16) && !(m.genre_ids || []).includes(99))
+      .filter((m) => {
+        if (!m.poster_path) return false;
+        if (m.media_type !== "movie" && m.media_type !== "tv") return false;
+        if (!m.original_language || m.original_language !== "en") return false;
+        if ((m.genre_ids || []).includes(16) || (m.genre_ids || []).includes(99)) return false;
+        return Boolean(m.release_date || m.first_air_date);
+      })
       .sort((a, b) => (b.vote_count || 0) - (a.vote_count || 0))
       .slice(0, 12)
       .map((m) => {
-        const movieYear = Number((m.release_date || "").slice(0, 4)) || year;
+        const releaseDate = m.release_date || m.first_air_date || "";
+        const movieYear = Number(releaseDate.slice(0, 4)) || new Date().getFullYear();
         const genres = (m.genre_ids || []).map((id) => GENRE_MAP[id]).filter(Boolean).slice(0, 3);
+        const title = m.title || m.name || "Untitled";
+        const normalizedType = m.media_type === "tv" ? "Series" : "Movie";
 
         return {
-          title: m.title,
+          title,
           year: movieYear,
-          type: "Movie" as const,
+          type: normalizedType as "Movie" | "Series",
           rating: Number(m.vote_average?.toFixed(1) || "0"),
           posterPath: m.poster_path,
           posterUrl: `${imageConfig.secure_base_url}${posterSize}${m.poster_path}`,
