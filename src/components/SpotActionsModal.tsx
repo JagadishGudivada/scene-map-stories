@@ -1,14 +1,8 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Bookmark, BookmarkCheck, Bed, CheckCircle2, Plane } from "lucide-react";
+import { Bookmark, BookmarkCheck, Bed, CheckCircle2, Plane, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { MapPin } from "@/components/LeafletMap";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
 
 interface SpotActionsModalProps {
@@ -61,75 +55,89 @@ export default function SpotActionsModal({ pin, onClose }: SpotActionsModalProps
   );
 
   return (
-    <Dialog open={!!pin} onOpenChange={(open) => (!open ? onClose() : undefined)}>
-      <DialogContent className="max-w-md rounded-2xl border border-border/70 bg-background/95 p-5 sm:p-6">
-        <DialogHeader className="text-left space-y-1">
-          <DialogTitle className="text-foreground font-serif text-2xl">{pin?.label || "Location"}</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
-            {pin?.title || pin?.city || "Choose a quick action"}
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+    <AnimatePresence>
+      {pin && (
+        <motion.div
+          initial={{ opacity: 0, y: 16, scale: 0.97 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 12, scale: 0.97 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="fixed z-50 bottom-4 right-4 left-4 sm:left-auto sm:bottom-6 sm:right-6 w-auto sm:w-[340px] glass rounded-2xl border border-border/70 bg-background/95 shadow-float p-4"
+          role="dialog"
+          aria-label={pin.label}
+        >
           <button
-            onClick={toggleSaveSpot}
-            disabled={!spotSlug || saveSpotLoading}
-            className={`h-11 px-4 rounded-xl font-bold text-sm transition-opacity flex items-center justify-center gap-2 disabled:opacity-50 ${
-              spotSaved
-                ? "glass border border-amber/40 text-amber hover:bg-muted/50"
-                : "bg-gradient-amber text-charcoal hover:opacity-90 shadow-amber"
-            }`}
+            onClick={onClose}
+            aria-label="Close"
+            className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
-            {spotSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-            {spotSaved ? "Saved" : "Save Spot"}
+            <X className="w-3.5 h-3.5" />
           </button>
 
-          <button
-            onClick={toggleBeenHere}
-            disabled={!spotSlug || beenHereLoading}
-            className={`h-11 px-4 rounded-xl border font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
-              beenHere
-                ? "bg-teal/15 border-teal/40 text-teal hover:bg-teal/20"
-                : "glass border-border text-foreground hover:bg-muted/50"
-            }`}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            {beenHere ? "Been Here" : "I've Been Here"}
-          </button>
+          <div className="pr-6 mb-3">
+            <p className="font-serif text-lg leading-tight text-foreground truncate">{pin.label}</p>
+            <p className="text-xs text-muted-foreground truncate">{pin.title || pin.city || "Quick actions"}</p>
+          </div>
 
-          <a
-            href={flightsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-11 px-4 rounded-xl glass border border-border text-foreground hover:bg-muted/50 transition-all flex items-center justify-center gap-2 text-sm"
-          >
-            <Plane className="w-4 h-4" />
-            Flights
-          </a>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={toggleSaveSpot}
+              disabled={!spotSlug || saveSpotLoading}
+              className={`h-9 px-2 rounded-lg font-semibold text-xs transition-opacity flex items-center justify-center gap-1.5 disabled:opacity-50 ${
+                spotSaved
+                  ? "glass border border-amber/40 text-amber"
+                  : "bg-gradient-amber text-charcoal hover:opacity-90"
+              }`}
+            >
+              {spotSaved ? <BookmarkCheck className="w-3.5 h-3.5" /> : <Bookmark className="w-3.5 h-3.5" />}
+              {spotSaved ? "Saved" : "Save"}
+            </button>
 
-          <a
-            href={hotelsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="h-11 px-4 rounded-xl glass border border-border text-foreground hover:bg-muted/50 transition-all flex items-center justify-center gap-2 text-sm"
-          >
-            <Bed className="w-4 h-4" />
-            Hotels
-          </a>
-        </div>
+            <button
+              onClick={toggleBeenHere}
+              disabled={!spotSlug || beenHereLoading}
+              className={`h-9 px-2 rounded-lg border font-medium text-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 ${
+                beenHere
+                  ? "bg-teal/15 border-teal/40 text-teal"
+                  : "glass border-border text-foreground hover:bg-muted/50"
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {beenHere ? "Visited" : "Been Here"}
+            </button>
 
-        {spotSlug && (
-          <div className="pt-1">
+            <a
+              href={flightsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-9 px-2 rounded-lg glass border border-border text-foreground hover:bg-muted/50 transition-all flex items-center justify-center gap-1.5 text-xs"
+            >
+              <Plane className="w-3.5 h-3.5" />
+              Flights
+            </a>
+
+            <a
+              href={hotelsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="h-9 px-2 rounded-lg glass border border-border text-foreground hover:bg-muted/50 transition-all flex items-center justify-center gap-1.5 text-xs"
+            >
+              <Bed className="w-3.5 h-3.5" />
+              Hotels
+            </a>
+          </div>
+
+          {spotSlug && (
             <Link
               to={`/spot/${spotSlug}`}
               onClick={onClose}
-              className="text-sm text-amber hover:text-amber/80 transition-colors"
+              className="mt-3 inline-block text-xs text-amber hover:text-amber/80 transition-colors"
             >
               View Full Details →
             </Link>
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
