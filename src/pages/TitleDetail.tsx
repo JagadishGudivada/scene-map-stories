@@ -383,7 +383,7 @@ export default function TitleDetail() {
     streamStage === "details"
       ? "Finalizing title media..."
       : streamStage === "ai_started"
-      ? "AI is mapping locations..."
+      ? "Mapping locations..."
       : "Preparing title details...";
 
   useEffect(() => {
@@ -509,11 +509,11 @@ export default function TitleDetail() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
 
-        {view.source === "ai" && (
+        {/* {view.source === "ai" && (
           <div className="absolute top-20 right-4 sm:right-8 z-10 glass rounded-full px-3 py-1.5 border border-amber/30 text-amber text-[11px] font-mono flex items-center gap-1.5">
             <Sparkles className="w-3 h-3" /> AI generated
           </div>
-        )}
+        )} */}
 
         <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10">
           <div className="max-w-5xl mx-auto">
@@ -541,7 +541,7 @@ export default function TitleDetail() {
               {!mockTitle && loading && (
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-amber/30 text-amber text-xs mb-4">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  {streamStage === "details" ? "Finalizing title media" : "AI is mapping locations"}
+                  {streamStage === "details" ? "Finalizing title media" : "Mapping locations"}
                 </div>
               )}
 

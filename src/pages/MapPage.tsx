@@ -292,7 +292,7 @@ export default function MapPage() {
                     </span>
                     {aiResults.length > 0 && (
                       <span className="text-[10px] text-muted-foreground ml-auto">
-                        {aiResults.length} AI + {searchResults.length - aiResults.length > 0 ? `${searchResults.length - aiResults.length} local` : ""}
+                        {aiResults.length}  + {searchResults.length - aiResults.length > 0 ? `${searchResults.length - aiResults.length} local` : ""}
                       </span>
                     )}
                   </div>

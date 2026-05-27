@@ -259,7 +259,10 @@
   .maplibregl-popup-tip {
     background: hsl(var(--card)) !important;
   }
-  .sarevista-popup .maplibregl-popup-content {
+  .sarevista-popup,
+  .sarevista-popup .maplibregl-popup-content,
+  .sarevista-popup .maplibregl-popup-tip {
+    pointer-events: none !important;
     background: transparent !important;
   }
   .sarevista-map-popup {

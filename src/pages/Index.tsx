@@ -351,8 +351,13 @@ export default function Index() {
           </motion.section>
         ) : (
           <>
+          {/* Popular Locations */}
+                  <div className="mb-14">
+                    <PopularLocations />
+                  </div>
+                  
             {/* === TRENDING HASHTAGS === */}
-            <motion.section
+           {/*  <motion.section
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35 }}
@@ -382,7 +387,7 @@ export default function Index() {
                   </button>
                 ))}
               </div>
-            </motion.section>
+            </motion.section> */}
 
             {/* === SECTION TABS === */}
             <div className="flex items-center gap-1 mb-8 border-b border-border">
@@ -483,10 +488,7 @@ export default function Index() {
                     </div>
                   </section>
 
-                  {/* Popular Locations */}
-                  <div className="mb-14">
-                    <PopularLocations />
-                  </div>
+                  
 
                   {/* Recently Visited by Community */}
                   <RecentlyVisitedSpots />
