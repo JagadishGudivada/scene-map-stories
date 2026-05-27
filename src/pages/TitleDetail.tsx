@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -76,6 +76,52 @@ function slugifySpot(label: string) {
     .replace(/-+$/, "");
 }
 
+function hasLocationCoords(location: AILocation) {
+  return Number.isFinite(location.lat) && Number.isFinite(location.lng) && (location.lat !== 0 || location.lng !== 0);
+}
+
+function getGoogleMapsApiKey() {
+  return import.meta.env.VITE_GOOGLE_MAP_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
+}
+
+function buildGoogleMapsEmbedUrl(label: string, lat: number, lng: number) {
+  const apiKey = getGoogleMapsApiKey();
+  if (apiKey) {
+    const query = encodeURIComponent(`${label}@${lat},${lng}`);
+    return `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${query}&zoom=16`;
+  }
+
+  return `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed&t=k`;
+}
+
+function buildGoogleMapsDirectionsUrl(lat: number, lng: number) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+}
+
+function buildGoogleStreetViewEmbedUrl(lat: number, lng: number, heading = 180, pitch = 0, fov = 90) {
+  const apiKey = getGoogleMapsApiKey();
+  if (apiKey) {
+    return `https://www.google.com/maps/embed/v1/streetview?key=${apiKey}&location=${lat},${lng}&heading=${heading}&pitch=${pitch}&fov=${fov}`;
+  }
+
+  return `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed&t=k`;
+}
+
+function shouldPreferMapFallback(label: string, lat: number, lng: number) {
+  const normalized = label.toLowerCase();
+  const restrictedKeyword = /(forensic|mental health|pentagon|military|air force|naval|embassy|prison|detention|restricted)/.test(normalized);
+  const terrainKeyword = /(mount|\bmt\b|mountain|range|river|lake|park|rocks?|burn|cone|valley|gully|fields?|wilderness|trail|forest|reserve|national park|alps?|remarkables)/.test(normalized);
+  if (restrictedKeyword || terrainKeyword) return true;
+
+  const knownProblemLocations: Array<[number, number]> = [
+    [42.7483, -81.1606], // Southwest Centre for Forensic Mental Health Care, St. Thomas
+  ];
+
+  return knownProblemLocations.some(([knownLat, knownLng]) =>
+    Math.abs(lat - knownLat) < 0.002 && Math.abs(lng - knownLng) < 0.002
+  );
+}
+
 export default function TitleDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -97,6 +143,7 @@ export default function TitleDetail() {
   const [userLocations, setUserLocations] = useState<AILocation[]>([]);
   const [relatedTitlesData, setRelatedTitlesData] = useState<any[] | null>(null);
   const [relatedLoading, setRelatedLoading] = useState(false);
+  const [activeLocationIndex, setActiveLocationIndex] = useState(0);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -371,6 +418,89 @@ export default function TitleDetail() {
 
   const displayLocationCount = mapPins.length;
 
+  useEffect(() => {
+    if (!view?.locations.length) return;
+    const firstPinnedIndex = view.locations.findIndex(hasLocationCoords);
+    setActiveLocationIndex(firstPinnedIndex >= 0 ? firstPinnedIndex : 0);
+  }, [view]);
+
+  const activeLocation = useMemo(() => {
+    if (!view?.locations.length) return null;
+    const direct = view.locations[activeLocationIndex] || null;
+    if (direct && hasLocationCoords(direct)) return direct;
+    return view.locations.find(hasLocationCoords) || direct;
+  }, [view, activeLocationIndex]);
+
+  const renderLocationCard = (loc: AILocation, i: number, showMap: boolean) => {
+    const hasCoords = hasLocationCoords(loc);
+    const useStreetView = hasCoords ? !shouldPreferMapFallback(loc.label, loc.lat, loc.lng) : false;
+    const embedUrl = hasCoords
+      ? useStreetView
+        ? buildGoogleStreetViewEmbedUrl(loc.lat, loc.lng)
+        : buildGoogleMapsEmbedUrl(loc.label, loc.lat, loc.lng)
+      : "";
+
+    return (
+      <motion.div
+        key={`${loc.label}-${i}`}
+        initial={{ opacity: 0, x: 12 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: i * 0.04 }}
+        onClick={() => {
+          setSelectedLocationPin({
+            label: loc.label,
+            lat: loc.lat,
+            lng: loc.lng,
+            title: view?.title,
+            type: view?.type || "Movie",
+            city: loc.label,
+          });
+          setActiveLocationIndex(i);
+        }}
+        className={`rounded-lg border border-border overflow-hidden cursor-pointer hover:border-amber/20 hover:bg-muted/30 transition-all ${
+          activeLocationIndex === i ? "ring-1 ring-amber/20" : ""
+        }`}
+      >
+        {showMap && hasCoords ? (
+          <div className="block relative">
+            <iframe
+              src={embedUrl}
+              width="100%"
+              height="180"
+              style={{ border: 0, borderRadius: "12px 12px 0 0" }}
+              loading="lazy"
+              allowFullScreen
+              referrerPolicy="no-referrer-when-downgrade"
+              title={`${loc.label} on Google Maps`}
+            />
+            <a
+              href={buildGoogleMapsDirectionsUrl(loc.lat, loc.lng)}
+              target="_blank"
+              rel="noreferrer"
+              className="absolute right-2 top-2 z-20 glass rounded-md px-2 py-1 text-[11px] font-medium text-foreground border border-border hover:bg-muted/70 transition-colors"
+              aria-label={`Open directions for ${loc.label} in Google Maps`}
+            >
+              Directions
+            </a>
+          </div>
+        ) : null}
+
+        <div className={`p-3 flex items-start gap-3 ${showMap && hasCoords ? "rounded-b-lg" : ""}`}>
+          <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center badge-${view?.type.toLowerCase() || "movie"}`}>
+            <MapPin className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground truncate">{loc.label}</p>
+            <p className="text-xs text-muted-foreground">
+              {hasCoords ? `${loc.lat.toFixed(2)}°, ${loc.lng.toFixed(2)}°` : "View on map →"}
+            </p>
+            {loc.description && <p className="text-xs text-muted-foreground/80 mt-1 line-clamp-2">{loc.description}</p>}
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   const isInitialLoading = loading && !mockTitle && !aiDetails;
   const loadingProgress = useMemo(() => {
     if (!loading) return 100;
@@ -605,55 +735,78 @@ export default function TitleDetail() {
             </span>
           </div>
 
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1 min-w-0">
-              <LeafletMap
-                pins={mapPins}
-                center={mapCenter}
-                zoom={mapZoom}
-                onMapReady={setTitleMap}
-                className="h-[420px] rounded-xl"
-              />
-            </div>
+          <div className="lg:hidden space-y-2">
+            {view.locations.map((loc, i) => renderLocationCard(loc, i, true))}
+          </div>
 
-            <ScrollArea className="lg:w-80 h-[420px] glass rounded-xl border border-border">
+          <div className="hidden lg:flex gap-4 items-start">
+            <ScrollArea className="w-2/5 h-[70vh] max-h-[720px] glass rounded-xl border border-border">
               <div className="p-3 space-y-2">
-                {view.locations.map((loc, i) => (
-                  <motion.div
-                    key={`${loc.label}-${i}`}
-                    initial={{ opacity: 0, x: 12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.04 }}
-                    onClick={() =>
-                      setSelectedLocationPin({
-                        label: loc.label,
-                        lat: loc.lat,
-                        lng: loc.lng,
-                        title: view.title,
-                        type: view.type,
-                        city: loc.label,
-                      })
-                    }
-                    className="rounded-lg p-3 border border-border flex items-start gap-3 cursor-pointer hover:border-amber/20 hover:bg-muted/30 transition-all"
-                  >
-                    <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center badge-${view.type.toLowerCase()}`}>
-                      <MapPin className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{loc.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {loc.lat !== 0 || loc.lng !== 0
-                          ? `${loc.lat.toFixed(2)}°, ${loc.lng.toFixed(2)}°`
-                          : "View on map →"}
-                      </p>
-                      {loc.description && (
-                        <p className="text-xs text-muted-foreground/80 mt-1 line-clamp-2">{loc.description}</p>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
+                {view.locations.map((loc, i) => renderLocationCard(loc, i, false))}
               </div>
             </ScrollArea>
+
+            <div className="w-3/5 sticky top-8 self-start">
+              <div className="glass rounded-xl border border-border overflow-hidden h-[70vh] max-h-[720px] relative">
+                {activeLocation && hasLocationCoords(activeLocation) ? (
+                  <>
+                    {(() => {
+                      const useStreetView = !shouldPreferMapFallback(
+                        activeLocation.label,
+                        activeLocation.lat,
+                        activeLocation.lng
+                      );
+                      const activeEmbedUrl = useStreetView
+                        ? buildGoogleStreetViewEmbedUrl(activeLocation.lat, activeLocation.lng)
+                        : buildGoogleMapsEmbedUrl(activeLocation.label, activeLocation.lat, activeLocation.lng);
+
+                      return (
+                        <>
+                    <iframe
+                      key={`${activeLocation.lat}-${activeLocation.lng}`}
+                      src={activeEmbedUrl}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      allowFullScreen
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title={`${activeLocation.label} on Google Maps`}
+                      className="absolute inset-0 h-full w-full"
+                    />
+                    <a
+                      href={buildGoogleMapsDirectionsUrl(activeLocation.lat, activeLocation.lng)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="absolute right-4 top-4 z-20 glass rounded-xl border border-border px-3 py-2 text-xs font-medium text-foreground hover:bg-muted/70 transition-colors"
+                      aria-label={`Open directions for ${activeLocation.label} in Google Maps`}
+                    >
+                      Directions
+                    </a>
+                    <div className="absolute left-4 top-4 z-20 glass rounded-xl border border-border px-3 py-2 max-w-[80%]">
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Active location</p>
+                      <p className="text-sm font-semibold text-foreground truncate">{activeLocation.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {activeLocation.lat.toFixed(2)}°, {activeLocation.lng.toFixed(2)}°
+                      </p>
+                      {!useStreetView && (
+                        <p className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground mt-1">Map fallback</p>
+                      )}
+                    </div>
+                        </>
+                      );
+                    })()}
+                  </>
+                ) : (
+                  <div className="h-full flex items-center justify-center p-6 text-center text-muted-foreground">
+                    <div>
+                      <MapPin className="w-8 h-8 mx-auto mb-3 text-amber" />
+                      <p className="text-sm">No coordinates available for the active location.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 
