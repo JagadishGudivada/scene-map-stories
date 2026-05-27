@@ -1,14 +1,8 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { Bookmark, BookmarkCheck, Bed, CheckCircle2, Plane } from "lucide-react";
+import { Bookmark, BookmarkCheck, Bed, CheckCircle2, Plane, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import type { MapPin } from "@/components/LeafletMap";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
 
 interface SpotActionsModalProps {
