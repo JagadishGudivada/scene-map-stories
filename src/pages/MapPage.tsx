@@ -30,14 +30,19 @@ export default function MapPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
   const [pathMode, setPathMode] = useState(false);
+  const [nearMeMode, setNearMeMode] = useState(false);
+  const [nearMeCenter, setNearMeCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearMeRadius, setNearMeRadius] = useState(25);
   const [highlightedPin, setHighlightedPin] = useState<MapPinType | null>(null);
   const mapInstanceRef = useRef<AppMap | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
   const { pins: weeklyPins, loading: weeklyLoading } = useWeeklyReleaseLocations();
+  const { nearbyPins, loading: nearbyLoading } = useNearbySpots(nearMeCenter, nearMeRadius, nearMeMode);
 
   // Base pins shown on the map: weekly release locations only
   const basePins = weeklyPins;
+
 
   // Handle URL search params from homepage
   useEffect(() => {
