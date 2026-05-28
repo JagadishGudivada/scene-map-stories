@@ -1,14 +1,18 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2 } from "lucide-react";
+import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2, Navigation, LocateFixed } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import LeafletMap, { type AppMap, type MapPin as MapPinType } from "@/components/LeafletMap";
 import MapSidePanel from "@/components/MapSidePanel";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { useWeeklyReleaseLocations } from "@/hooks/useWeeklyReleaseLocations";
+import { useNearbySpots } from "@/hooks/useNearbySpots";
+import { toast } from "@/hooks/use-toast";
 import Seo from "@/components/Seo";
+
 
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
