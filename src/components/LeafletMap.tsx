@@ -258,8 +258,14 @@ export default function LeafletMap({
       const pointFeatures = map.queryRenderedFeatures(event.point, { layers: [UNCLUSTERED_LAYER_ID] });
       if (pointFeatures.length) {
         handleUnclusteredPinClick(event);
+        return;
+      }
+
+      if (onMapClick) {
+        onMapClick(event.lngLat.lng, event.lngLat.lat);
       }
     };
+
 
     const onMouseEnter = () => {
       map.getCanvas().style.cursor = "pointer";
