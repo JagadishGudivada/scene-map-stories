@@ -46,7 +46,10 @@ interface LeafletMapProps {
   onMapReady?: (map: AppMap) => void;
   highlightedPin?: MapPin | null;
   visitedCities?: VisitedCityRegion[];
+  onMapClick?: (lng: number, lat: number) => void;
+  radiusCircle?: { lat: number; lng: number; km: number } | null;
 }
+
 
 const DARK_TILES = [
   "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
