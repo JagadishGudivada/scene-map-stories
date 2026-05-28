@@ -391,7 +391,7 @@ export default function LeafletMap({
       map.off("mouseleave", UNCLUSTERED_LAYER_ID, onMouseLeave);
       clearPinLayers();
     };
-  }, [pins, isDark, onPinClick]);
+  }, [pins, isDark, onPinClick, onMapClick]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
