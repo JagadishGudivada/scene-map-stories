@@ -386,8 +386,8 @@ export default function MapPage() {
           </motion.div>
         </div>
 
-        {/* Path Mode + Pin count */}
-        <div className="absolute bottom-24 md:bottom-8 left-4 z-[1000] flex flex-col gap-2">
+        {/* Path Mode + Near Me + Pin count */}
+        <div className="absolute bottom-24 md:bottom-8 left-4 z-[1000] flex flex-col gap-2 max-w-[280px]">
           <div className="glass rounded-xl px-4 py-2.5 border border-border shadow-card">
             <div className="flex items-center gap-3">
               <Route className="w-4 h-4 text-amber" />
@@ -395,6 +395,54 @@ export default function MapPage() {
               <Switch checked={pathMode} onCheckedChange={setPathMode} />
             </div>
           </div>
+
+          <div className="glass rounded-xl px-4 py-2.5 border border-border shadow-card">
+            <div className="flex items-center gap-3">
+              <Navigation className="w-4 h-4 text-amber" />
+              <span className="text-xs font-medium text-foreground">Near Me</span>
+              <Switch checked={nearMeMode} onCheckedChange={toggleNearMe} />
+            </div>
+            <AnimatePresence>
+              {nearMeMode && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                  animate={{ height: "auto", opacity: 1, marginTop: 10 }}
+                  exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] text-muted-foreground">Radius</span>
+                    <span className="text-[11px] font-semibold text-amber">{nearMeRadius} km</span>
+                  </div>
+                  <Slider
+                    value={[nearMeRadius]}
+                    onValueChange={(v) => setNearMeRadius(v[0])}
+                    min={5}
+                    max={200}
+                    step={5}
+                  />
+                  <button
+                    onClick={handleUseMyLocation}
+                    className="mt-3 w-full flex items-center justify-center gap-2 py-1.5 rounded-lg bg-amber/10 hover:bg-amber/20 border border-amber/30 text-amber text-xs font-medium transition-colors"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    Use my location
+                  </button>
+                  {!nearMeCenter && (
+                    <p className="mt-2 text-[10px] text-muted-foreground leading-snug">
+                      Click anywhere on the map to find filming spots nearby.
+                    </p>
+                  )}
+                  {nearMeCenter && (
+                    <p className="mt-2 text-[10px] text-muted-foreground">
+                      {nearbyLoading ? "Searching…" : `${nearbyPins.length} spot${nearbyPins.length === 1 ? "" : "s"} within ${nearMeRadius} km`}
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <div className="glass rounded-xl px-4 py-2.5 border border-border shadow-card">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-amber" />
@@ -403,6 +451,7 @@ export default function MapPage() {
             </div>
           </div>
         </div>
+
 
         {/* Location sidebar list (desktop) */}
         {!selectedPin && (
