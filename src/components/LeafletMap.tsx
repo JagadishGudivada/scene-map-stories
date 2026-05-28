@@ -122,7 +122,10 @@ export default function LeafletMap({
   onMapReady,
   highlightedPin,
   visitedCities,
+  onMapClick,
+  radiusCircle,
 }: LeafletMapProps) {
+
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<AppMap | null>(null);
   const visitedLabelsRef = useRef<maplibregl.Marker[]>([]);
