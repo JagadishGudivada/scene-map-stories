@@ -191,10 +191,50 @@ export default function MapPage() {
     clearResults();
   }, [clearResults]);
 
-  // Determine which pins to show on map: AI results when available, otherwise filtered
-  const displayPins = aiResults.length > 0 ? [...filteredPins, ...aiResults.filter(
-    (ai) => !filteredPins.some((p) => Math.abs(p.lat - ai.lat) < 0.01 && Math.abs(p.lng - ai.lng) < 0.01)
-  )] : filteredPins;
+  const handleMapClick = useCallback((lng: number, lat: number) => {
+    if (!nearMeMode) return;
+    setNearMeCenter({ lat, lng });
+    setSelectedPin(null);
+    mapInstanceRef.current?.flyTo({ center: [lng, lat], zoom: 11, duration: 1200 });
+  }, [nearMeMode]);
+
+  const handleUseMyLocation = useCallback(() => {
+    if (!("geolocation" in navigator)) {
+      toast({ title: "Geolocation unavailable", description: "Your browser doesn't support location access." });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setNearMeMode(true);
+        setNearMeCenter({ lat, lng });
+        mapInstanceRef.current?.flyTo({ center: [lng, lat], zoom: 11, duration: 1500 });
+      },
+      (err) => {
+        toast({ title: "Couldn't get location", description: err.message });
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  const toggleNearMe = useCallback((on: boolean) => {
+    setNearMeMode(on);
+    if (!on) setNearMeCenter(null);
+  }, []);
+
+  // Determine which pins to show on map
+  const displayPins = useMemo(() => {
+    if (nearMeMode && nearMeCenter) {
+      return nearbyPins;
+    }
+    if (aiResults.length > 0) {
+      return [...filteredPins, ...aiResults.filter(
+        (ai) => !filteredPins.some((p) => Math.abs(p.lat - ai.lat) < 0.01 && Math.abs(p.lng - ai.lng) < 0.01)
+      )];
+    }
+    return filteredPins;
+  }, [nearMeMode, nearMeCenter, nearbyPins, aiResults, filteredPins]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -213,7 +253,10 @@ export default function MapPage() {
           pathPins={displayPins}
           onMapReady={handleMapReady}
           highlightedPin={highlightedPin}
+          onMapClick={handleMapClick}
+          radiusCircle={nearMeMode && nearMeCenter ? { ...nearMeCenter, km: nearMeRadius } : null}
         />
+
 
         {/* Floating search & filter bar */}
         <div className="absolute top-4 left-4 right-4 z-[1000] max-w-xl mx-auto">
