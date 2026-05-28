@@ -46,7 +46,10 @@ interface LeafletMapProps {
   onMapReady?: (map: AppMap) => void;
   highlightedPin?: MapPin | null;
   visitedCities?: VisitedCityRegion[];
+  onMapClick?: (lng: number, lat: number) => void;
+  radiusCircle?: { lat: number; lng: number; km: number } | null;
 }
+
 
 const DARK_TILES = [
   "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
@@ -119,7 +122,10 @@ export default function LeafletMap({
   onMapReady,
   highlightedPin,
   visitedCities,
+  onMapClick,
+  radiusCircle,
 }: LeafletMapProps) {
+
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<AppMap | null>(null);
   const visitedLabelsRef = useRef<maplibregl.Marker[]>([]);
@@ -252,8 +258,14 @@ export default function LeafletMap({
       const pointFeatures = map.queryRenderedFeatures(event.point, { layers: [UNCLUSTERED_LAYER_ID] });
       if (pointFeatures.length) {
         handleUnclusteredPinClick(event);
+        return;
+      }
+
+      if (onMapClick) {
+        onMapClick(event.lngLat.lng, event.lngLat.lat);
       }
     };
+
 
     const onMouseEnter = () => {
       map.getCanvas().style.cursor = "pointer";
@@ -379,7 +391,7 @@ export default function LeafletMap({
       map.off("mouseleave", UNCLUSTERED_LAYER_ID, onMouseLeave);
       clearPinLayers();
     };
-  }, [pins, isDark, onPinClick]);
+  }, [pins, isDark, onPinClick, onMapClick]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;
@@ -625,9 +637,111 @@ export default function LeafletMap({
     };
   }, [visitedCities]);
 
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const SOURCE_ID = "near-me-radius-source";
+    const FILL_LAYER_ID = "near-me-radius-fill";
+    const LINE_LAYER_ID = "near-me-radius-line";
+    const CENTER_SOURCE_ID = "near-me-center-source";
+    const CENTER_LAYER_ID = "near-me-center-layer";
+
+    const cleanup = () => {
+      removeLayerAndSource(map, FILL_LAYER_ID, SOURCE_ID);
+      try { if (map.getLayer(LINE_LAYER_ID)) map.removeLayer(LINE_LAYER_ID); } catch {}
+      try { if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID); } catch {}
+      removeLayerAndSource(map, CENTER_LAYER_ID, CENTER_SOURCE_ID);
+    };
+
+    const render = () => {
+      cleanup();
+      if (!radiusCircle) return;
+
+      const { lat, lng, km } = radiusCircle;
+      const steps = 64;
+      const coords: [number, number][] = [];
+      const distRad = km / 6371;
+      const latRad = (lat * Math.PI) / 180;
+      const lngRad = (lng * Math.PI) / 180;
+      for (let i = 0; i <= steps; i++) {
+        const brng = (i / steps) * 2 * Math.PI;
+        const lat2 = Math.asin(
+          Math.sin(latRad) * Math.cos(distRad) +
+            Math.cos(latRad) * Math.sin(distRad) * Math.cos(brng)
+        );
+        const lng2 =
+          lngRad +
+          Math.atan2(
+            Math.sin(brng) * Math.sin(distRad) * Math.cos(latRad),
+            Math.cos(distRad) - Math.sin(latRad) * Math.sin(lat2)
+          );
+        coords.push([(lng2 * 180) / Math.PI, (lat2 * 180) / Math.PI]);
+      }
+
+      map.addSource(SOURCE_ID, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: { type: "Polygon", coordinates: [coords] },
+          properties: {},
+        },
+      });
+
+      map.addLayer({
+        id: FILL_LAYER_ID,
+        type: "fill",
+        source: SOURCE_ID,
+        paint: {
+          "fill-color": "hsl(38, 80%, 56%)",
+          "fill-opacity": 0.08,
+        },
+      });
+
+      map.addLayer({
+        id: LINE_LAYER_ID,
+        type: "line",
+        source: SOURCE_ID,
+        paint: {
+          "line-color": "hsl(38, 80%, 56%)",
+          "line-width": 2,
+          "line-opacity": 0.7,
+          "line-dasharray": [3, 3],
+        },
+      });
+
+      map.addSource(CENTER_SOURCE_ID, {
+        type: "geojson",
+        data: {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [lng, lat] },
+          properties: {},
+        },
+      });
+
+      map.addLayer({
+        id: CENTER_LAYER_ID,
+        type: "circle",
+        source: CENTER_SOURCE_ID,
+        paint: {
+          "circle-radius": 7,
+          "circle-color": "hsl(38, 80%, 56%)",
+          "circle-stroke-width": 3,
+          "circle-stroke-color": isDark ? "hsl(0,0%,8%)" : "hsl(0,0%,100%)",
+        },
+      });
+    };
+
+    if (map.isStyleLoaded()) render();
+    else map.once("load", render);
+
+    return cleanup;
+  }, [radiusCircle, isDark]);
+
   return (
     <div className={`relative z-0 rounded-2xl overflow-hidden border border-border ${className}`}>
       <div ref={mapRef} className="w-full h-full" />
+
       <div className="absolute top-4 right-4 z-[1000] glass rounded-xl px-3 py-2 border border-border">
         <div className="flex flex-col gap-1.5">
           <div className="flex items-center gap-2">

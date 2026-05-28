@@ -1,14 +1,18 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2 } from "lucide-react";
+import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2, Navigation, LocateFixed } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import LeafletMap, { type AppMap, type MapPin as MapPinType } from "@/components/LeafletMap";
 import MapSidePanel from "@/components/MapSidePanel";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
+import { Slider } from "@/components/ui/slider";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { useWeeklyReleaseLocations } from "@/hooks/useWeeklyReleaseLocations";
+import { useNearbySpots } from "@/hooks/useNearbySpots";
+import { toast } from "@/hooks/use-toast";
 import Seo from "@/components/Seo";
+
 
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
@@ -26,14 +30,19 @@ export default function MapPage() {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
   const [pathMode, setPathMode] = useState(false);
+  const [nearMeMode, setNearMeMode] = useState(false);
+  const [nearMeCenter, setNearMeCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [nearMeRadius, setNearMeRadius] = useState(25);
   const [highlightedPin, setHighlightedPin] = useState<MapPinType | null>(null);
   const mapInstanceRef = useRef<AppMap | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
   const { pins: weeklyPins, loading: weeklyLoading } = useWeeklyReleaseLocations();
+  const { nearbyPins, loading: nearbyLoading } = useNearbySpots(nearMeCenter, nearMeRadius, nearMeMode);
 
   // Base pins shown on the map: weekly release locations only
   const basePins = weeklyPins;
+
 
   // Handle URL search params from homepage
   useEffect(() => {
@@ -182,10 +191,50 @@ export default function MapPage() {
     clearResults();
   }, [clearResults]);
 
-  // Determine which pins to show on map: AI results when available, otherwise filtered
-  const displayPins = aiResults.length > 0 ? [...filteredPins, ...aiResults.filter(
-    (ai) => !filteredPins.some((p) => Math.abs(p.lat - ai.lat) < 0.01 && Math.abs(p.lng - ai.lng) < 0.01)
-  )] : filteredPins;
+  const handleMapClick = useCallback((lng: number, lat: number) => {
+    if (!nearMeMode) return;
+    setNearMeCenter({ lat, lng });
+    setSelectedPin(null);
+    mapInstanceRef.current?.flyTo({ center: [lng, lat], zoom: 11, duration: 1200 });
+  }, [nearMeMode]);
+
+  const handleUseMyLocation = useCallback(() => {
+    if (!("geolocation" in navigator)) {
+      toast({ title: "Geolocation unavailable", description: "Your browser doesn't support location access." });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setNearMeMode(true);
+        setNearMeCenter({ lat, lng });
+        mapInstanceRef.current?.flyTo({ center: [lng, lat], zoom: 11, duration: 1500 });
+      },
+      (err) => {
+        toast({ title: "Couldn't get location", description: err.message });
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
+
+  const toggleNearMe = useCallback((on: boolean) => {
+    setNearMeMode(on);
+    if (!on) setNearMeCenter(null);
+  }, []);
+
+  // Determine which pins to show on map
+  const displayPins = useMemo(() => {
+    if (nearMeMode && nearMeCenter) {
+      return nearbyPins;
+    }
+    if (aiResults.length > 0) {
+      return [...filteredPins, ...aiResults.filter(
+        (ai) => !filteredPins.some((p) => Math.abs(p.lat - ai.lat) < 0.01 && Math.abs(p.lng - ai.lng) < 0.01)
+      )];
+    }
+    return filteredPins;
+  }, [nearMeMode, nearMeCenter, nearbyPins, aiResults, filteredPins]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -204,7 +253,10 @@ export default function MapPage() {
           pathPins={displayPins}
           onMapReady={handleMapReady}
           highlightedPin={highlightedPin}
+          onMapClick={handleMapClick}
+          radiusCircle={nearMeMode && nearMeCenter ? { ...nearMeCenter, km: nearMeRadius } : null}
         />
+
 
         {/* Floating search & filter bar */}
         <div className="absolute top-4 left-4 right-4 z-[1000] max-w-xl mx-auto">
@@ -334,8 +386,8 @@ export default function MapPage() {
           </motion.div>
         </div>
 
-        {/* Path Mode + Pin count */}
-        <div className="absolute bottom-24 md:bottom-8 left-4 z-[1000] flex flex-col gap-2">
+        {/* Path Mode + Near Me + Pin count */}
+        <div className="absolute bottom-24 md:bottom-8 left-4 z-[1000] flex flex-col gap-2 max-w-[280px]">
           <div className="glass rounded-xl px-4 py-2.5 border border-border shadow-card">
             <div className="flex items-center gap-3">
               <Route className="w-4 h-4 text-amber" />
@@ -343,6 +395,54 @@ export default function MapPage() {
               <Switch checked={pathMode} onCheckedChange={setPathMode} />
             </div>
           </div>
+
+          <div className="glass rounded-xl px-4 py-2.5 border border-border shadow-card">
+            <div className="flex items-center gap-3">
+              <Navigation className="w-4 h-4 text-amber" />
+              <span className="text-xs font-medium text-foreground">Near Me</span>
+              <Switch checked={nearMeMode} onCheckedChange={toggleNearMe} />
+            </div>
+            <AnimatePresence>
+              {nearMeMode && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                  animate={{ height: "auto", opacity: 1, marginTop: 10 }}
+                  exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[11px] text-muted-foreground">Radius</span>
+                    <span className="text-[11px] font-semibold text-amber">{nearMeRadius} km</span>
+                  </div>
+                  <Slider
+                    value={[nearMeRadius]}
+                    onValueChange={(v) => setNearMeRadius(v[0])}
+                    min={5}
+                    max={200}
+                    step={5}
+                  />
+                  <button
+                    onClick={handleUseMyLocation}
+                    className="mt-3 w-full flex items-center justify-center gap-2 py-1.5 rounded-lg bg-amber/10 hover:bg-amber/20 border border-amber/30 text-amber text-xs font-medium transition-colors"
+                  >
+                    <LocateFixed className="w-3.5 h-3.5" />
+                    Use my location
+                  </button>
+                  {!nearMeCenter && (
+                    <p className="mt-2 text-[10px] text-muted-foreground leading-snug">
+                      Click anywhere on the map to find filming spots nearby.
+                    </p>
+                  )}
+                  {nearMeCenter && (
+                    <p className="mt-2 text-[10px] text-muted-foreground">
+                      {nearbyLoading ? "Searching…" : `${nearbyPins.length} spot${nearbyPins.length === 1 ? "" : "s"} within ${nearMeRadius} km`}
+                    </p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
           <div className="glass rounded-xl px-4 py-2.5 border border-border shadow-card">
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-amber" />
@@ -351,6 +451,7 @@ export default function MapPage() {
             </div>
           </div>
         </div>
+
 
         {/* Location sidebar list (desktop) */}
         {!selectedPin && (
