@@ -176,81 +176,66 @@ serve(async (req) => {
       },
     };
 
-    let response = await fetch(AI_CHAT_COMPLETIONS_URL, {
-      method: "POST",
-      signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-      headers: {
-        Authorization: `Bearer ${AI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(AI_ENABLE_GOOGLE_GROUNDING ? withGrounding : basePayload),
-    });
+    const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
 
-    if (!response.ok && AI_ENABLE_GOOGLE_GROUNDING) {
-      // Fallback for compatibility-layer payload differences.
-      response = await fetch(AI_CHAT_COMPLETIONS_URL, {
-        method: "POST",
-        signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-        headers: {
-          Authorization: `Bearer ${AI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(basePayload),
-      });
-    }
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, please try again shortly.", titles: [] }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted.", titles: [] }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const errText = await response.text();
-      console.error("AI provider error:", response.status, errText);
-
-      // Fallback to a stable model if the preview model errored (5xx).
-      if (response.status >= 500 && AI_MODEL !== "google/gemini-2.5-flash-lite") {
-        const fallbackPayload = { ...basePayload, model: "google/gemini-2.5-flash-lite" };
-        response = await fetch(AI_CHAT_COMPLETIONS_URL, {
+    const aiFetch = async (): Promise<TitleOut[]> => {
+      try {
+        let response = await fetch(AI_CHAT_COMPLETIONS_URL, {
           method: "POST",
           signal: AbortSignal.timeout(AI_TIMEOUT_MS),
           headers: { Authorization: `Bearer ${AI_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify(fallbackPayload),
+          body: JSON.stringify(AI_ENABLE_GOOGLE_GROUNDING ? withGrounding : basePayload),
         });
-        if (!response.ok) {
-          console.error("Fallback model also failed:", response.status, await response.text());
-          return new Response(JSON.stringify({ titles: [], error: "AI temporarily unavailable" }), {
-            status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+        if (!response.ok && AI_ENABLE_GOOGLE_GROUNDING) {
+          response = await fetch(AI_CHAT_COMPLETIONS_URL, {
+            method: "POST",
+            signal: AbortSignal.timeout(AI_TIMEOUT_MS),
+            headers: { Authorization: `Bearer ${AI_API_KEY}`, "Content-Type": "application/json" },
+            body: JSON.stringify(basePayload),
           });
         }
-      } else {
-        return new Response(JSON.stringify({ titles: [], error: "AI temporarily unavailable" }), {
-          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+
+        if (!response.ok) {
+          const errText = await response.text().catch(() => "");
+          console.error("AI provider error:", response.status, errText);
+          if (response.status >= 500 && AI_MODEL !== "google/gemini-2.5-flash-lite") {
+            response = await fetch(AI_CHAT_COMPLETIONS_URL, {
+              method: "POST",
+              signal: AbortSignal.timeout(AI_TIMEOUT_MS),
+              headers: { Authorization: `Bearer ${AI_API_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ ...basePayload, model: "google/gemini-2.5-flash-lite" }),
+            });
+            if (!response.ok) {
+              await response.text().catch(() => "");
+              return [];
+            }
+          } else {
+            return [];
+          }
+        }
+
+        const data = await response.json();
+        const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+        if (!toolCall?.function?.arguments) return [];
+        try {
+          const parsed = JSON.parse(toolCall.function.arguments);
+          return Array.isArray(parsed.titles) ? parsed.titles : [];
+        } catch {
+          return [];
+        }
+      } catch (e) {
+        console.error("AI call failed:", e instanceof Error ? e.message : e);
+        return [];
       }
-    }
+    };
 
-    const data = await response.json();
-    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    let aiTitles: TitleOut[] = [];
-    if (toolCall?.function?.arguments) {
-      try {
-        const parsed = JSON.parse(toolCall.function.arguments);
-        aiTitles = Array.isArray(parsed.titles) ? parsed.titles : [];
-      } catch (_) { aiTitles = []; }
-    }
+    // Run TMDB and AI in parallel; both are soft-failable so a timeout never 500s the whole request.
+    const [tmdbTitles, aiTitles] = await Promise.all([
+      TMDB_API_KEY ? tmdbMultiSearch(TMDB_API_KEY, query.trim()) : Promise.resolve([] as TitleOut[]),
+      aiFetch(),
+    ]);
 
-    // Always run TMDB multi-search in parallel-style to catch recent / brand-new titles
-    // that may not yet be in the AI model's training data (e.g. new Netflix releases).
-    const TMDB_API_KEY = Deno.env.get("TMDB_API_KEY");
-    const tmdbTitles = TMDB_API_KEY ? await tmdbMultiSearch(TMDB_API_KEY, query.trim()) : [];
-
-    // Merge: TMDB first (authoritative for recency), then AI fills in books/older entries.
     const merged = mergeTitles(tmdbTitles, aiTitles, query.trim());
     return new Response(JSON.stringify({ titles: merged }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
