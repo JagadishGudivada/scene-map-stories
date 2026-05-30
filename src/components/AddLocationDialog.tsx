@@ -18,9 +18,10 @@ const schema = z.object({
 interface Props {
   titleSlug: string;
   titleName: string;
+  iconOnly?: boolean;
 }
 
-export default function AddLocationDialog({ titleSlug, titleName }: Props) {
+export default function AddLocationDialog({ titleSlug, titleName, iconOnly }: Props) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -84,9 +85,15 @@ export default function AddLocationDialog({ titleSlug, titleName }: Props) {
     <>
       <button
         onClick={handleClick}
-        className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2"
+        aria-label="Add location"
+        className={
+          iconOnly
+            ? "h-11 w-11 rounded-full glass border border-border text-foreground hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
+            : "h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2"
+        }
       >
-        <Plus className="w-4 h-4" /> Add Location
+        <Plus className="w-4 h-4" />
+        {!iconOnly && <span>Add Location</span>}
       </button>
 
       <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>

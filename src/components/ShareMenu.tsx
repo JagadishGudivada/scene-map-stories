@@ -12,6 +12,7 @@ interface ShareMenuProps {
   text: string;
   url?: string;
   className?: string;
+  iconOnly?: boolean;
 }
 
 const platforms = [
@@ -65,7 +66,7 @@ const platforms = [
   },
 ];
 
-export default function ShareMenu({ title, text, url, className }: ShareMenuProps) {
+export default function ShareMenu({ title, text, url, className, iconOnly }: ShareMenuProps) {
   const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
 
   const handleShare = (platform: typeof platforms[number]) => {
@@ -77,11 +78,17 @@ export default function ShareMenu({ title, text, url, className }: ShareMenuProp
     window.open(platform.getUrl(shareUrl, `${title} — ${text}`), "_blank", "noopener,noreferrer,width=600,height=400");
   };
 
+  const triggerClass = className
+    ?? (iconOnly
+      ? "h-11 w-11 rounded-full glass border border-border text-foreground hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
+      : "h-11 px-6 rounded-xl glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className={className || "h-11 px-6 rounded-xl glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2"}>
-          <Share2 className="w-4 h-4" /> Share
+        <button className={triggerClass} aria-label="Share">
+          <Share2 className="w-4 h-4" />
+          {!iconOnly && <span>Share</span>}
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 glass border-border">
