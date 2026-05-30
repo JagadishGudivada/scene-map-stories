@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { buildSpotScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/locationScout.ts";
 import { resolveLocationImage } from "../_shared/images.ts";
 import { getSpot, upsertSpot } from "../_shared/store.ts";
 
@@ -43,13 +44,12 @@ serve(async (req) => {
         .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
 
-    const userPrompt = `Provide detailed information about the real-world filming/setting location "${placeName}"${
-      titleHint ? ` featured in "${titleHint}"` : ""
-    }${
-      typeof lat === "number" && typeof lng === "number"
-        ? ` (approx coordinates ${lat}, ${lng})`
-        : ""
-    }. Include the official place name, city, country, country flag emoji, precise coordinates, street address if known, a 2-3 sentence description of why this place matters, 3-4 fun facts, 3-4 visit tips, and the titles (movies/series/books) that feature it. Respond ONLY via the return_spot_details tool.`;
+    const userPrompt = buildSpotScoutPrompt({
+      placeName,
+      titleHint,
+      lat: typeof lat === "number" ? lat : undefined,
+      lng: typeof lng === "number" ? lng : undefined,
+    });
 
     const response = await fetch(AI_CHAT_COMPLETIONS_URL, {
       method: "POST",
@@ -62,8 +62,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are an expert on movies, TV series, books and their real-world filming/setting locations. Always return accurate, real coordinates and verified details. Never invent fictional places or addresses.",
+            content: getLocationScoutSystemPrompt(),
           },
           { role: "user", content: userPrompt },
         ],

@@ -569,19 +569,32 @@ export default function LocationDetail() {
             className="flex flex-wrap gap-3 mb-6"
           >
             {[
-              { icon: "🎬", label: `${cityData.totalTitles} titles filmed here` },
-              { icon: "📍", label: `${cityData.totalLocations} filming locations` },
-              { icon: "👁️", label: `${cityData.explorers} explorers` },
+              {
+                icon: "🎬",
+                value: cityData.totalTitles,
+                fullLabel: `${cityData.totalTitles} titles filmed here`,
+              },
+              {
+                icon: "📍",
+                value: cityData.totalLocations,
+                fullLabel: `${cityData.totalLocations} filming locations`,
+              },
+              {
+                icon: "👁️",
+                value: cityData.explorers,
+                fullLabel: `${cityData.explorers} explorers`,
+              },
             ].map((stat, i) => (
               <motion.span
-                key={stat.label}
+                key={stat.fullLabel}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.6 + i * 0.1 }}
                 className="glass rounded-full px-4 py-2 text-sm font-medium text-foreground"
               >
                 <span className="mr-1.5">{stat.icon}</span>
-                {stat.label}
+                <span className="sm:hidden">{stat.value}</span>
+                <span className="hidden sm:inline">{stat.fullLabel}</span>
               </motion.span>
             ))}
           </motion.div>

@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { buildTitleScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/locationScout.ts";
 import { resolveTitleImage } from "../_shared/images.ts";
 import { getTitle, upsertTitle } from "../_shared/store.ts";
 
@@ -74,11 +75,15 @@ function resolveReasoningEffort(model: string, requested: string): "none" | "min
   return normalized as "none" | "minimal" | "low" | "medium" | "high";
 }
 
+function normalizeTitleType(value: unknown): "Movie" | "Series" | "Book" | undefined {
+  return value === "Movie" || value === "Series" || value === "Book" ? value : undefined;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { slug, title: hintTitle, year: hintYear } = await req.json();
+    const { slug, title: hintTitle, year: hintYear, creator: hintCreator, type: hintType } = await req.json();
     if (!slug || typeof slug !== "string") {
       return jsonResponse({ error: "slug required" }, 400);
     }
@@ -114,9 +119,14 @@ serve(async (req) => {
         .join(" ");
     const slugYear = hintYear || Number(slug.match(/-(\d{4})$/)?.[1] || 0) || undefined;
 
-    const userPrompt = `Provide detailed information about the title "${slugTitle}"${
-      slugYear ? ` (${slugYear})` : ""
-    }. Include type (Movie / Series / Book), release year, IMDb-style rating, genres, a one-paragraph synopsis, and a comprehensive list of minimum 10 real filming locations (for Movies/Series) or real-world settings mentioned in the story (for Books). Use real-world coordinates. Respond ONLY via the return_title_details tool.`;
+    const hintedType = normalizeTitleType(hintType);
+
+    const userPrompt = buildTitleScoutPrompt({
+      title: slugTitle,
+      year: slugYear,
+      creator: typeof hintCreator === "string" ? hintCreator : undefined,
+      typeHint: hintedType,
+    });
 
     const basePayload = {
         model: AI_MODEL,
@@ -124,8 +134,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are an expert on movies, TV series, and books and their real-world filming/setting locations. Always return accurate, real coordinates. Never invent fictional places.",
+            content: getLocationScoutSystemPrompt(),
           },
           { role: "user", content: userPrompt },
         ],
@@ -241,16 +250,38 @@ serve(async (req) => {
         stage: "ai_started",
       });
 
+      const hintedImagePromise = resolveTitleImage({
+        title: slugTitle,
+        year: slugYear,
+        type: hintedType,
+        author: typeof hintCreator === "string" ? hintCreator : undefined,
+      });
+
       const parsed = await generateDetails();
       send("details", parsed);
 
-      // Resolve imagery after core details so UI can render immediately.
-      const { coverImage, backdropImage } = await resolveTitleImage({
-        title: parsed.title,
-        year: parsed.year,
-        type: parsed.type,
-        author: parsed.creator,
-      });
+      // Start image enrichment from search metadata in parallel with the AI call.
+      let { coverImage, backdropImage } = await hintedImagePromise;
+
+      const parsedType = normalizeTitleType(parsed.type);
+      const shouldRetryImageLookup =
+        (!coverImage && !backdropImage) ||
+        parsed.title !== slugTitle ||
+        parsed.year !== slugYear ||
+        parsed.creator !== hintCreator ||
+        parsedType !== hintedType;
+
+      if (shouldRetryImageLookup) {
+        const resolvedImages = await resolveTitleImage({
+          title: parsed.title,
+          year: parsed.year,
+          type: parsedType,
+          author: parsed.creator,
+        });
+        coverImage = resolvedImages.coverImage;
+        backdropImage = resolvedImages.backdropImage;
+      }
+
       if (coverImage) parsed.coverImage = coverImage;
       if (backdropImage) parsed.backdropImage = backdropImage;
 

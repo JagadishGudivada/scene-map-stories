@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { normalizeKey } from "../_shared/aiCache.ts";
 import { resolveLocationImage } from "../_shared/images.ts";
+import {
+  buildRelatedLocationsScoutPrompt,
+  getRelatedLocationsScoutSystemPrompt,
+} from "../_shared/locationScout.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -37,7 +41,10 @@ serve(async (req) => {
       name ||
       slug.split("-").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
 
-    const userPrompt = `Suggest 6 cities (NOT including "${cityName}") that are most similar to "${cityName}"${country ? `, ${country}` : ""} as famous real-world filming locations. Pick cities that share cinematic vibe, era, geography, or genre overlap. Prefer iconic, well-known filming hubs. For each, return: name, country, ISO 2-letter country code, country flag emoji, approximate count of titles filmed there. Respond ONLY via the return_locations tool.`;
+    const userPrompt = buildRelatedLocationsScoutPrompt({
+      cityName,
+      country: typeof country === "string" ? country : undefined,
+    });
 
     const response = await fetch(AI_URL, {
       method: "POST",
@@ -50,8 +57,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are an expert on cities as filming locations. Always return real cities and accurate country/flag info.",
+            content: getRelatedLocationsScoutSystemPrompt(),
           },
           { role: "user", content: userPrompt },
         ],

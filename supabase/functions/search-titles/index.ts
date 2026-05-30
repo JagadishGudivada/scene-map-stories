@@ -1,5 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { normalizeKey } from "../_shared/aiCache.ts";
+import {
+  buildSearchTitlesScoutPrompt,
+  getSearchTitlesScoutSystemPrompt,
+} from "../_shared/locationScout.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -93,6 +97,7 @@ serve(async (req) => {
     }
 
     const cacheKey = normalizeKey(query);
+    void cacheKey;
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
@@ -114,22 +119,14 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content:
-              `You are a movies, TV series, and books expert with web-grounded recency awareness. ` +
-              `Given a query, return up to 8 real matching titles (Movie / Series / Book) ordered by relevance. ` +
-              `Rules: ` +
-              `1) Prioritize exact-title and same-franchise matches first. ` +
-              `2) Include announced or upcoming entries when relevant, using expected release year when widely reported. ` +
-              `3) For franchise queries, prefer screen entries (Movie/Series) before loosely related books unless book title is an exact match. ` +
-              `4) Keep results specific to the query; avoid weakly related author bibliography. ` +
-              `Respond ONLY via the return_titles tool.`,
+            content: getSearchTitlesScoutSystemPrompt(),
           },
           {
             role: "user",
-            content:
-              `Today is ${new Date().toISOString().slice(0, 10)}. ` +
-              `Search titles matching: "${query.trim()}". ` +
-              `If a sequel/reboot/spinoff is announced for an upcoming year, include it.`,
+            content: buildSearchTitlesScoutPrompt({
+              query,
+              today: new Date().toISOString().slice(0, 10),
+            }),
           },
         ],
         tools: [

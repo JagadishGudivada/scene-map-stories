@@ -23,6 +23,45 @@ import heroRomeImg from "@/assets/hero-rome.jpg";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
 
+const imdbGenreIconMap: Record<string, string> = {
+  action: "💥",
+  adventure: "🤠",
+  animation: "🎨",
+  biography: "📜",
+  comedy: "😂",
+  crime: "🕵️‍♂️",
+  drama: "🎭",
+  family: "👨‍👩‍👧‍👦",
+  fantasy: "🧝‍♂️",
+  filmnoir: "🚬",
+  history: "⏳",
+  horror: "😱",
+  music: "🎶",
+  musical: "💃",
+  mystery: "🔮",
+  romance: "💕",
+  scifi: "🚀",
+  sport: "🏅",
+  thriller: "🫣",
+  war: "🪖",
+  western: "🌵",
+  adult: "🔞",
+  documentary: "📹",
+  gameshow: "🎲",
+  news: "📰",
+  realitytv: "📺",
+  short: "⏱️",
+  talkshow: "🎙️",
+};
+
+function normalizeGenreLabel(label: string) {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function getGenreIcon(label: string) {
+  return imdbGenreIconMap[normalizeGenreLabel(label)] || "🎬";
+}
+
 function slugify(title: string, year: number) {
   return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
 }
@@ -204,7 +243,7 @@ export default function TitleDetail() {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
           },
-          body: JSON.stringify({ slug, title: navState?.title, year: navState?.year }),
+          body: JSON.stringify({ slug, title: navState?.title, year: navState?.year, creator: navState?.creator, type: navState?.type }),
         });
 
         if (!response.ok) {
@@ -637,27 +676,26 @@ export default function TitleDetail() {
           }}
         />
       )}
-      {/* Full-bleed Hero */}
-      <div className="relative h-[55vh] min-h-[400px] w-full overflow-hidden">
-        <img src={view.coverImage} alt={view.title} className="w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-background/45 via-transparent to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/25 via-transparent to-transparent" />
+      {/* Hero card */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24">
+        <div className="relative aspect-[16/9] lg:aspect-[21/9] w-full overflow-hidden rounded-3xl border border-border shadow-card">
+          <img
+            src={view.coverImage}
+            alt={view.title}
+            className="absolute inset-0 h-full w-full object-cover"
+            style={{ objectPosition: "center 22%" }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-background/55 via-background/15 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-background/25 via-transparent to-transparent" />
 
-        <Link
-          to="/"
-          className="absolute top-20 left-4 sm:left-8 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
+          <Link
+            to="/"
+            className="absolute top-4 right-4 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
 
-        {/* {view.source === "ai" && (
-          <div className="absolute top-20 right-4 sm:right-8 z-10 glass rounded-full px-3 py-1.5 border border-amber/30 text-amber text-[11px] font-mono flex items-center gap-1.5">
-            <Sparkles className="w-3 h-3" /> AI generated
-          </div>
-        )} */}
-
-        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-10">
-          <div className="max-w-5xl mx-auto">
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3 badge-${view.type.toLowerCase()}`}>
                 <TypeIcon className="w-3 h-3" />
@@ -689,8 +727,14 @@ export default function TitleDetail() {
               {view.genres.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-5">
                   {view.genres.map((g) => (
-                    <span key={g} className="glass rounded-full px-3 py-1 text-xs text-foreground border border-border">
-                      {g}
+                    <span
+                      key={g}
+                      className="glass rounded-full px-3 py-1 text-xs text-foreground border border-border inline-flex items-center gap-1.5"
+                      title={g}
+                      aria-label={g}
+                    >
+                      <span className="sm:hidden" aria-hidden="true">{getGenreIcon(g)}</span>
+                      <span className="hidden sm:inline">{g}</span>
                     </span>
                   ))}
                 </div>
@@ -710,7 +754,6 @@ export default function TitleDetail() {
                   <span>{saved ? "Saved" : "Save to Map"}</span>
                 </button>
 
-                {/* Mobile: icon-only round buttons */}
                 <div className="flex sm:hidden items-center gap-2">
                   <button
                     aria-label="I've been here"
@@ -726,7 +769,6 @@ export default function TitleDetail() {
                   />
                 </div>
 
-                {/* Desktop / tablet: full pill buttons */}
                 <div className="hidden sm:flex items-center gap-3">
                   <button className="h-11 px-6 rounded-full glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" /> I've Been Here

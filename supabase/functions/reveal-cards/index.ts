@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCached } from "../_shared/aiCache.ts";
+import {
+  buildRevealCardsScoutPrompt,
+  getRevealCardsScoutSystemPrompt,
+} from "../_shared/locationScout.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -50,17 +54,7 @@ serve(async (req) => {
 
     const subject = describe(kind as Kind, name, context);
 
-    const prompt = `Generate a stack of 12 short, punchy "reveal cards" about ${subject}. Voice: gen-z, witty, casual, no corporate tone. Mix of three types:
-- "bts": one behind-the-scenes filmmaking fact (camera tricks, on-set stories, casting, hidden details)
-- "didyouknow": one wild trivia or location fact that feels like a secret
-- "mood": one evocative one-line quote about the place/story (poetic, dreamy, 8-15 words)
-
-Rules:
-- Each card text MUST be 12-32 words, max 220 characters
-- No hashtags, no emojis at the start, no "fun fact:" prefixes
-- Real, verifiable facts only — never invent quotes from real people
-- Make them feel like something a friend would whisper to you, not Wikipedia
-- Return strictly via the return_cards tool`;
+    const prompt = buildRevealCardsScoutPrompt({ subject });
 
     const resp = await fetch(AI_CHAT_COMPLETIONS_URL, {
       method: "POST",
@@ -73,8 +67,7 @@ Rules:
         messages: [
           {
             role: "system",
-            content:
-              "You are a film-obsessed travel friend with encyclopedic knowledge of movies, series, books and filming locations. You speak in short, scroll-friendly bursts.",
+            content: getRevealCardsScoutSystemPrompt(),
           },
           { role: "user", content: prompt },
         ],

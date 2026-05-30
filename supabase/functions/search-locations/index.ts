@@ -1,4 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import {
+  buildSearchLocationsScoutPrompt,
+  getSearchLocationsScoutSystemPrompt,
+} from "../_shared/locationScout.ts";
 import { normalizeKey } from "../_shared/aiCache.ts";
 
 const corsHeaders = {
@@ -21,6 +25,9 @@ serve(async (req) => {
     }
 
     const cacheKey = normalizeKey(query);
+    void cacheKey;
+
+    const trimmedQuery = query.trim();
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
@@ -42,11 +49,11 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content: `You are a filming locations expert. When given a search query about movies, TV series, books, or real-world locations, return famous filming/setting locations as JSON via the return_locations tool. Return up to 8 locations. Use real coordinates. type must be exactly "Movie", "Series", or "Book".`,
+            content: getSearchLocationsScoutSystemPrompt(),
           },
           {
             role: "user",
-            content: `Find filming or setting locations for: "${query.trim()}"`,
+            content: buildSearchLocationsScoutPrompt({ query: trimmedQuery }),
           },
         ],
         tools: [

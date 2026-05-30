@@ -2,6 +2,10 @@
 // with REAL web-search context (DuckDuckGo + Wikipedia) so the model isn't
 // limited to its training cutoff.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import {
+  buildVerifyLocationSuggestionPrompt,
+  getVerifyLocationSuggestionSystemPrompt,
+} from "../_shared/locationScout.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -65,26 +69,13 @@ Deno.serve(async (req) => {
       : "(no web results returned)";
 
     const today = new Date().toISOString().slice(0, 10);
-    const prompt = `Today is ${today}.
-
-You must verify whether the movie / series / book "${row.title_name}" is set at, was filmed at, or notably features this real-world location: "${row.location_name}".${row.description ? `\nUser note: ${row.description}` : ""}
-
-Below is fresh web evidence (DuckDuckGo + Wikipedia, fetched just now). Treat it as your primary source of truth — it may contain information newer than your training cutoff.
-
-=== WEB EVIDENCE ===
-${evidenceBlock}
-=== END EVIDENCE ===
-
-Rules:
-- Accept BOTH filming locations and story/setting locations.
-- Accept regional matches: a place inside a region the title is set in counts.
-- If the web evidence above credibly supports the connection, set verified=true.
-- If evidence is thin but plausible and consistent (e.g. multiple snippets mention both the title and location together), prefer verified=true.
-- Only set verified=false if the evidence clearly contradicts or is completely silent on the connection.
-- Return precise lat/lng for the canonical place. Use your geographic knowledge for coordinates — they don't need to be in the snippets.
-
-Respond ONLY in compact JSON:
-{"verified": true|false, "label": "<canonical place name>", "lat": <number>, "lng": <number>, "notes": "<one sentence citing which evidence snippet [n] supports this>"}`;
+    const prompt = buildVerifyLocationSuggestionPrompt({
+      titleName: String(row.title_name || ""),
+      locationName: String(row.location_name || ""),
+      description: typeof row.description === "string" ? row.description : undefined,
+      today,
+      evidenceBlock,
+    });
 
     const aiRes = await fetch(AI_URL, {
       method: "POST",
@@ -92,7 +83,7 @@ Respond ONLY in compact JSON:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You verify real-world filming and story locations for movies/series/books. Trust the provided web evidence over your training data. Always reply with valid JSON only." },
+          { role: "system", content: getVerifyLocationSuggestionSystemPrompt() },
           { role: "user", content: prompt },
         ],
         response_format: { type: "json_object" },
