@@ -18,6 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { useSavedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
+import { RevealButton } from "@/components/RevealDeck";
 import heroRomeImg from "@/assets/hero-rome.jpg";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
