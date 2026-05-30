@@ -676,26 +676,24 @@ export default function TitleDetail() {
           }}
         />
       )}
-      {/* Hero card */}
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 sm:pt-24">
-        <div className="relative aspect-[16/9] lg:aspect-[21/9] w-full overflow-hidden rounded-3xl border border-border shadow-card">
+      {/* Hero */}
+      <div className="relative h-[55vh] min-h-[400px] w-full overflow-hidden lg:mx-auto lg:mt-6 lg:max-w-5xl lg:px-6 lg:h-auto lg:min-h-0 lg:rounded-3xl lg:border lg:border-border lg:shadow-card">
           <img
             src={view.coverImage}
             alt={view.title}
-            className="absolute inset-0 h-full w-full object-cover"
-            style={{ objectPosition: "center 22%" }}
+            className="absolute inset-0 h-full w-full object-cover object-center lg:object-[center_22%]"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-background/55 via-background/15 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-background/25 via-transparent to-transparent" />
 
           <Link
             to="/"
-            className="absolute top-4 right-4 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors"
+            className="absolute top-4 left-4 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors lg:left-auto lg:right-4"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
 
-          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8">
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:px-8 lg:pb-8 lg:pt-0">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3 badge-${view.type.toLowerCase()}`}>
                 <TypeIcon className="w-3 h-3" />
@@ -786,7 +784,6 @@ export default function TitleDetail() {
             </motion.div>
           </div>
         </div>
-      </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 mt-10">
         {view.synopsis && (
