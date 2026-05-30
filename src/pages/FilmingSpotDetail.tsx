@@ -11,6 +11,7 @@ import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
+import { RevealButton } from "@/components/RevealDeck";
 import { useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
 import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
