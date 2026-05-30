@@ -17,3 +17,5 @@ verify_jwt = false
 
 [functions.weekly-movies]
 verify_jwt = false
+[functions.reveal-cards]
+verify_jwt = false

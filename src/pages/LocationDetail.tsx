@@ -17,6 +17,7 @@ import ReportInfoDialog from "@/components/ReportInfoDialog";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import VerificationAccordion from "@/components/VerificationAccordion";
 import Seo from "@/components/Seo";
+import { RevealButton } from "@/components/RevealDeck";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import heroRomeImg from "@/assets/hero-rome-location.jpg";
 import heroRomeAlt from "@/assets/hero-rome.jpg";
@@ -472,6 +473,16 @@ export default function LocationDetail() {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={placeSchema} />
+      {slug && (
+        <RevealButton
+          context={{
+            kind: "location",
+            slug,
+            name: cityData.name,
+            meta: { country: cityData.country },
+          }}
+        />
+      )}
       {/* SECTION 1: HERO */}
       <div ref={heroRef} className="relative h-screen w-full overflow-hidden grain">
         <img
