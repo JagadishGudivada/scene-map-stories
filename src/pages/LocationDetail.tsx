@@ -473,6 +473,16 @@ export default function LocationDetail() {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
       <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={placeSchema} />
+      {slug && (
+        <RevealButton
+          context={{
+            kind: "location",
+            slug,
+            name: cityData.name,
+            meta: { country: cityData.country },
+          }}
+        />
+      )}
       {/* SECTION 1: HERO */}
       <div ref={heroRef} className="relative h-screen w-full overflow-hidden grain">
         <img
