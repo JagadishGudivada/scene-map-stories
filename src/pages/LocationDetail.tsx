@@ -591,36 +591,71 @@ export default function LocationDetail() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="flex flex-wrap gap-3"
           >
-            <button
-              onClick={handleExploreOnMap}
-              className="px-6 py-3 rounded-full bg-gradient-amber text-charcoal font-bold text-sm hover:brightness-110 hover:scale-[1.02] transition-all shadow-amber"
-            >
-              Explore All Locations on Map
-            </button>
-            <button
-              onClick={toggleLocationSave}
-              disabled={locationSaveLoading}
-              className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
-                locationSaved
-                  ? "border border-amber/40 text-amber bg-amber/10 hover:bg-amber/20"
-                  : "border border-border/40 text-foreground hover:border-amber hover:text-amber"
-              }`}
-            >
-              {locationSaved ? <BookmarkCheck className="w-4 h-4 inline mr-1.5" /> : <Bookmark className="w-4 h-4 inline mr-1.5" />}
-              {locationSaved ? "City Saved" : "Save City to My List"}
-            </button>
-            <button className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all">
-              <Bell className="w-4 h-4 inline mr-1.5" />
-              Get New Title Alerts
-            </button>
-            <ShareMenu
-              title={`${cityData.name} Filming Locations`}
-              text={`Discover ${cityData.totalLocations} filming locations in ${cityData.name}, ${cityData.country}`}
-              className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all flex items-center gap-1.5"
-            />
-            <ReportInfoDialog entityType="location" slug={slug || ""} />
+            {/* Mobile: compact icon row */}
+            <div className="flex sm:hidden items-center gap-2">
+              <button
+                onClick={handleExploreOnMap}
+                className="h-11 px-5 rounded-full bg-gradient-amber text-charcoal font-bold text-sm hover:brightness-110 transition-all shadow-amber flex items-center gap-2"
+              >
+                <MapPin className="w-4 h-4" /> Map
+              </button>
+              <button
+                onClick={toggleLocationSave}
+                disabled={locationSaveLoading}
+                aria-label={locationSaved ? "City saved" : "Save city"}
+                className={`h-11 w-11 rounded-full flex items-center justify-center transition-all ${
+                  locationSaved
+                    ? "border border-amber/40 text-amber bg-amber/10"
+                    : "glass border border-border text-foreground hover:text-amber"
+                }`}
+              >
+                {locationSaved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
+              </button>
+              <button
+                aria-label="Get new title alerts"
+                className="h-11 w-11 rounded-full glass border border-border text-foreground hover:text-amber transition-all flex items-center justify-center"
+              >
+                <Bell className="w-4 h-4" />
+              </button>
+              <ShareMenu
+                title={`${cityData.name} Filming Locations`}
+                text={`Discover ${cityData.totalLocations} filming locations in ${cityData.name}, ${cityData.country}`}
+                iconOnly
+              />
+            </div>
+
+            {/* Desktop / tablet: full pill buttons */}
+            <div className="hidden sm:flex flex-wrap gap-3">
+              <button
+                onClick={handleExploreOnMap}
+                className="px-6 py-3 rounded-full bg-gradient-amber text-charcoal font-bold text-sm hover:brightness-110 hover:scale-[1.02] transition-all shadow-amber"
+              >
+                Explore All Locations on Map
+              </button>
+              <button
+                onClick={toggleLocationSave}
+                disabled={locationSaveLoading}
+                className={`px-6 py-3 rounded-full text-sm font-medium transition-all ${
+                  locationSaved
+                    ? "border border-amber/40 text-amber bg-amber/10 hover:bg-amber/20"
+                    : "border border-border/40 text-foreground hover:border-amber hover:text-amber"
+                }`}
+              >
+                {locationSaved ? <BookmarkCheck className="w-4 h-4 inline mr-1.5" /> : <Bookmark className="w-4 h-4 inline mr-1.5" />}
+                {locationSaved ? "City Saved" : "Save City to My List"}
+              </button>
+              <button className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all">
+                <Bell className="w-4 h-4 inline mr-1.5" />
+                Get New Title Alerts
+              </button>
+              <ShareMenu
+                title={`${cityData.name} Filming Locations`}
+                text={`Discover ${cityData.totalLocations} filming locations in ${cityData.name}, ${cityData.country}`}
+                className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all flex items-center gap-1.5"
+              />
+              <ReportInfoDialog entityType="location" slug={slug || ""} />
+            </div>
           </motion.div>
         </div>
 
