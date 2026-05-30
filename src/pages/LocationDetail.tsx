@@ -17,6 +17,7 @@ import ReportInfoDialog from "@/components/ReportInfoDialog";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import VerificationAccordion from "@/components/VerificationAccordion";
 import Seo from "@/components/Seo";
+import { RevealButton } from "@/components/RevealDeck";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import heroRomeImg from "@/assets/hero-rome-location.jpg";
 import heroRomeAlt from "@/assets/hero-rome.jpg";
