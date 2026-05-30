@@ -696,27 +696,47 @@ export default function TitleDetail() {
                 </div>
               )}
 
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={toggleSave}
                   disabled={saveLoading}
-                  className={`h-10 sm:h-11 px-4 sm:px-6 rounded-xl font-bold text-xs sm:text-sm transition-opacity flex items-center gap-1.5 sm:gap-2 disabled:opacity-50 ${
+                  className={`h-11 px-5 sm:px-6 rounded-full font-bold text-sm transition-opacity flex items-center gap-2 disabled:opacity-50 ${
                     saved
                       ? "glass border border-amber/40 text-amber hover:bg-muted/50"
                       : "bg-gradient-amber text-charcoal hover:opacity-90 shadow-amber"
                   }`}
                 >
                   {saved ? <BookmarkCheck className="w-4 h-4" /> : <Bookmark className="w-4 h-4" />}
-                  <span className="hidden xs:inline">{saved ? "Saved" : "Save to"}</span> {saved ? "" : "Map"}
+                  <span>{saved ? "Saved" : "Save to Map"}</span>
                 </button>
-                <button className="h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2">
-                  <CheckCircle2 className="w-4 h-4" /> <span className="hidden xs:inline">I've</span> Been Here
-                </button>
-                <AddLocationDialog titleSlug={titleSlug} titleName={view.title} />
-                <ShareMenu
-                  title={view.title}
-                  text={`Explore ${displayLocationCount} filming locations from ${view.title} (${view.year})`}
-                />
+
+                {/* Mobile: icon-only round buttons */}
+                <div className="flex sm:hidden items-center gap-2">
+                  <button
+                    aria-label="I've been here"
+                    className="h-11 w-11 rounded-full glass border border-border text-foreground hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                  </button>
+                  <AddLocationDialog titleSlug={titleSlug} titleName={view.title} iconOnly />
+                  <ShareMenu
+                    title={view.title}
+                    text={`Explore ${displayLocationCount} filming locations from ${view.title} (${view.year})`}
+                    iconOnly
+                  />
+                </div>
+
+                {/* Desktop / tablet: full pill buttons */}
+                <div className="hidden sm:flex items-center gap-3">
+                  <button className="h-11 px-6 rounded-full glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> I've Been Here
+                  </button>
+                  <AddLocationDialog titleSlug={titleSlug} titleName={view.title} />
+                  <ShareMenu
+                    title={view.title}
+                    text={`Explore ${displayLocationCount} filming locations from ${view.title} (${view.year})`}
+                  />
+                </div>
               </div>
               <div className="mt-2">
                 <ReportInfoDialog entityType="title" slug={titleSlug} />
