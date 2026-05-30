@@ -677,7 +677,7 @@ export default function TitleDetail() {
         />
       )}
       {/* Hero */}
-      <div className="relative h-[55vh] min-h-[400px] w-full overflow-hidden lg:mx-auto lg:mt-6 lg:max-w-5xl lg:px-6 lg:h-auto lg:min-h-0 lg:rounded-3xl lg:border lg:border-border lg:shadow-card">
+      <div className="relative h-[55vh] min-h-[400px] w-full overflow-hidden lg:mx-auto lg:mt-6 lg:max-w-5xl lg:h-[55vh] lg:min-h-[400px] lg:rounded-3xl lg:border lg:border-border lg:shadow-card">
           <img
             src={view.coverImage}
             alt={view.title}
