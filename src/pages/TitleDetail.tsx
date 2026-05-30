@@ -627,6 +627,16 @@ export default function TitleDetail() {
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
       <Seo title={seoTitle} description={seoDesc} type="article" image={view.coverImage} jsonLd={movieSchema} />
+      {slug && (
+        <RevealButton
+          context={{
+            kind: "title",
+            slug,
+            name: view.title,
+            meta: { year: view.year, type: view.type },
+          }}
+        />
+      )}
       {/* Full-bleed Hero */}
       <div className="relative h-[55vh] min-h-[400px] w-full overflow-hidden">
         <img src={view.coverImage} alt={view.title} className="w-full h-full object-cover" />
