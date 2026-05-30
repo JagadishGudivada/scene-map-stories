@@ -203,6 +203,14 @@ export default function FilmingSpotDetail() {
   return (
     <div className="min-h-screen bg-background text-foreground pt-20">
       <Seo title={spotSeoTitle} description={spotSeoDesc} type="article" image={(spot as any).image} jsonLd={spotSchema} />
+      <RevealButton
+        context={{
+          kind: "spot",
+          slug: spot.slug,
+          name: spot.name,
+          meta: { city: spot.city, country: spot.country, title: spot.titles?.[0] },
+        }}
+      />
       {/* Breadcrumb */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-2">
         <Breadcrumb>
