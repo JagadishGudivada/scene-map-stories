@@ -304,19 +304,26 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-0 mt-5 glass rounded-2xl border border-border divide-x divide-border overflow-hidden">
+          {/* Stats — tap to jump */}
+          <div className="grid grid-cols-4 gap-2 mt-5">
             {stats.map((stat) => (
-              <div
+              <button
                 key={stat.label}
-                className="flex-1 flex flex-col items-center py-4 px-2 hover:bg-muted/50 transition-colors"
+                type="button"
+                onClick={() => {
+                  if (!stat.jump) return;
+                  setActiveTab(stat.jump.tab);
+                  if (stat.jump.filter) setSavedFilter(stat.jump.filter);
+                }}
+                className="glass rounded-2xl border border-border py-3 px-2 flex flex-col items-center gap-1 active:scale-95 hover:border-amber/40 transition-all"
               >
-                <stat.icon className={`w-4 h-4 mb-1.5 ${stat.color}`} />
-                <span className={`text-xl font-bold font-serif ${stat.color}`}>{stat.value}</span>
-                <span className="text-xs text-muted-foreground mt-0.5 text-center leading-tight">{stat.label}</span>
-              </div>
+                <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
+                <span className={`text-xl font-bold font-serif leading-none ${stat.color}`}>{stat.value}</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</span>
+              </button>
             ))}
           </div>
+
 
           <section className="mt-5 glass rounded-2xl border border-border p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
