@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X, Pencil, Plus, Globe, Trash2 } from "lucide-react";
+import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X, Pencil, Plus, Globe, Trash2, Sparkles, Film } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
 import EditProfileDialog, { type ProfileRow } from "@/components/EditProfileDialog";
 import CreatePostDialog from "@/components/CreatePostDialog";
@@ -24,6 +24,7 @@ type PostRow = {
 };
 
 type Tab = "map" | "saved" | "posts" | "lists";
+type SavedFilter = "titles" | "locations" | "spots" | "been" | "watched";
 
 const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "map", label: "Memory Map", icon: MapPin },
@@ -38,6 +39,7 @@ function prettifySlug(slug: string) {
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("map");
+  const [savedFilter, setSavedFilter] = useState<SavedFilter>("titles");
   const { user: authUser } = useAuth();
   const { username: routeUsername } = useParams<{ username: string }>();
   const { toast } = useToast();
@@ -224,11 +226,11 @@ export default function Profile() {
     }
   };
 
-  const stats = [
-    { label: "Titles Saved", value: savedTitleSlugs.length, icon: Bookmark, color: "text-amber" },
-    { label: "Spots Visited", value: visitedSpotSlugs.length, icon: MapPin, color: "text-teal" },
-    { label: "Countries", value: visitedCountriesCount, icon: Users, color: "text-foreground" },
-    { label: "Watched", value: watchedTitleSlugs.length, icon: Heart, color: "text-foreground" },
+  const stats: { label: string; value: number; icon: typeof Bookmark; color: string; jump?: { tab: Tab; filter?: SavedFilter } }[] = [
+    { label: "Titles", value: savedTitleSlugs.length, icon: Bookmark, color: "text-amber", jump: { tab: "saved", filter: "titles" } },
+    { label: "Spots", value: visitedSpotSlugs.length, icon: MapPin, color: "text-teal", jump: { tab: "saved", filter: "been" } },
+    { label: "Countries", value: visitedCountriesCount, icon: Users, color: "text-foreground", jump: { tab: "map" } },
+    { label: "Watched", value: watchedTitleSlugs.length, icon: Heart, color: "text-foreground", jump: { tab: "saved", filter: "watched" } },
   ];
 
   return (
@@ -302,19 +304,26 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-0 mt-5 glass rounded-2xl border border-border divide-x divide-border overflow-hidden">
+          {/* Stats — tap to jump */}
+          <div className="grid grid-cols-4 gap-2 mt-5">
             {stats.map((stat) => (
-              <div
+              <button
                 key={stat.label}
-                className="flex-1 flex flex-col items-center py-4 px-2 hover:bg-muted/50 transition-colors"
+                type="button"
+                onClick={() => {
+                  if (!stat.jump) return;
+                  setActiveTab(stat.jump.tab);
+                  if (stat.jump.filter) setSavedFilter(stat.jump.filter);
+                }}
+                className="glass rounded-2xl border border-border py-3 px-2 flex flex-col items-center gap-1 active:scale-95 hover:border-amber/40 transition-all"
               >
-                <stat.icon className={`w-4 h-4 mb-1.5 ${stat.color}`} />
-                <span className={`text-xl font-bold font-serif ${stat.color}`}>{stat.value}</span>
-                <span className="text-xs text-muted-foreground mt-0.5 text-center leading-tight">{stat.label}</span>
-              </div>
+                <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
+                <span className={`text-xl font-bold font-serif leading-none ${stat.color}`}>{stat.value}</span>
+                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</span>
+              </button>
             ))}
           </div>
+
 
           <section className="mt-5 glass rounded-2xl border border-border p-4 sm:p-5">
             <div className="flex items-center justify-between gap-3 mb-3">
@@ -425,202 +434,164 @@ export default function Profile() {
               </div>
             )}
 
-            {activeTab === "saved" && (
-              <div>
-                {/* Saved Titles */}
-                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2">
-                  <Bookmark className="w-4 h-4 text-amber" /> Saved Titles
-                </h3>
-                {savedTitlesLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : savedTitleSlugs.length === 0 ? (
-                  <div className="glass rounded-2xl border border-border p-8 text-center mb-6">
-                    <Bookmark className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">No saved titles yet. Browse titles and tap "Save to Map".</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                    {savedTitleSlugs.map((slug, i) => (
-                      <motion.div
-                        key={slug}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
-                      >
-                        <Link to={`/title/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-9 h-9 rounded-lg bg-amber/10 flex items-center justify-center">
-                            <Bookmark className="w-4 h-4 text-amber" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground capitalize truncate">{prettifySlug(slug)}</span>
-                        </Link>
-                        <button
-                          onClick={() => handleUnsaveTitle(slug)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
-                          title="Remove from saved"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
+            {activeTab === "saved" && (() => {
+              const filters: { id: SavedFilter; label: string; count: number; icon: typeof Bookmark; color: string }[] = [
+                { id: "titles", label: "Titles", count: savedTitleSlugs.length, icon: Bookmark, color: "amber" },
+                { id: "locations", label: "Locations", count: savedLocationSlugs.length, icon: MapPin, color: "teal" },
+                { id: "spots", label: "Wishlist", count: savedSpotSlugs.length, icon: Sparkles, color: "amber" },
+                { id: "been", label: "Been Here", count: visitedSpotSlugs.length, icon: CheckCircle2, color: "teal" },
+                { id: "watched", label: "Watched", count: watchedTitleSlugs.length, icon: Film, color: "teal" },
+              ];
 
-                {/* Saved Locations */}
-                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
-                  <MapPin className="w-4 h-4 text-teal" /> Saved Locations
-                </h3>
-                {savedLocationsLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : savedLocationSlugs.length === 0 ? (
-                  <div className="glass rounded-2xl border border-border p-8 text-center">
-                    <MapPin className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">No saved locations yet. Visit a location page and tap "Save City".</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {savedLocationSlugs.map((slug, i) => (
-                      <motion.div
-                        key={slug}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
-                      >
-                        <Link to={`/location/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
-                            <MapPin className="w-4 h-4 text-teal" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground capitalize truncate">{slug.replace(/-/g, " ")}</span>
-                        </Link>
-                        <button
-                          onClick={() => handleUnsaveLocation(slug)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
-                          title="Remove from saved"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Saved Spots */}
-                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
-                  <Bookmark className="w-4 h-4 text-amber" /> Saved Spots Wishlist
-                </h3>
-                {savedSpotsLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : savedSpotSlugs.length === 0 ? (
-                  <div className="glass rounded-2xl border border-border p-8 text-center">
-                    <Bookmark className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">No saved spots yet. Open a spot and tap "Save Spot".</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {savedSpotSlugs.map((slug, i) => (
-                      <motion.div
-                        key={slug}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
-                      >
-                        <Link to={`/spot/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-9 h-9 rounded-lg bg-amber/10 flex items-center justify-center">
-                            <Bookmark className="w-4 h-4 text-amber" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground capitalize truncate">{slug.replace(/-/g, " ")}</span>
-                        </Link>
-                        <button
-                          onClick={() => handleUnsaveSpot(slug)}
-                          className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
-                          title="Remove from wishlist"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Been Here */}
-                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
-                  <MapPin className="w-4 h-4 text-teal" /> Been Here
-                </h3>
-                {visitedSpotsLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : visitedSpotSlugs.length === 0 ? (
-                  <div className="glass rounded-2xl border border-border p-8 text-center">
-                    <MapPin className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">No visited spots yet. Open a spot and tap "I've Been Here".</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {visitedSpotSlugs.map((slug, i) => {
-                      const persistedSpot = visitedSpots.find((spot) => spot.spot_slug === slug);
+              const renderGrid = (
+                items: { slug: string; label: string; onUnsave?: (s: string) => void; href: string; accent: "amber" | "teal"; icon: typeof Bookmark }[],
+                emptyMsg: string,
+                emptyIcon: typeof Bookmark
+              ) => {
+                if (items.length === 0) {
+                  const EmptyIcon = emptyIcon;
+                  return (
+                    <div className="glass rounded-2xl border border-dashed border-border p-10 text-center">
+                      <EmptyIcon className="w-7 h-7 text-muted-foreground mx-auto mb-3 opacity-60" />
+                      <p className="text-muted-foreground text-sm max-w-xs mx-auto">{emptyMsg}</p>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                    {items.map((item, i) => {
+                      const Icon = item.icon;
+                      const accentBg = item.accent === "amber" ? "bg-amber/10" : "bg-teal/10";
+                      const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
                       return (
                         <motion.div
-                          key={slug}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                          className="group glass rounded-xl p-4 border border-border flex items-center justify-between"
+                          key={item.slug}
+                          initial={{ opacity: 0, scale: 0.96 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: Math.min(i * 0.02, 0.3) }}
+                          className="group relative glass rounded-2xl border border-border p-3 aspect-square flex flex-col justify-between overflow-hidden hover:border-amber/40 transition-all active:scale-[0.97]"
                         >
-                          <Link to={`/spot/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
-                            <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
-                              <MapPin className="w-4 h-4 text-teal" />
-                            </div>
-                            <span className="text-sm font-medium text-foreground capitalize truncate">
-                              {persistedSpot ? persistedSpot.spot_name : slug.replace(/-/g, " ")}
-                            </span>
-                          </Link>
-                          <button
-                            onClick={() => handleUnvisitSpot(slug)}
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-0 group-hover:opacity-100"
-                            title="Remove from visited"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
+                          <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
+                          <div className={`w-9 h-9 rounded-xl ${accentBg} ${accentText} flex items-center justify-center`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <span className="text-[13px] font-medium text-foreground capitalize leading-snug line-clamp-2 relative z-0">
+                            {item.label}
+                          </span>
+                          {item.onUnsave && (
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); item.onUnsave!(item.slug); }}
+                              className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
+                              title="Remove"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          )}
                         </motion.div>
                       );
                     })}
                   </div>
-                )}
+                );
+              };
 
-                {/* Watched Titles */}
-                <h3 className="font-serif text-lg text-foreground mb-3 flex items-center gap-2 mt-6">
-                  <CheckCircle2 className="w-4 h-4 text-teal" /> Watched Titles
-                </h3>
-                {watchedTitlesLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading…</p>
-                ) : watchedTitleSlugs.length === 0 ? (
-                  <div className="glass rounded-2xl border border-border p-8 text-center">
-                    <CheckCircle2 className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">No watched titles yet. Open a title and tap "Watched".</p>
+              const grids: Record<SavedFilter, { loading: boolean; node: React.ReactNode }> = {
+                titles: {
+                  loading: savedTitlesLoading,
+                  node: renderGrid(
+                    savedTitleSlugs.map((slug) => ({ slug, label: prettifySlug(slug), href: `/title/${slug}`, accent: "amber", icon: Bookmark, onUnsave: handleUnsaveTitle })),
+                    "No saved titles yet. Browse a title and tap Save to Map.",
+                    Bookmark
+                  ),
+                },
+                locations: {
+                  loading: savedLocationsLoading,
+                  node: renderGrid(
+                    savedLocationSlugs.map((slug) => ({ slug, label: slug.replace(/-/g, " "), href: `/location/${slug}`, accent: "teal", icon: MapPin, onUnsave: handleUnsaveLocation })),
+                    "No saved locations yet. Open a location and tap Save City.",
+                    MapPin
+                  ),
+                },
+                spots: {
+                  loading: savedSpotsLoading,
+                  node: renderGrid(
+                    savedSpotSlugs.map((slug) => ({ slug, label: slug.replace(/-/g, " "), href: `/spot/${slug}`, accent: "amber", icon: Sparkles, onUnsave: handleUnsaveSpot })),
+                    "No spots on your wishlist yet. Open a spot and tap Save Spot.",
+                    Sparkles
+                  ),
+                },
+                been: {
+                  loading: visitedSpotsLoading,
+                  node: renderGrid(
+                    visitedSpotSlugs.map((slug) => {
+                      const p = visitedSpots.find((s) => s.spot_slug === slug);
+                      return { slug, label: p?.spot_name ?? slug.replace(/-/g, " "), href: `/spot/${slug}`, accent: "teal" as const, icon: CheckCircle2, onUnsave: handleUnvisitSpot };
+                    }),
+                    "No visited spots yet. Tap I've Been Here on any spot.",
+                    CheckCircle2
+                  ),
+                },
+                watched: {
+                  loading: watchedTitlesLoading,
+                  node: renderGrid(
+                    watchedTitleSlugs.map((slug) => ({ slug, label: prettifySlug(slug), href: `/title/${slug}`, accent: "teal" as const, icon: Film })),
+                    "No watched titles yet. Open a title and tap Watched.",
+                    Film
+                  ),
+                },
+              };
+
+              return (
+                <div>
+                  {/* Sub-filter pill chips — horizontal scroll on mobile */}
+                  <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mb-5 overflow-x-auto no-scrollbar">
+                    <div className="flex items-center gap-2 min-w-max">
+                      {filters.map((f) => {
+                        const active = savedFilter === f.id;
+                        return (
+                          <button
+                            key={f.id}
+                            type="button"
+                            onClick={() => setSavedFilter(f.id)}
+                            className={`h-9 px-3.5 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                              active
+                                ? "bg-foreground text-background border border-foreground"
+                                : "glass border border-border text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            <f.icon className="w-3.5 h-3.5" />
+                            {f.label}
+                            <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${active ? "bg-background/20" : "bg-muted"}`}>
+                              {f.count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {watchedTitleSlugs.map((slug, i) => (
-                      <motion.div
-                        key={slug}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="glass rounded-xl p-4 border border-border flex items-center gap-3 min-w-0"
-                      >
-                        <Link to={`/title/${slug}`} className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center flex-shrink-0">
-                            <CheckCircle2 className="w-4 h-4 text-teal" />
-                          </div>
-                          <span className="text-sm font-medium text-foreground capitalize truncate">{prettifySlug(slug)}</span>
-                        </Link>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
+
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={savedFilter}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      {grids[savedFilter].loading ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} className="aspect-square rounded-2xl bg-muted/40 animate-pulse" />
+                          ))}
+                        </div>
+                      ) : (
+                        grids[savedFilter].node
+                      )}
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              );
+            })()}
+
 
             {activeTab === "posts" && (
               <div>
