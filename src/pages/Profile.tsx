@@ -24,6 +24,7 @@ type PostRow = {
 };
 
 type Tab = "map" | "saved" | "posts" | "lists";
+type SavedFilter = "titles" | "locations" | "spots" | "been" | "watched";
 
 const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
   { id: "map", label: "Memory Map", icon: MapPin },
