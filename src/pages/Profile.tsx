@@ -39,6 +39,7 @@ function prettifySlug(slug: string) {
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("map");
+  const [savedFilter, setSavedFilter] = useState<SavedFilter>("titles");
   const { user: authUser } = useAuth();
   const { username: routeUsername } = useParams<{ username: string }>();
   const { toast } = useToast();
