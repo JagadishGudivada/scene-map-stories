@@ -43,6 +43,12 @@ export type InvokeOptions = {
   persist?: "session" | "local" | "memory";
 };
 
+async function getUserAccessToken(): Promise<string | null> {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  return data.session?.access_token ?? null;
+}
+
 export async function invokeCached<T = any>(
   functionName: string,
   body: Record<string, unknown>,
@@ -70,7 +76,9 @@ export async function invokeCached<T = any>(
   if (existing) return existing as Promise<T>;
 
   const promise = (async () => {
-    const { data, error } = await supabase.functions.invoke(functionName, { body });
+    const token = await getUserAccessToken().catch(() => null);
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    const { data, error } = await supabase.functions.invoke(functionName, { body, headers });
     if (error) throw error;
     if ((data as any)?.error) throw new Error((data as any).error);
     const entry: Entry = { value: data, expiresAt: Date.now() + ttlSeconds * 1000 };

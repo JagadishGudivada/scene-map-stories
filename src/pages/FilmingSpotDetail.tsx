@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MapPin, ChevronRight, Film, Tv, BookOpen, Navigation2, Camera,
@@ -8,11 +8,17 @@ import {
 import ShareMenu from "@/components/ShareMenu";
 import ReportInfoDialog from "@/components/ReportInfoDialog";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
+import PassportBadgeUnlockSheet from "@/components/PassportBadgeUnlockSheet";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { RevealButton } from "@/components/RevealDeck";
-import { useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
+import { useAllVisitedSpots, useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
+import {
+  countryToCode,
+  getBadgeTierForVisits,
+  type PassportBadge,
+} from "@/hooks/usePassportBadges";
 import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
@@ -24,9 +30,13 @@ const typeIcons: Record<string, React.ElementType> = {
 };
 
 export default function FilmingSpotDetail() {
+  const navigate = useNavigate();
   const { slug } = useParams<{ slug: string }>();
   const spotSlug = slug || "";
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [unlockedBadge, setUnlockedBadge] = useState<PassportBadge | null>(null);
   const { saved: spotSaved, toggle: toggleSaveSpot, loading: saveSpotLoading } = useSavedSpot(spotSlug);
+  const { spots: allVisitedSpots } = useAllVisitedSpots();
   const routeState = useLocation().state as {
     label?: string;
     lat?: number;
@@ -105,7 +115,33 @@ export default function FilmingSpotDetail() {
 
   const spot = useMemo(() => {
     if (staticSpot) return staticSpot;
-    if (!slug || !aiSpot) return null;
+    if (!slug) return null;
+
+    if (!aiSpot && routeState?.label) {
+      const city = "Unknown City";
+      const country = "Unknown Country";
+      const normalizedType = routeState.type || "Movie";
+      const titles = routeState?.titleHint ? [routeState.titleHint] : [];
+
+      return {
+        id: 0,
+        slug,
+        name: routeState.label,
+        lat: routeState.lat ?? 0,
+        lng: routeState.lng ?? 0,
+        titles,
+        description: routeState.description || "No description available yet.",
+        type: normalizedType,
+        city,
+        citySlug: city.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+        country,
+        flag: "📍",
+        funFacts: [],
+        visitTips: [],
+      };
+    }
+
+    if (!aiSpot) return null;
 
     const city = aiSpot.city || "Unknown City";
     const normalizedType = aiSpot.type || routeState?.type || "Movie";
@@ -149,6 +185,34 @@ export default function FilmingSpotDetail() {
         }
       : undefined
   );
+
+  const handleToggleBeenHere = async () => {
+    if (!spotSlug || !spot) return;
+
+    const countryKey = spot.country.trim().toLowerCase();
+    const existingCountryVisits = allVisitedSpots.filter(
+      (visited) => visited.country.trim().toLowerCase() === countryKey
+    );
+    const isFirstCountryVisit = !beenHere && existingCountryVisits.length === 0;
+
+    await toggleBeenHere();
+
+    if (!isFirstCountryVisit) return;
+
+    const nextVisitCount = existingCountryVisits.length + 1;
+    const tier = getBadgeTierForVisits(nextVisitCount);
+    const badge: PassportBadge = {
+      id: `${countryToCode(spot.country)}-${countryKey.replace(/\s+/g, "-")}`,
+      country: spot.country,
+      countryCode: countryToCode(spot.country),
+      tier,
+      visitCount: nextVisitCount,
+      earnedAt: new Date().toISOString(),
+    };
+
+    setUnlockedBadge(badge);
+    setUnlockOpen(true);
+  };
 
   if (!staticSpot && loading) {
     return (
@@ -419,7 +483,7 @@ export default function FilmingSpotDetail() {
                 {spotSaved ? "Saved Spot" : "Save Spot"}
               </button>
               <button
-                onClick={toggleBeenHere}
+                onClick={handleToggleBeenHere}
                 disabled={beenHereLoading || !spotSlug}
                 className={`w-full h-11 px-4 rounded-xl border font-medium text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
                   beenHere
@@ -508,6 +572,16 @@ export default function FilmingSpotDetail() {
           </div>
         </div>
       </div>
+
+      <PassportBadgeUnlockSheet
+        open={unlockOpen}
+        badge={unlockedBadge}
+        onClose={() => setUnlockOpen(false)}
+        onViewPassport={() => {
+          setUnlockOpen(false);
+          navigate("/profile");
+        }}
+      />
     </div>
   );
 }

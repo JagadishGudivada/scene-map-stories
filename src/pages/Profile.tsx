@@ -5,8 +5,10 @@ import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, 
 import LeafletMap from "@/components/LeafletMap";
 import EditProfileDialog, { type ProfileRow } from "@/components/EditProfileDialog";
 import CreatePostDialog from "@/components/CreatePostDialog";
+import PassportStampBadge from "@/components/PassportStampBadge";
 import { Button } from "@/components/ui/button";
 import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots, useAllWatchedTitles } from "@/hooks/useSaved";
+import { usePassportBadges } from "@/hooks/usePassportBadges";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -178,6 +180,7 @@ export default function Profile() {
     () => new Set(visitedSpotsData.map((spot) => spot.country)).size,
     [visitedSpotsData]
   );
+  const { badges: passportBadges } = usePassportBadges(visitedSpots, authUser?.id);
 
   const handleUnsaveTitle = async (titleSlug: string) => {
     if (!authUser) return;
@@ -312,6 +315,45 @@ export default function Profile() {
               </div>
             ))}
           </div>
+
+          <section className="mt-5 glass rounded-2xl border border-border p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <div>
+                <h2 className="font-serif text-lg text-foreground">My Passport</h2>
+                <p className="text-xs text-muted-foreground">Country stamps earned from visited filming spots</p>
+              </div>
+              <span className="text-xs px-2 py-1 rounded-full bg-amber/10 text-amber font-medium">
+                {passportBadges.length} unlocked
+              </span>
+            </div>
+
+            {visitedSpotsLoading ? (
+              <p className="text-sm text-muted-foreground">Loading passport stamps...</p>
+            ) : passportBadges.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-5 text-center">
+                <p className="text-sm text-muted-foreground">No passport stamps yet. Mark your first spot with "I've Been Here" to unlock one.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {passportBadges.map((badge) => (
+                  <div key={badge.id} className="flex flex-col items-center text-center gap-2">
+                    <PassportStampBadge
+                      badge={badge}
+                      country={badge.country}
+                      size="sm"
+                      generateOnMiss={isOwnProfile}
+                    />
+                    <div>
+                      <p className="text-xs font-semibold text-foreground truncate max-w-[9rem]">{badge.country}</p>
+                      {badge.tier !== "bronze" && (
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{badge.tier}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
 
         {/* Tabs */}

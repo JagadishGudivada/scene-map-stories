@@ -19,3 +19,6 @@ verify_jwt = false
 verify_jwt = false
 [functions.reveal-cards]
 verify_jwt = false
+
+[functions.passport-stamp-art]
+verify_jwt = true
