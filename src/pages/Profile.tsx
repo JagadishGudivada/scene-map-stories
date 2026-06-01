@@ -226,11 +226,11 @@ export default function Profile() {
     }
   };
 
-  const stats = [
-    { label: "Titles Saved", value: savedTitleSlugs.length, icon: Bookmark, color: "text-amber" },
-    { label: "Spots Visited", value: visitedSpotSlugs.length, icon: MapPin, color: "text-teal" },
-    { label: "Countries", value: visitedCountriesCount, icon: Users, color: "text-foreground" },
-    { label: "Watched", value: watchedTitleSlugs.length, icon: Heart, color: "text-foreground" },
+  const stats: { label: string; value: number; icon: typeof Bookmark; color: string; jump?: { tab: Tab; filter?: SavedFilter } }[] = [
+    { label: "Titles", value: savedTitleSlugs.length, icon: Bookmark, color: "text-amber", jump: { tab: "saved", filter: "titles" } },
+    { label: "Spots", value: visitedSpotSlugs.length, icon: MapPin, color: "text-teal", jump: { tab: "saved", filter: "been" } },
+    { label: "Countries", value: visitedCountriesCount, icon: Users, color: "text-foreground", jump: { tab: "map" } },
+    { label: "Watched", value: watchedTitleSlugs.length, icon: Heart, color: "text-foreground", jump: { tab: "saved", filter: "watched" } },
   ];
 
   return (
