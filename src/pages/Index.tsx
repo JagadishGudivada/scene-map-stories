@@ -9,6 +9,7 @@ import PopularLocations from "@/components/PopularLocations";
 import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import Footer from "@/components/Footer";
 import Seo from "@/components/Seo";
+import CinematicRoulette from "@/components/CinematicRoulette";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
@@ -584,6 +585,7 @@ export default function Index() {
         )}
       </div>
       <Footer />
+      <CinematicRoulette />
     </div>
   );
 }
