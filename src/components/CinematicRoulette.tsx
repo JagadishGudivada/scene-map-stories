@@ -66,19 +66,21 @@ export default function CinematicRoulette() {
     return () => clearInterval(i);
   }, []);
 
-  // Seed pool from mockData immediately
+  // Seed pool from mockData immediately (only with images)
   useEffect(() => {
     setPool(
-      allMapPins.map((p: MapPinType) => ({
-        name: p.label,
-        title: p.title,
-        type: p.type,
-        image: p.image,
-        lat: p.lat,
-        lng: p.lng,
-        city: (p as any).city,
-        country: (p as any).country,
-      }))
+      allMapPins
+        .filter((p) => !!p.image)
+        .map((p: MapPinType) => ({
+          name: p.label,
+          title: p.title,
+          type: p.type,
+          image: p.image,
+          lat: p.lat,
+          lng: p.lng,
+          city: (p as any).city,
+          country: (p as any).country,
+        }))
     );
   }, []);
 
