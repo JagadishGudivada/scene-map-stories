@@ -19,6 +19,9 @@ interface RouletteSpot {
   lng: number;
 }
 
+const FALLBACK_IMG =
+  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=70";
+
 const TEASERS = [
   "Spin the reel",
   "Surprise me",
@@ -66,19 +69,21 @@ export default function CinematicRoulette() {
     return () => clearInterval(i);
   }, []);
 
-  // Seed pool from mockData immediately
+  // Seed pool from mockData immediately (only with images)
   useEffect(() => {
     setPool(
-      allMapPins.map((p: MapPinType) => ({
-        name: p.label,
-        title: p.title,
-        type: p.type,
-        image: p.image,
-        lat: p.lat,
-        lng: p.lng,
-        city: (p as any).city,
-        country: (p as any).country,
-      }))
+      allMapPins
+        .filter((p) => !!p.image)
+        .map((p: MapPinType) => ({
+          name: p.label,
+          title: p.title,
+          type: p.type,
+          image: p.image,
+          lat: p.lat,
+          lng: p.lng,
+          city: (p as any).city,
+          country: (p as any).country,
+        }))
     );
   }, []);
 
@@ -275,18 +280,23 @@ export default function CinematicRoulette() {
                     initial={{ y: 0 }}
                     animate={{ y: `-${(reelFrames.length - 1) * 100}%` }}
                     transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
-                    className="absolute inset-0"
+                    className="flex flex-col w-full"
+                    style={{ height: `${reelFrames.length * 100}%` }}
                   >
                     {reelFrames.map((f, i) => (
                       <div
                         key={i}
-                        className="h-full w-full relative"
-                        style={{ height: "100%" }}
+                        className="w-full relative shrink-0"
+                        style={{ height: `${100 / reelFrames.length}%` }}
                       >
                         {f.image ? (
                           <img
                             src={f.image}
                             alt=""
+                            referrerPolicy="no-referrer"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG;
+                            }}
                             className="absolute inset-0 w-full h-full object-cover"
                           />
                         ) : (
@@ -306,16 +316,17 @@ export default function CinematicRoulette() {
                     transition={{ duration: 0.5 }}
                     className="absolute inset-0"
                   >
-                    {spot.image ? (
-                      <img
-                        src={spot.image}
-                        alt={spot.name}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 bg-gradient-to-br from-amber/20 via-card to-teal/20" />
-                    )}
+                    <img
+                      src={spot.image || FALLBACK_IMG}
+                      alt={spot.name}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = FALLBACK_IMG;
+                      }}
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+
                     {/* Grain */}
                     <div className="absolute inset-0 opacity-[0.06] mix-blend-overlay pointer-events-none [background-image:radial-gradient(circle_at_1px_1px,_white_1px,_transparent_0)] [background-size:3px_3px]" />
                   </motion.div>
