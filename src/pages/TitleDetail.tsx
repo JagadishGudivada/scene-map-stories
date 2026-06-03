@@ -185,6 +185,7 @@ export default function TitleDetail() {
   const [relatedTitlesData, setRelatedTitlesData] = useState<any[] | null>(null);
   const [relatedLoading, setRelatedLoading] = useState(false);
   const [activeLocationIndex, setActiveLocationIndex] = useState(0);
+  const [trailOpen, setTrailOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
