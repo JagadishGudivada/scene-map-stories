@@ -797,7 +797,7 @@ export default function TitleDetail() {
 
         {/* Filming Locations */}
         <section className="mb-12">
-          <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-3 mb-5 flex-wrap">
             <MapPin className="w-5 h-5 text-amber" />
             <h2 className="font-serif text-2xl text-foreground">
               {view.type === "Book" ? "Locations in the Story" : "Filming Locations"}
@@ -805,6 +805,16 @@ export default function TitleDetail() {
             <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-border">
               {view.locations.length} pinned
             </span>
+            {validPins.length >= 2 && (
+              <button
+                onClick={() => setTrailOpen(true)}
+                className="ml-auto inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-gradient-amber text-charcoal font-bold text-xs shadow-amber hover:opacity-90 transition-opacity"
+              >
+                <Route className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Build Filming Trail</span>
+                <span className="sm:hidden">Build Trail</span>
+              </button>
+            )}
           </div>
 
           <div className="lg:hidden space-y-2">
