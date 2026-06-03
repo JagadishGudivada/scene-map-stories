@@ -965,6 +965,19 @@ export default function TitleDetail() {
           onClose={() => setSelectedLocationPin(null)}
         />
       </div>
+
+      <FilmingTrailDialog
+        open={trailOpen}
+        onOpenChange={setTrailOpen}
+        titleSlug={titleSlug}
+        titleName={view.title}
+        locations={view.locations.map((l) => ({
+          label: l.label,
+          lat: l.lat,
+          lng: l.lng,
+          description: l.description,
+        }))}
+      />
     </div>
   );
 }
