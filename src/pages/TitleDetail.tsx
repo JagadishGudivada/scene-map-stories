@@ -3,7 +3,7 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MapPin, Star, Bookmark, BookmarkCheck, Clock, Film, Tv, BookOpen,
-  ArrowLeft, Camera, CheckCircle2, Loader2, Sparkles,
+  ArrowLeft, Camera, CheckCircle2, Loader2, Sparkles, Route,
 } from "lucide-react";
 import { mockTitles, mockPosts } from "@/lib/mockData";
 import { titleLocationPins } from "@/lib/mapData";
@@ -13,6 +13,7 @@ import PostCard from "@/components/PostCard";
 import ShareMenu from "@/components/ShareMenu";
 import ReportInfoDialog from "@/components/ReportInfoDialog";
 import AddLocationDialog from "@/components/AddLocationDialog";
+import FilmingTrailDialog from "@/components/FilmingTrailDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useSavedTitle } from "@/hooks/useSaved";
