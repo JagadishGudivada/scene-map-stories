@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 
 const typeColorMap: Record<MediaType, string> = {
   Movie: "bg-amber/15 text-amber",
@@ -145,7 +146,7 @@ export default function MapSidePanel({ pin, onClose }: MapSidePanelProps) {
       {/* Location image */}
       <div className="relative h-56 sm:h-60 shrink-0 overflow-hidden">
         <img
-          src={locationImage || "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&h=400&fit=crop"}
+          src={locationImage || DEFAULT_PEXELS_IMAGE}
           alt={pin.label}
           className="w-full h-full object-cover"
         />

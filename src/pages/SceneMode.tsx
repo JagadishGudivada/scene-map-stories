@@ -44,12 +44,12 @@ const scenes = [
 ];
 
 const communityPhotos = [
-  { id: 1, user: "marco_travels", match: 94, likes: 234, img: "https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&h=500&fit=crop" },
-  { id: 2, user: "sarahwanders", match: 87, likes: 189, img: "https://images.unsplash.com/photo-1555992828-ca4dbe41d294?w=400&h=600&fit=crop" },
-  { id: 3, user: "filmfanatic", match: 91, likes: 312, img: "https://images.unsplash.com/photo-1529154036614-a60975f5c7f6?w=400&h=450&fit=crop" },
+  { id: 1, user: "marco_travels", match: 94, likes: 234, img: "https://images.pexels.com/photos/2199293/pexels-photo-2199293.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&dpr=1" },
+  { id: 2, user: "sarahwanders", match: 87, likes: 189, img: "https://images.pexels.com/photos/386009/pexels-photo-386009.jpeg?auto=compress&cs=tinysrgb&w=400&h=600&dpr=1" },
+  { id: 3, user: "filmfanatic", match: 91, likes: 312, img: "https://images.pexels.com/photos/206359/pexels-photo-206359.jpeg?auto=compress&cs=tinysrgb&w=400&h=450&dpr=1" },
   { id: 4, user: "upload", match: 0, likes: 0, img: "" },
-  { id: 5, user: "romelover", match: 82, likes: 156, img: "https://images.unsplash.com/photo-1548585744-e3db5209f3ea?w=400&h=500&fit=crop" },
-  { id: 6, user: "cinephile_uk", match: 79, likes: 98, img: "https://images.unsplash.com/photo-1515542622106-78bda8ba0e5b?w=400&h=550&fit=crop" },
+  { id: 5, user: "romelover", match: 82, likes: 156, img: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=400&h=500&dpr=1" },
+  { id: 6, user: "cinephile_uk", match: 79, likes: 98, img: "https://images.pexels.com/photos/415326/pexels-photo-415326.jpeg?auto=compress&cs=tinysrgb&w=400&h=550&dpr=1" },
 ];
 
 const crowdData = [

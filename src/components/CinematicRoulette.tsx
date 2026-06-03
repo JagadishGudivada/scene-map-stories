@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dices, MapPin, Sparkles, X, Share2, Map as MapIcon, RotateCcw, Film, Compass } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { allMapPins } from "@/lib/mapData";
+import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import { toast } from "@/hooks/use-toast";
 
@@ -19,8 +20,11 @@ interface RouletteSpot {
   lng: number;
 }
 
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=70";
+const FALLBACK_IMG = DEFAULT_PEXELS_IMAGE;
+
+function getSpotImageQuery(spot: RouletteSpot): string {
+  return [spot.name, spot.city, spot.country, spot.title].filter(Boolean).join(" ");
+}
 
 const TEASERS = [
   "Spin the reel",
@@ -134,6 +138,22 @@ export default function CinematicRoulette() {
     [pool]
   );
 
+  const hydrateSpotImage = useCallback(async (candidate: RouletteSpot | null): Promise<RouletteSpot | null> => {
+    if (!candidate) return null;
+    const pexelsImage = await fetchPexelsImage(getSpotImageQuery(candidate));
+    const resolvedImage = pexelsImage || candidate.image || FALLBACK_IMG;
+
+    setPool((prev) =>
+      prev.map((p) =>
+        p.lat === candidate.lat && p.lng === candidate.lng && p.name === candidate.name
+          ? { ...p, image: resolvedImage }
+          : p
+      )
+    );
+
+    return { ...candidate, image: resolvedImage };
+  }, []);
+
   const spin = useCallback(() => {
     if (!pool.length) return;
     setSpinning(true);
@@ -147,11 +167,18 @@ export default function CinematicRoulette() {
     const final = pickRandom(reel.at(-1)?.name);
     if (final) reel.push(final);
     setReelFrames(reel);
+
+    // Resolve reel images by place name so visuals match the selected locations.
+    void Promise.all(reel.map((frame) => hydrateSpotImage(frame))).then((resolvedFrames) => {
+      setReelFrames(resolvedFrames.filter((frame): frame is RouletteSpot => !!frame));
+    });
+
     window.setTimeout(() => {
-      setSpot(final);
-      setSpinning(false);
+      void hydrateSpotImage(final)
+        .then((resolvedFinal) => setSpot(resolvedFinal))
+        .finally(() => setSpinning(false));
     }, 1400);
-  }, [pool, pickRandom]);
+  }, [pool, pickRandom, hydrateSpotImage]);
 
   const openAndSpin = useCallback(() => {
     setOpen(true);
@@ -277,6 +304,7 @@ export default function CinematicRoulette() {
               <div className="relative h-[260px] sm:h-[300px] bg-muted/30 overflow-hidden">
                 {spinning ? (
                   <motion.div
+                    key="roulette-spinning-reel"
                     initial={{ y: 0 }}
                     animate={{ y: `-${(reelFrames.length - 1) * 100}%` }}
                     transition={{ duration: 1.3, ease: [0.16, 1, 0.3, 1] }}
@@ -311,8 +339,9 @@ export default function CinematicRoulette() {
                   </motion.div>
                 ) : spot ? (
                   <motion.div
+                    key={`roulette-result-${spot.slug || spot.name}`}
                     initial={{ opacity: 0, scale: 1.05 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
                     transition={{ duration: 0.5 }}
                     className="absolute inset-0"
                   >

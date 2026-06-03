@@ -148,7 +148,7 @@ export default function Auth() {
       {/* Left Hero (desktop) */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-end p-12">
         <img
-          src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80"
+          src="https://images.pexels.com/photos/1519088/pexels-photo-1519088.jpeg?auto=compress&cs=tinysrgb&w=1200&h=1600&dpr=1"
           alt="Cinema"
           className="absolute inset-0 w-full h-full object-cover"
         />

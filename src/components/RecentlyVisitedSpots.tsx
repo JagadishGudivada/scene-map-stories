@@ -3,9 +3,9 @@ import { Link } from "react-router-dom";
 import { MapPin, Footprints, ArrowRight } from "lucide-react";
 import { useRecentVisitedSpots } from "@/hooks/useRecentVisitedSpots";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 
-const FALLBACK_IMG =
-  "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=70";
+const FALLBACK_IMG = DEFAULT_PEXELS_IMAGE;
 
 export default function RecentlyVisitedSpots() {
   const { spots, loading } = useRecentVisitedSpots(6);

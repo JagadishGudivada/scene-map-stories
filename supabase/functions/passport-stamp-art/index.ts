@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import { GoogleAuth } from "npm:google-auth-library@9";
 import { getCached, normalizeKey } from "../_shared/aiCache.ts";
+import { getVertexAccessToken } from "../_shared/vertexAuth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,41 +35,18 @@ type CachedPayload = {
   cacheHit?: boolean;
 };
 
-async function getVertexAccessToken(req: Request): Promise<string> {
-  const credentialsJson = Deno.env.get("GOOGLE_APPLICATION_CREDENTIALS_JSON");
-  if (!credentialsJson) throw new Error("GOOGLE_APPLICATION_CREDENTIALS_JSON not configured");
+type ImagenAttemptResult = {
+  imageDataUrl: string | null;
+  status: number;
+  quotaExceeded: boolean;
+  errorText?: string;
+};
 
-  const credentials = JSON.parse(credentialsJson);
-
-  if (credentials?.type === "external_account") {
-    const auth = new GoogleAuth({
-      credentials,
-      identityPoolTokenProvider: {
-        getFederatedToken: async () => {
-          const token = req.headers.get("Authorization")?.replace("Bearer ", "");
-          if (!token) throw new Error("No Supabase token found");
-          return token;
-        },
-      },
-    });
-
-    const client = await auth.getClient();
-    const tokenRes = await client.getAccessToken();
-    if (tokenRes?.token) return tokenRes.token;
-    throw new Error("GoogleAuth returned an empty access token");
-  }
-
-  const auth = new GoogleAuth({
-    credentials,
-    scopes: ["https://www.googleapis.com/auth/cloud-platform"],
-  });
-  const client = await auth.getClient();
-  const tokenRes = await client.getAccessToken();
-  if (!tokenRes?.token) throw new Error("GoogleAuth returned an empty access token");
-  return tokenRes.token;
-}
-
-async function generateWithImagen(prompt: string, accessToken: string, model: string): Promise<string | null> {
+async function generateWithImagen(
+  prompt: string,
+  accessToken: string,
+  model: string
+): Promise<ImagenAttemptResult> {
   const url = `https://${GCP_LOCATION}-aiplatform.googleapis.com/v1/projects/${GCP_PROJECT_ID}/locations/${GCP_LOCATION}/publishers/google/models/${model}:predict`;
 
   const res = await fetch(url, {
@@ -84,13 +61,32 @@ async function generateWithImagen(prompt: string, accessToken: string, model: st
   if (!res.ok) {
     const text = await res.text();
     console.warn(`Imagen ${model} ${res.status}:`, text.slice(0, 400));
-    return null;
+    const quotaExceeded =
+      res.status === 429 &&
+      /quota exceeded|resource_exhausted|online_prediction_requests_per_base_model/i.test(text);
+    return {
+      imageDataUrl: null,
+      status: res.status,
+      quotaExceeded,
+      errorText: text.slice(0, 400),
+    };
   }
 
   const data = await res.json();
   const pred = data?.predictions?.[0];
-  if (!pred?.bytesBase64Encoded) return null;
-  return `data:${pred.mimeType || "image/png"};base64,${pred.bytesBase64Encoded}`;
+  if (!pred?.bytesBase64Encoded) {
+    return {
+      imageDataUrl: null,
+      status: 200,
+      quotaExceeded: false,
+      errorText: "No bytesBase64Encoded in prediction payload",
+    };
+  }
+  return {
+    imageDataUrl: `data:${pred.mimeType || "image/png"};base64,${pred.bytesBase64Encoded}`,
+    status: 200,
+    quotaExceeded: false,
+  };
 }
 
 function db() {
@@ -194,20 +190,28 @@ serve(async (req) => {
 
     let accessToken: string;
     try {
-      accessToken = await getVertexAccessToken(req);
+      accessToken = await getVertexAccessToken(req, "passport-stamp-art");
     } catch (authErr) {
       const msg = authErr instanceof Error ? authErr.message : String(authErr);
       console.error("passport-stamp-art Vertex auth error:", msg);
       return json({ error: "Vertex AI authentication failed", detail: msg }, 500);
     }
 
-    const imagenModels = ["imagen-3.0-generate-002", "imagen-3.0-fast-generate-001"];
+    const imagenModels =
+      Deno.env
+        .get("VERTEX_IMAGEN_MODELS")
+        ?.split(",")
+        .map((m) => m.trim())
+        .filter(Boolean) || ["imagen-3.0-fast-generate-001", "imagen-3.0-generate-002"];
 
     let imageDataUrl: string | null = null;
     let resolvedModel: string | null = null;
+    const attempts: Array<{ model: string; status: number; quotaExceeded: boolean }> = [];
 
     for (const model of imagenModels) {
-      imageDataUrl = await generateWithImagen(prompt, accessToken, model);
+      const attempt = await generateWithImagen(prompt, accessToken, model);
+      attempts.push({ model, status: attempt.status, quotaExceeded: attempt.quotaExceeded });
+      imageDataUrl = attempt.imageDataUrl;
       if (imageDataUrl) {
         resolvedModel = model;
         break;
@@ -215,8 +219,24 @@ serve(async (req) => {
     }
 
     if (!imageDataUrl) {
-      console.error("passport-stamp-art: no image returned from Imagen models");
-      return json({ error: "No image returned by Vertex AI" }, 502);
+      const quotaOnlyFailure = attempts.length > 0 && attempts.every((a) => a.quotaExceeded);
+      if (quotaOnlyFailure) {
+        console.warn("passport-stamp-art: Vertex quota exhausted across configured models", {
+          attempts,
+        });
+        return json(
+          {
+            error: "Vertex Imagen quota exceeded",
+            detail:
+              "Quota exceeded for one or more configured Imagen models. Retry later or request Vertex quota increase.",
+            attempts,
+          },
+          429
+        );
+      }
+
+      console.error("passport-stamp-art: no image returned from Imagen models", { attempts });
+      return json({ error: "No image returned by Vertex AI", attempts }, 502);
     }
 
     const payload: CachedPayload = {

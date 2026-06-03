@@ -10,11 +10,12 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "check:edge": "node scripts/check-edge-functions.mjs",
+    "check:edge:all": "node scripts/check-edge-functions.mjs --include-mutating"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
-    "@lovable.dev/cloud-auth-js": "^1.1.2",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-alert-dialog": "^1.1.14",
     "@radix-ui/react-aspect-ratio": "^1.1.7",
@@ -51,8 +52,8 @@
     "embla-carousel-react": "^8.6.0",
     "framer-motion": "^12.34.1",
     "input-otp": "^1.4.2",
-    "lucide-react": "^0.462.0",
     "maplibre-gl": "^5.6.2",
+    "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",

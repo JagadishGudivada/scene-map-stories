@@ -20,5 +20,15 @@ verify_jwt = false
 [functions.reveal-cards]
 verify_jwt = false
 
+[functions.related-titles]
+verify_jwt = false
+
+[functions.related-locations]
+verify_jwt = false
+
 [functions.passport-stamp-art]
 verify_jwt = true
+
+[functions.title-enrichment-vertex]
+verify_jwt = false
+

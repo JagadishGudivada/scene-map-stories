@@ -13,6 +13,7 @@ import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { RevealButton } from "@/components/RevealDeck";
+import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
 import { useAllVisitedSpots, useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
 import {
   countryToCode,
@@ -357,10 +358,11 @@ export default function FilmingSpotDetail() {
                   loading="eager"
                   onError={(e) => {
                     const t = e.currentTarget;
-                    const q = encodeURIComponent(`${spot.name} ${spot.city}`);
                     if (!t.dataset.fallback) {
                       t.dataset.fallback = "1";
-                      t.src = `https://source.unsplash.com/1600x900/?${q}`;
+                      void fetchPexelsImage(`${spot.name} ${spot.city}`).then((imageUrl) => {
+                        t.src = imageUrl || DEFAULT_PEXELS_IMAGE;
+                      });
                     }
                   }}
                 />
