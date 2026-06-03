@@ -3,7 +3,7 @@ import { useParams, Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   MapPin, Star, Bookmark, BookmarkCheck, Clock, Film, Tv, BookOpen,
-  ArrowLeft, Camera, CheckCircle2, Loader2, Sparkles,
+  ArrowLeft, Camera, CheckCircle2, Loader2, Sparkles, Route,
 } from "lucide-react";
 import { mockTitles, mockPosts } from "@/lib/mockData";
 import { titleLocationPins } from "@/lib/mapData";
@@ -13,6 +13,7 @@ import PostCard from "@/components/PostCard";
 import ShareMenu from "@/components/ShareMenu";
 import ReportInfoDialog from "@/components/ReportInfoDialog";
 import AddLocationDialog from "@/components/AddLocationDialog";
+import FilmingTrailDialog from "@/components/FilmingTrailDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useSavedTitle } from "@/hooks/useSaved";
@@ -184,6 +185,7 @@ export default function TitleDetail() {
   const [relatedTitlesData, setRelatedTitlesData] = useState<any[] | null>(null);
   const [relatedLoading, setRelatedLoading] = useState(false);
   const [activeLocationIndex, setActiveLocationIndex] = useState(0);
+  const [trailOpen, setTrailOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -795,7 +797,7 @@ export default function TitleDetail() {
 
         {/* Filming Locations */}
         <section className="mb-12">
-          <div className="flex items-center gap-3 mb-5">
+          <div className="flex items-center gap-3 mb-5 flex-wrap">
             <MapPin className="w-5 h-5 text-amber" />
             <h2 className="font-serif text-2xl text-foreground">
               {view.type === "Book" ? "Locations in the Story" : "Filming Locations"}
@@ -803,6 +805,16 @@ export default function TitleDetail() {
             <span className="text-xs text-muted-foreground glass rounded-full px-2 py-0.5 border border-border">
               {view.locations.length} pinned
             </span>
+            {validPins.length >= 2 && (
+              <button
+                onClick={() => setTrailOpen(true)}
+                className="ml-auto inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-gradient-amber text-charcoal font-bold text-xs shadow-amber hover:opacity-90 transition-opacity"
+              >
+                <Route className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Build Filming Trail</span>
+                <span className="sm:hidden">Build Trail</span>
+              </button>
+            )}
           </div>
 
           <div className="lg:hidden space-y-2">
@@ -953,6 +965,19 @@ export default function TitleDetail() {
           onClose={() => setSelectedLocationPin(null)}
         />
       </div>
+
+      <FilmingTrailDialog
+        open={trailOpen}
+        onOpenChange={setTrailOpen}
+        titleSlug={titleSlug}
+        titleName={view.title}
+        locations={view.locations.map((l) => ({
+          label: l.label,
+          lat: l.lat,
+          lng: l.lng,
+          description: l.description,
+        }))}
+      />
     </div>
   );
 }
