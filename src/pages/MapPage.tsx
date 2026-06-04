@@ -8,7 +8,7 @@ import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
-import { useWeeklyReleaseLocations } from "@/hooks/useWeeklyReleaseLocations";
+import { useTitleMapLocations } from "@/hooks/useTitleMapLocations";
 import { useNearbySpots } from "@/hooks/useNearbySpots";
 import { toast } from "@/hooks/use-toast";
 import Seo from "@/components/Seo";
@@ -37,11 +37,11 @@ export default function MapPage() {
   const mapInstanceRef = useRef<AppMap | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
-  const { pins: weeklyPins, loading: weeklyLoading } = useWeeklyReleaseLocations();
+  const { pins: titlePins } = useTitleMapLocations();
   const { nearbyPins, loading: nearbyLoading } = useNearbySpots(nearMeCenter, nearMeRadius, nearMeMode);
 
-  // Base pins shown on the map: weekly release locations only
-  const basePins = weeklyPins;
+  // Base pins shown on the map come from stored title payload locations.
+  const basePins = titlePins;
 
 
   // Handle URL search params from homepage
