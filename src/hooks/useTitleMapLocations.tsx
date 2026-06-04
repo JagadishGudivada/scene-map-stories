@@ -52,36 +52,37 @@ function toLocationArray(data: unknown): TitleDataLocation[] {
 function mapRowToPins(row: TitleRow): MapPin[] {
   const locations = toLocationArray(row.data);
   const type = normalizeMediaType(row.type);
+  const pins: MapPin[] = [];
 
-  return locations
-    .map((location) => {
-      const lat = toNumber(location.lat);
-      const lng = toNumber(location.lng);
-      if (lat === null || lng === null) return null;
+  for (const location of locations) {
+    const lat = toNumber(location.lat);
+    const lng = toNumber(location.lng);
+    if (lat === null || lng === null) continue;
 
-      const label =
-        (typeof location.label === "string" && location.label.trim()) ||
-        (typeof location.name === "string" && location.name.trim()) ||
-        [location.city, location.country].filter(Boolean).join(", ") ||
-        row.title;
+    const label =
+      (typeof location.label === "string" && location.label.trim()) ||
+      (typeof location.name === "string" && location.name.trim()) ||
+      [location.city, location.country].filter(Boolean).join(", ") ||
+      row.title;
 
-      return {
-        lat,
-        lng,
-        label,
-        title: row.title,
-        type,
-        image:
-          (typeof location.image_url === "string" && location.image_url) ||
-          (typeof location.image === "string" && location.image) ||
-          row.poster_url ||
-          row.backdrop_url ||
-          undefined,
-        city: typeof location.city === "string" ? location.city : undefined,
-        country: typeof location.country === "string" ? location.country : undefined,
-      } satisfies MapPin;
-    })
-    .filter((pin): pin is MapPin => Boolean(pin));
+    pins.push({
+      lat,
+      lng,
+      label,
+      title: row.title,
+      type,
+      image:
+        (typeof location.image_url === "string" && location.image_url) ||
+        (typeof location.image === "string" && location.image) ||
+        row.poster_url ||
+        row.backdrop_url ||
+        undefined,
+      city: typeof location.city === "string" ? location.city : undefined,
+      country: typeof location.country === "string" ? location.country : undefined,
+    });
+  }
+
+  return pins;
 }
 
 export function useTitleMapLocations() {
@@ -90,25 +91,27 @@ export function useTitleMapLocations() {
 
   useEffect(() => {
     let cancelled = false;
+    const initialBatchSize = 200;
+    const backgroundBatchSize = 200;
 
     const run = async () => {
       setLoading(true);
 
       try {
-        const { data, error } = await supabase
+        const { data: firstBatchData, error: firstBatchError } = await supabase
           .from("titles")
           .select("id, slug, title, type, poster_url, backdrop_url, data")
           .order("created_at", { ascending: false })
-          .limit(500);
+          .range(0, initialBatchSize - 1);
 
-        if (error) throw error;
+        if (firstBatchError) throw firstBatchError;
 
+        const firstRows = (firstBatchData || []) as TitleRow[];
         const collected: MapPin[] = [];
         const seen = new Set<string>();
 
-        for (const row of (data || []) as TitleRow[]) {
+        for (const row of firstRows) {
           const titlePins = mapRowToPins(row);
-
           for (const pin of titlePins) {
             const key = `${row.slug}-${pin.lat.toFixed(4)}-${pin.lng.toFixed(4)}-${pin.label.toLowerCase()}`;
             if (seen.has(key)) continue;
@@ -117,9 +120,42 @@ export function useTitleMapLocations() {
           }
         }
 
-        if (!cancelled) {
-          setPins(collected);
-          setLoading(false);
+        if (cancelled) return;
+
+        // Render the first page quickly so the map becomes interactive immediately.
+        setPins([...collected]);
+        setLoading(false);
+
+        // Continue loading remaining pages in the background and append results incrementally.
+        if (firstRows.length === initialBatchSize) {
+          for (let offset = initialBatchSize; !cancelled; offset += backgroundBatchSize) {
+            const { data, error } = await supabase
+              .from("titles")
+              .select("id, slug, title, type, poster_url, backdrop_url, data")
+              .order("created_at", { ascending: false })
+              .range(offset, offset + backgroundBatchSize - 1);
+
+            if (error) break;
+
+            const rows = (data || []) as TitleRow[];
+            if (!rows.length) break;
+
+            for (const row of rows) {
+              const titlePins = mapRowToPins(row);
+              for (const pin of titlePins) {
+                const key = `${row.slug}-${pin.lat.toFixed(4)}-${pin.lng.toFixed(4)}-${pin.label.toLowerCase()}`;
+                if (seen.has(key)) continue;
+                seen.add(key);
+                collected.push(pin);
+              }
+            }
+
+            if (!cancelled) {
+              setPins([...collected]);
+            }
+
+            if (rows.length < backgroundBatchSize) break;
+          }
         }
       } catch {
         if (!cancelled) {

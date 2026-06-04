@@ -1,23 +1,94 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { MapPin } from "@/components/LeafletMap";
-import { allMapPins } from "@/lib/mapData";
+import type { MediaType } from "@/lib/mockData";
 
-interface SpotRow {
+type TitleDataLocation = {
+  label?: string;
+  name?: string;
+  city?: string;
+  country?: string;
+  lat?: number;
+  lng?: number;
+  image?: string;
+  image_url?: string;
+};
+
+interface TitleRow {
   id: string;
   slug: string;
-  name: string;
-  city: string | null;
-  country: string | null;
-  lat: number | null;
-  lng: number | null;
-  image_url: string | null;
-  data: any;
+  title: string;
+  type: string;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  data: unknown;
 }
 
 interface NearbyPin extends MapPin {
-  slug?: string;
+  titleSlug?: string;
   distanceKm: number;
+}
+
+function normalizeMediaType(type: string | null | undefined): MediaType {
+  if (type === "Movie" || type === "Series" || type === "Book") return type;
+  return "Movie";
+}
+
+function toNumber(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function toLocationArray(data: unknown): TitleDataLocation[] {
+  if (!data || typeof data !== "object") return [];
+  const payload = data as Record<string, unknown>;
+  const candidates = [payload.locations, payload.spots, payload.pins];
+
+  for (const value of candidates) {
+    if (Array.isArray(value)) {
+      return value.filter((item): item is TitleDataLocation => Boolean(item && typeof item === "object"));
+    }
+  }
+
+  return [];
+}
+
+function mapTitleRowToPins(row: TitleRow): NearbyPin[] {
+  const type = normalizeMediaType(row.type);
+  const locations = toLocationArray(row.data);
+  const pins: NearbyPin[] = [];
+
+  for (const loc of locations) {
+    const lat = toNumber(loc.lat);
+    const lng = toNumber(loc.lng);
+    if (lat === null || lng === null) continue;
+
+    const label =
+      (typeof loc.label === "string" && loc.label.trim()) ||
+      (typeof loc.name === "string" && loc.name.trim()) ||
+      [loc.city, loc.country].filter(Boolean).join(", ") ||
+      row.title;
+
+    pins.push({
+      lat,
+      lng,
+      label,
+      title: row.title,
+      titleSlug: row.slug,
+      city: typeof loc.city === "string" ? loc.city : undefined,
+      country: typeof loc.country === "string" ? loc.country : undefined,
+      type,
+      image:
+        (typeof loc.image_url === "string" && loc.image_url) ||
+        (typeof loc.image === "string" && loc.image) ||
+        row.poster_url ||
+        row.backdrop_url ||
+        undefined,
+      distanceKm: 0,
+    });
+  }
+
+  return pins;
 }
 
 function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number) {
@@ -36,7 +107,7 @@ export function useNearbySpots(
   radiusKm: number,
   enabled: boolean
 ) {
-  const [allSpots, setAllSpots] = useState<MapPin[]>([]);
+  const [allSpots, setAllSpots] = useState<NearbyPin[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -48,45 +119,39 @@ export function useNearbySpots(
 
     (async () => {
       try {
-        const { data, error } = await supabase
-          .from("spots")
-          .select("id, slug, name, city, country, lat, lng, image_url, data")
-          .not("lat", "is", null)
-          .not("lng", "is", null)
-          .limit(1000);
+        const collected: NearbyPin[] = [];
+        const seen = new Set<string>();
+        const batchSize = 200;
 
-        if (error) throw error;
+        for (let offset = 0; !cancelled; offset += batchSize) {
+          const { data, error } = await supabase
+            .from("titles")
+            .select("id, slug, title, type, poster_url, backdrop_url, data")
+            .order("created_at", { ascending: false })
+            .range(offset, offset + batchSize - 1);
 
-        const dbPins: MapPin[] = (data as SpotRow[] | null || [])
-          .filter((s) => s.lat != null && s.lng != null)
-          .map((s) => {
-            const titles = Array.isArray(s.data?.titles) ? s.data.titles : [];
-            const firstTitle = typeof titles[0] === "string" ? titles[0] : titles[0]?.title;
-            return {
-              lat: s.lat as number,
-              lng: s.lng as number,
-              label: s.name,
-              title: firstTitle || s.city || undefined,
-              city: s.city || undefined,
-              country: s.country || undefined,
-              type: "Movie" as const,
-              image: s.image_url || undefined,
-            };
-          });
+          if (error) throw error;
 
-        // Merge with mock pins for richer coverage; dedupe by proximity
-        const merged: MapPin[] = [...dbPins];
-        for (const p of allMapPins) {
-          const exists = merged.some(
-            (m) => Math.abs(m.lat - p.lat) < 0.005 && Math.abs(m.lng - p.lng) < 0.005
-          );
-          if (!exists) merged.push(p);
+          const rows = (data || []) as TitleRow[];
+          if (!rows.length) break;
+
+          for (const row of rows) {
+            const rowPins = mapTitleRowToPins(row);
+            for (const pin of rowPins) {
+              const key = `${row.slug}-${pin.lat.toFixed(4)}-${pin.lng.toFixed(4)}-${pin.label.toLowerCase()}`;
+              if (seen.has(key)) continue;
+              seen.add(key);
+              collected.push(pin);
+            }
+          }
+
+          if (rows.length < batchSize) break;
         }
 
-        if (!cancelled) setAllSpots(merged);
+        if (!cancelled) setAllSpots(collected);
       } catch (err) {
         console.error("Failed to load nearby spots:", err);
-        if (!cancelled) setAllSpots(allMapPins);
+        if (!cancelled) setAllSpots([]);
       } finally {
         if (!cancelled) setLoading(false);
       }

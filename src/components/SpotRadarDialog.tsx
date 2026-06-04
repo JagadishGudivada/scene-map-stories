@@ -22,12 +22,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { supabase } from "@/integrations/supabase/client";
-import { allMapPins } from "@/lib/mapData";
-import { toast } from "@/hooks/use-toast";
+import { useNearbySpots } from "@/hooks/useNearbySpots";
 
 interface RadarSpot {
-  slug?: string;
+  titleSlug?: string;
   name: string;
   city?: string;
   country?: string;
@@ -37,17 +35,6 @@ interface RadarSpot {
   type: "Movie" | "Series" | "Book";
   title?: string;
   distanceKm: number;
-}
-
-const EARTH_KM = 6371;
-function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number) {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(bLat - aLat);
-  const dLng = toRad(bLng - aLng);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_KM * Math.asin(Math.sqrt(h));
 }
 
 const RADIUS_PRESETS = [
@@ -82,10 +69,13 @@ export default function SpotRadarDialog({ open, onOpenChange }: SpotRadarDialogP
   const navigate = useNavigate();
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [locStatus, setLocStatus] = useState<"idle" | "loading" | "denied" | "ok">("idle");
-  const [allSpots, setAllSpots] = useState<RadarSpot[]>([]);
-  const [loadingDb, setLoadingDb] = useState(false);
   const [radiusKm, setRadiusKm] = useState(25);
   const [typeFilter, setTypeFilter] = useState<"All" | "Movie" | "Series" | "Book">("All");
+  const { nearbyPins, loading: loadingDb } = useNearbySpots(
+    coords,
+    radiusKm,
+    open && locStatus === "ok"
+  );
 
   // Geolocate when opened
   useEffect(() => {
@@ -105,87 +95,24 @@ export default function SpotRadarDialog({ open, onOpenChange }: SpotRadarDialogP
     );
   }, [open, coords]);
 
-  // Load seed pool: mock pins + DB spots (once)
-  useEffect(() => {
-    if (!open || allSpots.length) return;
-    let cancelled = false;
-    setLoadingDb(true);
-
-    (async () => {
-      const seeded: RadarSpot[] = allMapPins
-        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
-        .map((p) => ({
-          name: p.label,
-          city: p.city,
-          country: p.country,
-          lat: p.lat,
-          lng: p.lng,
-          image: p.image,
-          type: p.type,
-          title: p.title,
-          distanceKm: 0,
-        }));
-
-      try {
-        const { data, error } = await supabase
-          .from("spots")
-          .select("id, slug, name, city, country, lat, lng, image_url, data")
-          .not("lat", "is", null)
-          .not("lng", "is", null)
-          .limit(1000);
-
-        if (!error && data) {
-          for (const s of data as any[]) {
-            if (s.lat == null || s.lng == null) continue;
-            // Dedupe by proximity
-            const dup = seeded.some(
-              (m) => Math.abs(m.lat - s.lat) < 0.005 && Math.abs(m.lng - s.lng) < 0.005
-            );
-            if (dup) continue;
-            const titles = Array.isArray(s.data?.titles) ? s.data.titles : [];
-            const firstTitle =
-              typeof titles[0] === "string" ? titles[0] : titles[0]?.title;
-            seeded.push({
-              slug: s.slug,
-              name: s.name,
-              city: s.city || undefined,
-              country: s.country || undefined,
-              lat: s.lat,
-              lng: s.lng,
-              image: s.image_url || undefined,
-              type: "Movie",
-              title: firstTitle,
-              distanceKm: 0,
-            });
-          }
-        }
-      } catch (e) {
-        // ignore — mock pool still works
-      }
-
-      if (!cancelled) {
-        setAllSpots(seeded);
-        setLoadingDb(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, allSpots.length]);
-
   const nearby = useMemo<RadarSpot[]>(() => {
-    if (!coords) return [];
-    return allSpots
+    return nearbyPins
       .map((s) => ({
-        ...s,
-        distanceKm: haversineKm(coords.lat, coords.lng, s.lat, s.lng),
+        titleSlug: s.titleSlug,
+        name: s.label,
+        city: s.city,
+        country: s.country,
+        lat: s.lat,
+        lng: s.lng,
+        image: s.image,
+        type: s.type,
+        title: s.title,
+        distanceKm: s.distanceKm,
       }))
-      .filter((s) => s.distanceKm <= radiusKm)
       .filter((s) => typeFilter === "All" || s.type === typeFilter)
       .sort((a, b) => a.distanceKm - b.distanceKm)
       .slice(0, 60);
-  }, [allSpots, coords, radiusKm, typeFilter]);
+  }, [nearbyPins, typeFilter]);
 
   const handleRetryLocation = useCallback(() => {
     setCoords(null);
@@ -199,9 +126,9 @@ export default function SpotRadarDialog({ open, onOpenChange }: SpotRadarDialogP
 
   const goToSpot = useCallback(
     (s: RadarSpot) => {
-      if (s.slug) {
+      if (s.titleSlug) {
         onOpenChange(false);
-        navigate(`/spot/${s.slug}`);
+        navigate(`/title/${s.titleSlug}`);
       } else {
         onOpenChange(false);
         navigate(`/map?lat=${s.lat}&lng=${s.lng}&zoom=14`);
