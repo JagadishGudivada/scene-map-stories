@@ -7,6 +7,7 @@ type EnrichmentRequest = {
   title?: string;
   year?: number;
   dryRun?: boolean;
+  maxLocations?: number;
 };
 
 type SourceEvidence = {
@@ -42,9 +43,13 @@ const GCP_PROJECT_ID = Deno.env.get("GCP_PROJECT_ID") || "project-13ea7804-7f26-
 const GCP_LOCATION = Deno.env.get("GCP_LOCATION") || "us-central1";
 const VERTEX_MODEL = Deno.env.get("VERTEX_MODEL_ENRICHMENT") || "gemini-2.5-flash";
 const VERTEX_TIMEOUT_MS = Number(Deno.env.get("VERTEX_TIMEOUT_MS") || "30000");
+const VERTEX_MAX_OUTPUT_TOKENS = Number(Deno.env.get("VERTEX_MAX_OUTPUT_TOKENS") || "4096");
 const VERTEX_GROUNDING_ENABLED = !["0", "false", "no", "off"].includes(
   (Deno.env.get("VERTEX_GROUNDING_ENABLED") || "true").toLowerCase()
 );
+const DEFAULT_MAX_LOCATIONS = Number(Deno.env.get("ENRICHMENT_MAX_LOCATIONS") || "12");
+const HARD_MAX_LOCATIONS = Number(Deno.env.get("ENRICHMENT_HARD_MAX_LOCATIONS") || "30");
+const TIMEOUT_RETRY_MIN_LOCATIONS = Number(Deno.env.get("ENRICHMENT_TIMEOUT_RETRY_MIN_LOCATIONS") || "6");
 const AUTOPUBLISH_THRESHOLD = Number(Deno.env.get("ENRICHMENT_AUTOPUBLISH_THRESHOLD") || "0.78");
 const SYSTEM_USER_ID = Deno.env.get("ENRICHMENT_SYSTEM_USER_ID") || "";
 
@@ -64,6 +69,24 @@ function clampConfidence(value: unknown): number {
   if (value < 0) return 0;
   if (value > 1) return 1;
   return value;
+}
+
+function normalizeLocationLimit(value: unknown): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return DEFAULT_MAX_LOCATIONS;
+  return Math.max(1, Math.min(HARD_MAX_LOCATIONS, Math.floor(parsed)));
+}
+
+function isTimeoutError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message.toLowerCase();
+  return msg.includes("timed out") || msg.includes("signal timed out");
+}
+
+function isParseError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message.toLowerCase();
+  return msg.includes("parse json") || msg.includes("could not parse json");
 }
 
 function parseJsonFromText(content: string): VertexEnrichmentPayload {
@@ -99,8 +122,44 @@ async function callVertexGenerate(
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: {
       temperature: 0.2,
-      maxOutputTokens: 8192,
+      maxOutputTokens: VERTEX_MAX_OUTPUT_TOKENS,
       responseMimeType: "application/json",
+      responseSchema: {
+        type: "OBJECT",
+        properties: {
+          title: { type: "STRING" },
+          year: { type: "NUMBER" },
+          locations: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                label: { type: "STRING" },
+                city: { type: "STRING" },
+                country: { type: "STRING" },
+                lat: { type: "NUMBER", nullable: true },
+                lng: { type: "NUMBER", nullable: true },
+                confidence: { type: "NUMBER" },
+                reason: { type: "STRING" },
+                sources: {
+                  type: "ARRAY",
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      url: { type: "STRING" },
+                      title: { type: "STRING" },
+                      snippet: { type: "STRING" },
+                    },
+                    required: ["url"],
+                  },
+                },
+              },
+              required: ["label", "confidence"],
+            },
+          },
+        },
+        required: ["locations"],
+      },
     },
   };
 
@@ -171,18 +230,20 @@ async function callVertexGenerate(
   throw new Error(`Vertex request failed (${lastStatus}): ${lastBody.slice(0, 300)}`);
 }
 
-function buildPrompt(title: string, year?: number): string {
+function buildPrompt(title: string, maxLocations: number, year?: number): string {
   return [
     "You are enriching one movie/series title for movie scout website with real filming locations.",
     "Use internet-grounded web retrieval to find real filming locations and return strict JSON only.",
     "Prioritize reliable sources including movie-locations style websites, official tourism pages, Wikipedia, and reputable film publications.",
     "Return JSON schema:",
-    '{"title":"string","year":number,"locations":[{"label":"string","city":"string","country":"string","lat":number,"lng":number,"confidence":number}]}]}',
+    '{"title":"string","year":number,"locations":[{"label":"string","city":"string","country":"string","lat":number,"lng":number,"confidence":number,"reason":"string","sources":[{"url":"https://...","title":"string","snippet":"string"}]}]}',
     "Rules:",
+    "- return a single valid JSON object only (no markdown, no code fences, no commentary)",
     "- confidence must be in [0,1]",
     "- include at least one source URL for each location",
     "- use null for unknown lat/lng",
-    "- max locations 20",
+    `- return at most ${maxLocations} locations`,
+    "- rank by confidence and include only the most credible places",
     `Target title: ${title}`,
     year ? `Target year: ${year}` : "",
   ]
@@ -291,12 +352,13 @@ async function insertPendingSuggestion(params: {
   return { inserted: true };
 }
 
-serve(async (req) => {
+serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const body = (await req.json().catch(() => ({}))) as EnrichmentRequest;
     const dryRun = body.dryRun === true;
+    const requestedLocationLimit = normalizeLocationLimit(body.maxLocations);
 
     if ((!body.slug || typeof body.slug !== "string") && (!body.title || typeof body.title !== "string")) {
       return json({ error: "Provide slug or title" }, 400);
@@ -311,23 +373,49 @@ serve(async (req) => {
     }
 
     const accessToken = await getVertexAccessToken(req, "title-enrichment-vertex");
-    const prompt = buildPrompt(resolved.title, resolved.year ?? undefined);
 
-    let generated: { payload: VertexEnrichmentPayload; evidence: SourceEvidence[]; grounded: boolean };
+    let generated: { payload: VertexEnrichmentPayload; evidence: SourceEvidence[]; grounded: boolean } | null = null;
+    let usedLocationLimit = requestedLocationLimit;
 
     try {
+      const prompt = buildPrompt(resolved.title, usedLocationLimit, resolved.year ?? undefined);
       generated = await callVertexGenerate(accessToken, prompt, VERTEX_GROUNDING_ENABLED);
-    } catch (error) {
+    } catch (firstError) {
+      let fallbackError: unknown = firstError;
+
       if (VERTEX_GROUNDING_ENABLED) {
-        console.warn("title-enrichment-vertex grounding attempt failed, retrying without grounding", error);
-        generated = await callVertexGenerate(accessToken, prompt, false);
-      } else {
-        throw error;
+        try {
+          const prompt = buildPrompt(resolved.title, usedLocationLimit, resolved.year ?? undefined);
+          console.warn("title-enrichment-vertex grounding attempt failed, retrying without grounding", firstError);
+          generated = await callVertexGenerate(accessToken, prompt, false);
+          fallbackError = null;
+        } catch (secondError) {
+          fallbackError = secondError;
+        }
+      }
+
+      if (fallbackError) {
+        if (isTimeoutError(fallbackError) && usedLocationLimit > TIMEOUT_RETRY_MIN_LOCATIONS) {
+          usedLocationLimit = Math.max(TIMEOUT_RETRY_MIN_LOCATIONS, Math.floor(usedLocationLimit / 2));
+          const retryPrompt = buildPrompt(resolved.title, usedLocationLimit, resolved.year ?? undefined);
+          console.warn(`title-enrichment-vertex timeout fallback with smaller location limit: ${usedLocationLimit}`);
+          generated = await callVertexGenerate(accessToken, retryPrompt, false);
+        } else if (isParseError(fallbackError)) {
+          const retryPrompt = buildPrompt(resolved.title, usedLocationLimit, resolved.year ?? undefined);
+          console.warn("title-enrichment-vertex parse fallback retry without grounding");
+          generated = await callVertexGenerate(accessToken, retryPrompt, false);
+        } else {
+          throw fallbackError;
+        }
       }
     }
 
+    if (!generated) {
+      throw new Error("Vertex enrichment did not produce a response");
+    }
+
     const rawCandidates = Array.isArray(generated.payload.locations)
-      ? generated.payload.locations.slice(0, 12)
+      ? generated.payload.locations.slice(0, usedLocationLimit)
       : [];
 
     const seen = new Set<string>();
@@ -434,6 +522,8 @@ serve(async (req) => {
       grounded: generated.grounded,
       model: VERTEX_MODEL,
       threshold: AUTOPUBLISH_THRESHOLD,
+      requestedLocationLimit,
+      usedLocationLimit,
       title: {
         id: resolved.id,
         slug: resolved.slug,
