@@ -4,30 +4,38 @@ import {
   getSearchLocationsScoutSystemPrompt,
 } from "../_shared/locationScout.ts";
 import { normalizeKey } from "../_shared/aiCache.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, rateLimit, sanitizeQuery, badRequest } from "../_shared/security.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const limited = rateLimit(req, { key: "search-locations", limit: 20, windowMs: 60_000 });
+  if (limited) return limited;
 
   try {
-    const { query } = await req.json();
-    if (!query || typeof query !== "string" || query.trim().length < 2) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return badRequest("Invalid JSON body");
+    }
+    const trimmedQuery = sanitizeQuery((body as any)?.query, { min: 2, max: 200 });
+    if (!trimmedQuery) {
       return new Response(JSON.stringify({ locations: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const cacheKey = normalizeKey(query);
+    const cacheKey = normalizeKey(trimmedQuery);
     void cacheKey;
-
-    const trimmedQuery = query.trim();
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
