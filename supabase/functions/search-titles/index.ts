@@ -4,12 +4,7 @@ import {
   buildSearchTitlesScoutPrompt,
   getSearchTitlesScoutSystemPrompt,
 } from "../_shared/locationScout.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, rateLimit, sanitizeQuery, badRequest } from "../_shared/security.ts";
 
 function isTruthyEnv(value: string | undefined, defaultValue: boolean): boolean {
   if (value == null) return defaultValue;
