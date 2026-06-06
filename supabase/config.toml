@@ -32,3 +32,8 @@ verify_jwt = true
 [functions.title-enrichment-vertex]
 verify_jwt = false
 
+[functions.sitemap]
+verify_jwt = false
+
+
+
