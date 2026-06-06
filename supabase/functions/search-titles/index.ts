@@ -82,10 +82,25 @@ serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+  if (req.method !== "POST") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const limited = rateLimit(req, { key: "search-titles", limit: 30, windowMs: 60_000 });
+  if (limited) return limited;
 
   try {
-    const { query } = await req.json();
-    if (!query || typeof query !== "string" || query.trim().length < 2) {
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return badRequest("Invalid JSON body");
+    }
+    const query = sanitizeQuery((body as any)?.query, { min: 2, max: 200 });
+    if (!query) {
       return new Response(JSON.stringify({ titles: [] }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
