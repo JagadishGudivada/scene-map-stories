@@ -190,6 +190,33 @@ export default function LocationDetail() {
     setAiData(null);
     (async () => {
       try {
+        // DB-first: serve from Postgres directly when already enriched.
+        const { data: row } = await supabase
+          .from("locations")
+          .select("name, city, country, flag, lat, lng, hero_image_url, description, data")
+          .eq("slug", slug)
+          .maybeSingle();
+
+        if (!active) return;
+
+        if (row) {
+          const base = (row.data && typeof row.data === "object") ? (row.data as Record<string, unknown>) : {};
+          const hydrated = {
+            ...base,
+            name: row.name,
+            city: row.city,
+            country: row.country,
+            flag: row.flag,
+            lat: row.lat,
+            lng: row.lng,
+            coverImage: row.hero_image_url,
+            description: row.description,
+          };
+          setAiData((prev: any) => mergeLocationData(prev, hydrated, slug));
+          setAiLoading(false);
+          return;
+        }
+
         const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/location-details?stream=1`;
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const response = await fetch(functionUrl, {

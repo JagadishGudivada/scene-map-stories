@@ -235,6 +235,34 @@ export default function TitleDetail() {
     setAiDetails(null);
     (async () => {
       try {
+        // DB-first: if already enriched, render instantly (no edge cold start).
+        const { data: row } = await supabase
+          .from("titles")
+          .select("title, year, type, synopsis, genres, rating, poster_url, backdrop_url, data")
+          .eq("slug", slug)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (row) {
+          const base = (row.data && typeof row.data === "object") ? (row.data as Record<string, unknown>) : {};
+          const hydrated = {
+            ...base,
+            title: row.title,
+            year: row.year ?? undefined,
+            type: row.type as "Movie" | "Series" | "Book",
+            synopsis: row.synopsis ?? undefined,
+            genres: row.genres ?? [],
+            rating: row.rating ?? undefined,
+            coverImage: row.poster_url ?? undefined,
+            backdropImage: row.backdrop_url ?? undefined,
+          } as Partial<AIDetails>;
+          setAiDetails((prev) => applyTitlePatch(hydrated, prev, navState || {}));
+          setStreamStage("complete");
+          setLoading(false);
+          return;
+        }
+
         const functionUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/title-details`;
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const response = await fetch(functionUrl, {

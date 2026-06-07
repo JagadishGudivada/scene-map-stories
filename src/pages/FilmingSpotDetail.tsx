@@ -79,6 +79,35 @@ export default function FilmingSpotDetail() {
 
     (async () => {
       try {
+        // DB-first: hit Postgres directly when the spot is already enriched.
+        const { data: row } = await supabase
+          .from("spots")
+          .select("name, address, city, country, flag, lat, lng, image_url, description, fun_facts, visit_tips, data")
+          .eq("slug", slug)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (row) {
+          const base = (row.data && typeof row.data === "object") ? (row.data as Record<string, unknown>) : {};
+          setAiSpot({
+            ...(base as any),
+            name: row.name,
+            address: row.address,
+            city: row.city,
+            country: row.country,
+            flag: row.flag,
+            lat: row.lat,
+            lng: row.lng,
+            image: row.image_url,
+            description: row.description,
+            funFacts: row.fun_facts ?? [],
+            visitTips: row.visit_tips ?? [],
+          });
+          setLoading(false);
+          return;
+        }
+
         const { invokeCached } = await import("@/lib/aiClientCache");
         const cacheKey = `${slug}|${routeState?.titleHint || ""}`;
         const data = await invokeCached<any>(

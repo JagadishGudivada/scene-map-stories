@@ -27,7 +27,11 @@ serve(async (req) => {
     const stored = await getLocation(slug);
     if (stored) {
       return new Response(JSON.stringify(stored), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800",
+        },
       });
     }
 
