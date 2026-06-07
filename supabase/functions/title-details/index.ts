@@ -91,7 +91,13 @@ serve(async (req) => {
     // Persistent table read-through (preferred)
     const stored = await getTitle(slug);
     if (stored) {
-      return jsonResponse(stored);
+      return new Response(JSON.stringify(stored), {
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=300, s-maxage=86400, stale-while-revalidate=604800",
+        },
+      });
     }
 
     const cacheKey = slug;
