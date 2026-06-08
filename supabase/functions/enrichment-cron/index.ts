@@ -64,6 +64,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const url = new URL(req.url);
+  const dryRun = url.searchParams.get("dryRun") === "1";
+
+
+
   // Auth: require either the service-role bearer OR x-cron-secret.
   // If neither is present, fall back to throttle-only access (anon key)
   // so the documented pg_cron+anon pattern keeps working while still
@@ -101,8 +106,8 @@ serve(async (req) => {
 
 
 
-  const url = new URL(req.url);
-  const dryRun = url.searchParams.get("dryRun") === "1";
+
+
 
   const summary = {
     startedAt: new Date().toISOString(),
