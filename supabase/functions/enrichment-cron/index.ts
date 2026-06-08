@@ -139,6 +139,22 @@ serve(async (req) => {
     await sleep(PER_CALL_DELAY_MS);
   }
 
+  // Record sentinel for throttle (only on a real run, never on dryRun).
+  if (!dryRun) {
+    const nowIso = new Date().toISOString();
+    const expires = new Date(Date.now() + 7 * 86_400_000).toISOString();
+    await db().from("ai_cache").upsert(
+      {
+        function_name: "enrichment-cron",
+        cache_key: THROTTLE_KEY,
+        payload: { lastRunAt: nowIso, summary },
+        created_at: nowIso,
+        expires_at: expires,
+      },
+      { onConflict: "function_name,cache_key" }
+    );
+  }
+
   return json({
     ...summary,
     finishedAt: new Date().toISOString(),
