@@ -64,11 +64,17 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Minimal auth: must include service role key as Authorization bearer
+  // Auth: accept either service-role bearer OR x-cron-secret header.
   const authHeader = req.headers.get("Authorization") || "";
-  if (!authHeader.includes(SERVICE_ROLE_KEY)) {
+  const cronSecret = req.headers.get("x-cron-secret") || "";
+  const expectedCronSecret = Deno.env.get("CRON_SECRET") || "";
+  const serviceRoleOk = authHeader.includes(SERVICE_ROLE_KEY);
+  const cronSecretOk = expectedCronSecret.length > 0 && cronSecret === expectedCronSecret;
+  if (!serviceRoleOk && !cronSecretOk) {
     return json({ error: "Forbidden" }, 403);
   }
+  // Downstream calls always use service role for full DB + vertex access.
+  const downstreamAuth = `Bearer ${SERVICE_ROLE_KEY}`;
 
   const url = new URL(req.url);
   const dryRun = url.searchParams.get("dryRun") === "1";
