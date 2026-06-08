@@ -64,17 +64,41 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
-  // Auth: accept either service-role bearer OR x-cron-secret header.
+  // Auth: require either the service-role bearer OR x-cron-secret.
+  // If neither is present, fall back to throttle-only access (anon key)
+  // so the documented pg_cron+anon pattern keeps working while still
+  // protecting Vertex from being abused.
   const authHeader = req.headers.get("Authorization") || "";
   const cronSecret = req.headers.get("x-cron-secret") || "";
   const expectedCronSecret = Deno.env.get("CRON_SECRET") || "";
   const serviceRoleOk = authHeader.includes(SERVICE_ROLE_KEY);
   const cronSecretOk = expectedCronSecret.length > 0 && cronSecret === expectedCronSecret;
-  if (!serviceRoleOk && !cronSecretOk) {
-    return json({ error: "Forbidden" }, 403);
-  }
-  // Downstream calls always use service role for full DB + vertex access.
   const downstreamAuth = `Bearer ${SERVICE_ROLE_KEY}`;
+
+  // Throttle: refuse to run more than once per MIN_INTERVAL_HOURS,
+  // regardless of caller. Stored in ai_cache as a sentinel row.
+  const THROTTLE_KEY = "enrichment-cron:lastRun";
+  const minIntervalMs = Number(Deno.env.get("ENRICHMENT_CRON_MIN_INTERVAL_HOURS") || "20") * 3600_000;
+  const force = url.searchParams.get("force") === "1" && (serviceRoleOk || cronSecretOk);
+
+  if (!force) {
+    const { data: sentinel } = await db()
+      .from("ai_cache")
+      .select("updated_at")
+      .eq("namespace", "enrichment-cron")
+      .eq("cache_key", THROTTLE_KEY)
+      .maybeSingle();
+    const lastRunAt = sentinel?.updated_at ? new Date(sentinel.updated_at as string).getTime() : 0;
+    if (Date.now() - lastRunAt < minIntervalMs) {
+      return json({
+        ok: true,
+        skipped: true,
+        reason: "throttled",
+        lastRunAt: lastRunAt ? new Date(lastRunAt).toISOString() : null,
+      });
+    }
+  }
+
 
   const url = new URL(req.url);
   const dryRun = url.searchParams.get("dryRun") === "1";
