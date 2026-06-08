@@ -84,11 +84,11 @@ serve(async (req) => {
   if (!force) {
     const { data: sentinel } = await db()
       .from("ai_cache")
-      .select("updated_at")
-      .eq("namespace", "enrichment-cron")
+      .select("created_at")
+      .eq("function_name", "enrichment-cron")
       .eq("cache_key", THROTTLE_KEY)
       .maybeSingle();
-    const lastRunAt = sentinel?.updated_at ? new Date(sentinel.updated_at as string).getTime() : 0;
+    const lastRunAt = sentinel?.created_at ? new Date(sentinel.created_at as string).getTime() : 0;
     if (Date.now() - lastRunAt < minIntervalMs) {
       return json({
         ok: true,
@@ -98,6 +98,7 @@ serve(async (req) => {
       });
     }
   }
+
 
 
   const url = new URL(req.url);
