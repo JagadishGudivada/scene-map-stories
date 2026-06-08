@@ -516,6 +516,17 @@ serve(async (req: Request) => {
       accepted.push({ ...candidateRecord, linked: true });
     }
 
+    // Bump last_fetched_at so the daily cron rotates through other titles next run.
+    if (!dryRun) {
+      const { error: bumpError } = await db()
+        .from("titles")
+        .update({ last_fetched_at: new Date().toISOString() })
+        .eq("id", resolved.id);
+      if (bumpError) {
+        console.error("title-enrichment-vertex last_fetched_at bump failed", bumpError);
+      }
+    }
+
     return json({
       ok: true,
       dryRun,

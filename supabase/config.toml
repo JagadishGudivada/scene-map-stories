@@ -32,6 +32,17 @@ verify_jwt = true
 [functions.title-enrichment-vertex]
 verify_jwt = false
 
+[functions.location-enrichment-vertex]
+verify_jwt = false
+
+[functions.spot-enrichment-vertex]
+verify_jwt = false
+
+[functions.enrichment-cron]
+verify_jwt = false
+
+
+
 [functions.sitemap]
 verify_jwt = false
 
