@@ -90,7 +90,7 @@ serve(async (req) => {
   const titles = await pickStale("titles", BATCH_TITLES);
   summary.titles.picked = titles.length;
   for (const slug of titles) {
-    const r = await invoke("title-enrichment-vertex", { slug, dryRun }, authHeader);
+    const r = await invoke("title-enrichment-vertex", { slug, dryRun }, downstreamAuth);
     if (r.ok) summary.titles.ok++; else summary.titles.failed++;
     summary.titles.results.push({ slug, status: r.status });
     await sleep(PER_CALL_DELAY_MS);
@@ -99,7 +99,7 @@ serve(async (req) => {
   const locations = await pickStale("locations", BATCH_LOCATIONS);
   summary.locations.picked = locations.length;
   for (const slug of locations) {
-    const r = await invoke("location-enrichment-vertex", { slug, dryRun }, authHeader);
+    const r = await invoke("location-enrichment-vertex", { slug, dryRun }, downstreamAuth);
     if (r.ok) summary.locations.ok++; else summary.locations.failed++;
     summary.locations.results.push({ slug, status: r.status });
     await sleep(PER_CALL_DELAY_MS);
@@ -108,7 +108,7 @@ serve(async (req) => {
   const spots = await pickStale("spots", BATCH_SPOTS);
   summary.spots.picked = spots.length;
   for (const slug of spots) {
-    const r = await invoke("spot-enrichment-vertex", { slug, dryRun }, authHeader);
+    const r = await invoke("spot-enrichment-vertex", { slug, dryRun }, downstreamAuth);
     if (r.ok) summary.spots.ok++; else summary.spots.failed++;
     summary.spots.results.push({ slug, status: r.status });
     await sleep(PER_CALL_DELAY_MS);
