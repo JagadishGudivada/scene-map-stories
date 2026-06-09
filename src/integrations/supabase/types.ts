@@ -180,6 +180,7 @@ export type Database = {
           created_at: string
           data: Json
           description: string | null
+          enriched_at: string | null
           flag: string | null
           hero_image_url: string | null
           id: string
@@ -198,6 +199,7 @@ export type Database = {
           created_at?: string
           data?: Json
           description?: string | null
+          enriched_at?: string | null
           flag?: string | null
           hero_image_url?: string | null
           id?: string
@@ -216,6 +218,7 @@ export type Database = {
           created_at?: string
           data?: Json
           description?: string | null
+          enriched_at?: string | null
           flag?: string | null
           hero_image_url?: string | null
           id?: string
@@ -412,6 +415,7 @@ export type Database = {
           created_at: string
           data: Json
           description: string | null
+          enriched_at: string | null
           flag: string | null
           fun_facts: string[] | null
           id: string
@@ -433,6 +437,7 @@ export type Database = {
           created_at?: string
           data?: Json
           description?: string | null
+          enriched_at?: string | null
           flag?: string | null
           fun_facts?: string[] | null
           id?: string
@@ -454,6 +459,7 @@ export type Database = {
           created_at?: string
           data?: Json
           description?: string | null
+          enriched_at?: string | null
           flag?: string | null
           fun_facts?: string[] | null
           id?: string
@@ -514,6 +520,7 @@ export type Database = {
           backdrop_url: string | null
           created_at: string
           data: Json
+          enriched_at: string | null
           genres: string[] | null
           id: string
           imdb_id: string | null
@@ -534,6 +541,7 @@ export type Database = {
           backdrop_url?: string | null
           created_at?: string
           data?: Json
+          enriched_at?: string | null
           genres?: string[] | null
           id?: string
           imdb_id?: string | null
@@ -554,6 +562,7 @@ export type Database = {
           backdrop_url?: string | null
           created_at?: string
           data?: Json
+          enriched_at?: string | null
           genres?: string[] | null
           id?: string
           imdb_id?: string | null
