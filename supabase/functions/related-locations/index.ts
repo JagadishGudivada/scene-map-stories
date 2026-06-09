@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { normalizeKey } from "../_shared/aiCache.ts";
 import { resolveLocationImage } from "../_shared/images.ts";
 import {
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("related-locations");
   buildRelatedLocationsScoutPrompt,
   getRelatedLocationsScoutSystemPrompt,
 } from "../_shared/locationScout.ts";
@@ -109,7 +112,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.error("AI error:", response.status, await response.text());
+      log.error("AI error:", response.status, await response.text());
       throw new Error("AI provider error");
     }
 
@@ -148,7 +151,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("related-locations error:", e);
+    log.error("related-locations error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

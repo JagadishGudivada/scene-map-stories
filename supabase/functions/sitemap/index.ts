@@ -10,6 +10,9 @@
 // so crawlers see canonical site URLs. CDN-cacheable for 24h.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("sitemap");
 
 const SITE = "https://sarevista.com";
 const SHARD_SIZE = 10_000;
@@ -170,7 +173,7 @@ Deno.serve(async (req) => {
       },
     });
   } catch (e) {
-    console.error("sitemap error", e);
+    log.error("sitemap error", e);
     return new Response("sitemap generation failed", { status: 500 });
   }
 });

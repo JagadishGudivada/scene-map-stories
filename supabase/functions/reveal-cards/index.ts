@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCached } from "../_shared/aiCache.ts";
 import {
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("reveal-cards");
   buildRevealCardsScoutPrompt,
   getRevealCardsScoutSystemPrompt,
 } from "../_shared/locationScout.ts";
@@ -105,7 +108,7 @@ serve(async (req) => {
 
     if (!resp.ok) {
       const t = await resp.text();
-      console.error("AI error", resp.status, t);
+      log.error("AI error", t, { status: resp.status });
       return json({ error: "AI request failed", status: resp.status }, 502);
     }
     const data = await resp.json();
@@ -139,8 +142,8 @@ serve(async (req) => {
 
     return json(payload);
   } catch (e) {
-    console.error("reveal-cards error", e);
-    return json({ error: String(e?.message || e) }, 500);
+    log.error("reveal-cards error", 500, { status: e);
+    return json({ error: String(e?.message || e) } });
   }
 });
 

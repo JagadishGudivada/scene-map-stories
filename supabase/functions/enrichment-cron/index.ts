@@ -5,6 +5,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { db } from "../_shared/store.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("enrichment-cron");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,7 +56,7 @@ async function pickStale(table: "titles" | "locations" | "spots", limit: number)
     .order("last_fetched_at", { ascending: true })
     .limit(limit);
   if (error) {
-    console.error(`enrichment-cron pickStale ${table} error`, error);
+    log.error("pickStale query failed", error, { table });
     return [];
   }
   return (data || []).map((r: any) => r.slug as string);
@@ -66,22 +69,18 @@ serve(async (req) => {
 
   const url = new URL(req.url);
   const dryRun = url.searchParams.get("dryRun") === "1";
-
-
+  const rlog = log.forRequest(req, { dryRun });
 
   // Auth: require either the service-role bearer OR x-cron-secret.
-  // If neither is present, fall back to throttle-only access (anon key)
-  // so the documented pg_cron+anon pattern keeps working while still
-  // protecting Vertex from being abused.
   const authHeader = req.headers.get("Authorization") || "";
   const cronSecret = req.headers.get("x-cron-secret") || "";
   const expectedCronSecret = Deno.env.get("CRON_SECRET") || "";
   const serviceRoleOk = authHeader.includes(SERVICE_ROLE_KEY);
   const cronSecretOk = expectedCronSecret.length > 0 && cronSecret === expectedCronSecret;
   const downstreamAuth = `Bearer ${SERVICE_ROLE_KEY}`;
+  rlog.debug("auth resolved", { serviceRoleOk, cronSecretOk });
 
-  // Throttle: refuse to run more than once per MIN_INTERVAL_HOURS,
-  // regardless of caller. Stored in ai_cache as a sentinel row.
+  // Throttle: refuse to run more than once per MIN_INTERVAL_HOURS.
   const THROTTLE_KEY = "enrichment-cron:lastRun";
   const minIntervalMs = Number(Deno.env.get("ENRICHMENT_CRON_MIN_INTERVAL_HOURS") || "20") * 3600_000;
   const force = url.searchParams.get("force") === "1" && (serviceRoleOk || cronSecretOk);
@@ -95,6 +94,8 @@ serve(async (req) => {
       .maybeSingle();
     const lastRunAt = sentinel?.created_at ? new Date(sentinel.created_at as string).getTime() : 0;
     if (Date.now() - lastRunAt < minIntervalMs) {
+      rlog.info("throttled", { lastRunAt: lastRunAt ? new Date(lastRunAt).toISOString() : null });
+      rlog.end(200, { skipped: true, reason: "throttled" });
       return json({
         ok: true,
         skipped: true,
@@ -104,11 +105,6 @@ serve(async (req) => {
     }
   }
 
-
-
-
-
-
   const summary = {
     startedAt: new Date().toISOString(),
     dryRun,
@@ -117,38 +113,41 @@ serve(async (req) => {
     spots: { picked: 0, ok: 0, failed: 0, results: [] as unknown[] },
   };
 
-  const titles = await pickStale("titles", BATCH_TITLES);
-  summary.titles.picked = titles.length;
-  for (const slug of titles) {
-    const r = await invoke("title-enrichment-vertex", { slug, dryRun }, downstreamAuth);
-    if (r.ok) summary.titles.ok++; else summary.titles.failed++;
-    summary.titles.results.push({ slug, status: r.status });
-    await sleep(PER_CALL_DELAY_MS);
-  }
+  rlog.info("cron run started", { batches: { titles: BATCH_TITLES, locations: BATCH_LOCATIONS, spots: BATCH_SPOTS }, staleDays: STALE_DAYS });
 
-  const locations = await pickStale("locations", BATCH_LOCATIONS);
-  summary.locations.picked = locations.length;
-  for (const slug of locations) {
-    const r = await invoke("location-enrichment-vertex", { slug, dryRun }, downstreamAuth);
-    if (r.ok) summary.locations.ok++; else summary.locations.failed++;
-    summary.locations.results.push({ slug, status: r.status });
-    await sleep(PER_CALL_DELAY_MS);
-  }
+  const runBatch = async (
+    kind: "titles" | "locations" | "spots",
+    fnName: string,
+    limit: number,
+    bucket: { picked: number; ok: number; failed: number; results: unknown[] },
+  ) => {
+    const slugs = await pickStale(kind, limit);
+    bucket.picked = slugs.length;
+    rlog.info(`picked stale ${kind}`, { count: slugs.length });
+    for (const slug of slugs) {
+      const startedAt = Date.now();
+      const r = await invoke(fnName, { slug, dryRun }, downstreamAuth);
+      const duration_ms = Date.now() - startedAt;
+      if (r.ok) {
+        bucket.ok++;
+        rlog.debug(`${kind} enriched`, { slug, status: r.status, duration_ms });
+      } else {
+        bucket.failed++;
+        rlog.warn(`${kind} enrichment failed`, { slug, status: r.status, duration_ms, body: r.body });
+      }
+      bucket.results.push({ slug, status: r.status });
+      await sleep(PER_CALL_DELAY_MS);
+    }
+  };
 
-  const spots = await pickStale("spots", BATCH_SPOTS);
-  summary.spots.picked = spots.length;
-  for (const slug of spots) {
-    const r = await invoke("spot-enrichment-vertex", { slug, dryRun }, downstreamAuth);
-    if (r.ok) summary.spots.ok++; else summary.spots.failed++;
-    summary.spots.results.push({ slug, status: r.status });
-    await sleep(PER_CALL_DELAY_MS);
-  }
+  await runBatch("titles", "title-enrichment-vertex", BATCH_TITLES, summary.titles);
+  await runBatch("locations", "location-enrichment-vertex", BATCH_LOCATIONS, summary.locations);
+  await runBatch("spots", "spot-enrichment-vertex", BATCH_SPOTS, summary.spots);
 
-  // Record sentinel for throttle (only on a real run, never on dryRun).
   if (!dryRun) {
     const nowIso = new Date().toISOString();
     const expires = new Date(Date.now() + 7 * 86_400_000).toISOString();
-    await db().from("ai_cache").upsert(
+    const { error: sentinelErr } = await db().from("ai_cache").upsert(
       {
         function_name: "enrichment-cron",
         cache_key: THROTTLE_KEY,
@@ -158,7 +157,15 @@ serve(async (req) => {
       },
       { onConflict: "function_name,cache_key" }
     );
+    if (sentinelErr) rlog.warn("failed to record throttle sentinel", { error: sentinelErr.message });
   }
+
+  rlog.info("cron run finished", {
+    titles: { picked: summary.titles.picked, ok: summary.titles.ok, failed: summary.titles.failed },
+    locations: { picked: summary.locations.picked, ok: summary.locations.ok, failed: summary.locations.failed },
+    spots: { picked: summary.spots.picked, ok: summary.spots.ok, failed: summary.spots.failed },
+  });
+  rlog.end(200);
 
   return json({
     ...summary,

@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { buildSpotScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/locationScout.ts";
 import { resolveLocationImage } from "../_shared/images.ts";
 import { getSpot, upsertSpot } from "../_shared/store.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("spot-details");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -128,7 +131,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.error("AI provider error:", response.status, await response.text());
+      log.error("AI provider error:", response.status, await response.text());
       throw new Error("AI provider error");
     }
 
@@ -158,7 +161,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("spot-details error:", e);
+    log.error("spot-details error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

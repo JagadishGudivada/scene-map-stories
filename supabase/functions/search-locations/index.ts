@@ -5,6 +5,9 @@ import {
 } from "../_shared/locationScout.ts";
 import { normalizeKey } from "../_shared/aiCache.ts";
 import { corsHeaders, rateLimit, sanitizeQuery, badRequest } from "../_shared/security.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("search-locations");
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -114,7 +117,7 @@ serve(async (req) => {
         });
       }
       const t = await response.text();
-      console.error("AI provider error:", response.status, t);
+      log.error("AI provider error:", t, { status: response.status });
       throw new Error("AI provider error");
     }
 
@@ -137,7 +140,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("search-locations error:", e);
+    log.error("search-locations error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

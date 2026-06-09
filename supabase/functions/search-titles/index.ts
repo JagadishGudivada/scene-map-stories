@@ -5,6 +5,9 @@ import {
   getSearchTitlesScoutSystemPrompt,
 } from "../_shared/locationScout.ts";
 import { corsHeaders, rateLimit, sanitizeQuery, badRequest } from "../_shared/security.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("search-titles");
 
 function isTruthyEnv(value: string | undefined, defaultValue: boolean): boolean {
   if (value == null) return defaultValue;
@@ -50,7 +53,7 @@ async function tmdbMultiSearch(apiKey: string, query: string): Promise<TitleOut[
       })
       .filter((t) => t.title.length > 0);
   } catch (e) {
-    console.error("tmdb multi-search error:", e);
+    log.error("tmdb multi-search error:", e);
     return [];
   }
 }
@@ -205,7 +208,7 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errText = await response.text().catch(() => "");
-          console.error("AI provider error:", response.status, errText);
+          log.error("AI provider error:", errText, { status: response.status });
           if (response.status >= 500 && AI_MODEL !== "google/gemini-2.5-flash-lite") {
             response = await fetch(AI_CHAT_COMPLETIONS_URL, {
               method: "POST",
@@ -232,7 +235,7 @@ serve(async (req) => {
           return [];
         }
       } catch (e) {
-        console.error("AI call failed:", e instanceof Error ? e.message : e);
+        log.error("AI call failed:", e instanceof Error ? e.message : e);
         return [];
       }
     };
@@ -248,7 +251,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("search-titles error:", e);
+    log.error("search-titles error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

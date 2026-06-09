@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { db, upsertLocation } from "../_shared/store.ts";
 import { getVertexAccessToken } from "../_shared/vertexAuth.ts";
 import { generateWithFallback, SourceEvidence } from "../_shared/vertexCall.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("location-enrichment-vertex");
 
 type EnrichmentRequest = {
   slug?: string;
@@ -224,7 +227,7 @@ serve(async (req) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("location-enrichment-vertex error", message);
+    log.error("location-enrichment-vertex error", message);
     return json({ error: message }, 500);
   }
 });

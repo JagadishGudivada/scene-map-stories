@@ -1,4 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("related-titles");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,7 +126,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("related-titles error:", e);
+    log.error("related-titles error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error", titles: [] }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
