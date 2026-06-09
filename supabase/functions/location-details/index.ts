@@ -3,6 +3,9 @@ import { getCached } from "../_shared/aiCache.ts";
 import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
 import { buildLocationScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/locationScout.ts";
 import { getLocation, upsertLocation } from "../_shared/store.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("location-details");
 
 const CACHE_VERSION = "v3:";
 
@@ -231,7 +234,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.error("AI provider error:", response.status, await response.text());
+      log.error("AI provider error:", response.status, await response.text());
       throw new Error("AI provider error");
     }
 
@@ -302,7 +305,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("location-details error:", e);
+    log.error("location-details error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

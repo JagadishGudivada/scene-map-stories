@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { db, upsertSpot } from "../_shared/store.ts";
 import { getVertexAccessToken } from "../_shared/vertexAuth.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("title-enrichment-vertex");
 
 type EnrichmentRequest = {
   slug?: string;
@@ -279,7 +282,7 @@ async function resolveTargetTitle(input: EnrichmentRequest): Promise<{ id: strin
 
     const { data, error } = await q.maybeSingle();
     if (error) {
-      console.error("title-enrichment-vertex resolve title error", error);
+      log.error("title-enrichment-vertex resolve title error", error);
       return null;
     }
 
@@ -296,7 +299,7 @@ async function resolveTargetTitle(input: EnrichmentRequest): Promise<{ id: strin
       .maybeSingle();
 
     if (error) {
-      console.error("title-enrichment-vertex resolve by slug text error", error);
+      log.error("title-enrichment-vertex resolve by slug text error", error);
       return null;
     }
 
@@ -345,7 +348,7 @@ async function insertPendingSuggestion(params: {
   });
 
   if (error) {
-    console.error("title-enrichment-vertex pending suggestion insert error", error);
+    log.error("title-enrichment-vertex pending suggestion insert error", error);
     return { inserted: false, reason: error.message };
   }
 
@@ -386,7 +389,7 @@ serve(async (req: Request) => {
       if (VERTEX_GROUNDING_ENABLED) {
         try {
           const prompt = buildPrompt(resolved.title, usedLocationLimit, resolved.year ?? undefined);
-          console.warn("title-enrichment-vertex grounding attempt failed, retrying without grounding", firstError);
+          log.warn("title-enrichment-vertex grounding attempt failed, retrying without grounding", { detail: firstError });
           generated = await callVertexGenerate(accessToken, prompt, false);
           fallbackError = null;
         } catch (secondError) {
@@ -493,7 +496,7 @@ serve(async (req: Request) => {
         .maybeSingle();
 
       if (spotReadError || !spotRow?.id) {
-        console.error("title-enrichment-vertex unable to resolve spot id", spotReadError);
+        log.error("title-enrichment-vertex unable to resolve spot id", spotReadError);
         skipped.push({ label, reason: "spot-id-not-found-after-upsert" });
         continue;
       }
@@ -508,7 +511,7 @@ serve(async (req: Request) => {
       );
 
       if (linkError) {
-        console.error("title-enrichment-vertex title_spots upsert error", linkError);
+        log.error("title-enrichment-vertex title_spots upsert error", linkError);
         skipped.push({ label, reason: `link-failed:${linkError.message}` });
         continue;
       }
@@ -543,7 +546,7 @@ serve(async (req: Request) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("title-enrichment-vertex error", message);
+    log.error("title-enrichment-vertex error", message);
     return json({ error: message }, 500);
   }
 });

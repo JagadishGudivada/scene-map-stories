@@ -3,6 +3,9 @@
 // limited to its training cutoff.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import {
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("verify-location-suggestion");
   buildVerifyLocationSuggestionPrompt,
   getVerifyLocationSuggestionSystemPrompt,
 } from "../_shared/locationScout.ts";
@@ -92,7 +95,7 @@ Deno.serve(async (req) => {
 
     if (!aiRes.ok) {
       const txt = await aiRes.text();
-      console.error("AI error", aiRes.status, txt);
+      log.error("AI error", aiRes.status, txt);
       await supabase.from("location_suggestions").update({ status: "pending", ai_notes: `AI error ${aiRes.status}` }).eq("id", suggestionId);
       return json({ error: "AI provider error" }, 200);
     }
@@ -154,7 +157,7 @@ async function ddgSearch(query: string): Promise<Array<{ source: string; title: 
     }
     return results;
   } catch (e) {
-    console.warn("ddg failed", e);
+    log.warn("ddg failed", { detail: e });
     return [];
   }
 }

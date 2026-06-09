@@ -1,4 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("location-photo");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -62,7 +65,7 @@ serve(async (req) => {
 
     if (!pexelsRes.ok) {
       const text = await pexelsRes.text();
-      console.error("location-photo pexels error:", pexelsRes.status, text);
+      log.error("location-photo pexels error:", pexelsRes.status, text);
       throw new Error("Failed to fetch location image");
     }
 
@@ -76,7 +79,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("location-photo error:", e);
+    log.error("location-photo error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error", imageUrl: null }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

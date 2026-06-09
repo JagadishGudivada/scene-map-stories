@@ -1,4 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("weekly-movies");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -56,7 +59,7 @@ async function getTmdbImageConfig(apiKey: string): Promise<TmdbImageConfig> {
   configUrl.searchParams.set("api_key", apiKey);
   const configRes = await fetch(configUrl.toString());
   if (!configRes.ok) {
-    console.error("TMDB configuration error:", configRes.status, await configRes.text());
+    log.error("TMDB configuration error:", configRes.status, await configRes.text());
     throw new Error("TMDB configuration request failed");
   }
 
@@ -130,7 +133,7 @@ serve(async (req) => {
 
     const tmdbRes = await fetch(url.toString());
     if (!tmdbRes.ok) {
-      console.error("TMDB trending error:", tmdbRes.status, await tmdbRes.text());
+      log.error("TMDB trending error:", tmdbRes.status, await tmdbRes.text());
       throw new Error("TMDB request failed");
     }
 
@@ -202,7 +205,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
-    console.error("weekly-movies error:", e);
+    log.error("weekly-movies error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error", movies: [] }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -2,6 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { getCached, normalizeKey } from "../_shared/aiCache.ts";
 import { getVertexAccessToken } from "../_shared/vertexAuth.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("passport-stamp-art");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -193,7 +196,7 @@ serve(async (req) => {
       accessToken = await getVertexAccessToken(req, "passport-stamp-art");
     } catch (authErr) {
       const msg = authErr instanceof Error ? authErr.message : String(authErr);
-      console.error("passport-stamp-art Vertex auth error:", msg);
+      log.error("passport-stamp-art Vertex auth error:", msg);
       return json({ error: "Vertex AI authentication failed", detail: msg }, 500);
     }
 
@@ -235,7 +238,7 @@ serve(async (req) => {
         );
       }
 
-      console.error("passport-stamp-art: no image returned from Imagen models", { attempts });
+      log.error("passport-stamp-art: no image returned from Imagen models", { attempts });
       return json({ error: "No image returned by Vertex AI", attempts }, 502);
     }
 
@@ -258,12 +261,12 @@ serve(async (req) => {
     );
 
     if (upsertError) {
-      console.error("passport-stamp-art cache upsert error", upsertError);
+      log.error("passport-stamp-art cache upsert error", upsertError);
     }
 
     return json(payload);
   } catch (error) {
-    console.error("passport-stamp-art error", error);
+    log.error("passport-stamp-art error", error);
     return json({ error: String(error instanceof Error ? error.message : error) }, 500);
   }
 });
