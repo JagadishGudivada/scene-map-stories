@@ -73,8 +73,9 @@ export function useNotifications() {
   useEffect(() => {
     if (!user) return;
 
+    // Per-user private channel — RLS on realtime.messages restricts subscription
     const channel = supabase
-      .channel("notifications-realtime")
+      .channel(`notifications:${user.id}`, { config: { private: true } })
       .on(
         "postgres_changes",
         {
