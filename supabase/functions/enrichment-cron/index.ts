@@ -5,6 +5,9 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { db } from "../_shared/store.ts";
+import { createLogger } from "../_shared/logger.ts";
+
+const log = createLogger("enrichment-cron");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
