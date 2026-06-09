@@ -56,7 +56,7 @@ async function pickStale(table: "titles" | "locations" | "spots", limit: number)
     .order("last_fetched_at", { ascending: true })
     .limit(limit);
   if (error) {
-    console.error(`enrichment-cron pickStale ${table} error`, error);
+    log.error("pickStale query failed", error, { table });
     return [];
   }
   return (data || []).map((r: any) => r.slug as string);
