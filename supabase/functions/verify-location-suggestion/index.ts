@@ -95,7 +95,7 @@ Deno.serve(async (req) => {
 
     if (!aiRes.ok) {
       const txt = await aiRes.text();
-      log.error("AI error", aiRes.status, txt);
+      log.error("AI error", txt, { status: aiRes.status });
       await supabase.from("location_suggestions").update({ status: "pending", ai_notes: `AI error ${aiRes.status}` }).eq("id", suggestionId);
       return json({ error: "AI provider error" }, 200);
     }

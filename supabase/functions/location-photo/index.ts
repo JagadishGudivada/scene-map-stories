@@ -65,7 +65,7 @@ serve(async (req) => {
 
     if (!pexelsRes.ok) {
       const text = await pexelsRes.text();
-      log.error("location-photo pexels error:", pexelsRes.status, text);
+      log.error("location-photo pexels error:", text, { status: pexelsRes.status });
       throw new Error("Failed to fetch location image");
     }
 

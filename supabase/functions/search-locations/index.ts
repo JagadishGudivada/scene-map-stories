@@ -117,7 +117,7 @@ serve(async (req) => {
         });
       }
       const t = await response.text();
-      log.error("AI provider error:", response.status, t);
+      log.error("AI provider error:", t, { status: response.status });
       throw new Error("AI provider error");
     }
 

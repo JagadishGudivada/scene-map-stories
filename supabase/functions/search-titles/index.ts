@@ -208,7 +208,7 @@ serve(async (req) => {
 
         if (!response.ok) {
           const errText = await response.text().catch(() => "");
-          log.error("AI provider error:", response.status, errText);
+          log.error("AI provider error:", errText, { status: response.status });
           if (response.status >= 500 && AI_MODEL !== "google/gemini-2.5-flash-lite") {
             response = await fetch(AI_CHAT_COMPLETIONS_URL, {
               method: "POST",
