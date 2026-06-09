@@ -45,6 +45,7 @@ export async function upsertTitle(slug: string, payload: Record<string, any>) {
       data: payload,
       source: payload.source || "ai",
       last_fetched_at: new Date().toISOString(),
+      ...(payload.enrichedAt ? { enriched_at: new Date(payload.enrichedAt as string).toISOString() } : {}),
     };
     await db().from("titles").upsert(row, { onConflict: "slug" });
   } catch (e) {
@@ -98,6 +99,7 @@ export async function upsertLocation(slug: string, payload: Record<string, any>)
       data: payload,
       source: payload.source || "ai",
       last_fetched_at: new Date().toISOString(),
+      ...(payload.enrichedAt ? { enriched_at: new Date(payload.enrichedAt as string).toISOString() } : {}),
     };
     await db().from("locations").upsert(row, { onConflict: "slug" });
   } catch (e) {
@@ -152,6 +154,7 @@ export async function upsertSpot(slug: string, payload: Record<string, any>) {
       data: payload,
       source: payload.source || "ai",
       last_fetched_at: new Date().toISOString(),
+      ...(payload.enrichedAt ? { enriched_at: new Date(payload.enrichedAt as string).toISOString() } : {}),
     };
     await db().from("spots").upsert(row, { onConflict: "slug" });
   } catch (e) {

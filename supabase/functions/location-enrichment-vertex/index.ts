@@ -91,11 +91,21 @@ const responseSchema = {
   required: ["description"],
 };
 
-function buildPrompt(name: string, country?: string | null): string {
+function buildPrompt(
+  name: string,
+  country?: string | null,
+  existing?: { description?: string | null; tagline?: string | null; travelTips?: string[] }
+): string {
+  const existingLines: string[] = [];
+  if (existing?.description) existingLines.push(`Existing description: ${existing.description}`);
+  if (existing?.tagline) existingLines.push(`Existing tagline: ${existing.tagline}`);
+  if (existing?.travelTips?.length) existingLines.push(`Existing travel tips: ${existing.travelTips.slice(0, 3).join(" | ")}`);
   return [
     "You are enriching a city/location page for a film-tourism website.",
     "Use grounded web retrieval. Prefer official tourism boards, Wikipedia, reputable travel publications, and film-location databases.",
     "Return STRICT JSON only matching the provided schema. No commentary, no markdown.",
+    existingLines.length > 0 ? "Existing content — improve and extend it, do not simply repeat it:" : "",
+    ...existingLines,
     "Rules:",
     "- description: 2-4 sentence editorial paragraph that mentions notable film/TV productions shot here when relevant",
     "- bestTimeToVisit: 1 sentence (season + reason)",
@@ -106,13 +116,25 @@ function buildPrompt(name: string, country?: string | null): string {
     "- include lat/lng if confidently known; else null",
     "- include at least 2 source URLs",
     `Target location: ${name}${country ? `, ${country}` : ""}`,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
+}
+
+async function queryVerifiedNearbySpots(
+  city: string | null,
+  country: string | null
+): Promise<Array<{ name: string; description?: string | null }>> {
+  if (!city && !country) return [];
+  let q = db().from("spots").select("name, description").limit(8);
+  if (city) q = q.ilike("city", `%${city}%`);
+  if (country) q = q.ilike("country", `%${country}%`);
+  const { data } = await q;
+  return Array.isArray(data) ? data : [];
 }
 
 async function resolveLocation(slug: string) {
   const { data } = await db()
     .from("locations")
-    .select("id, slug, name, city, country, lat, lng, hero_image_url, description, data")
+    .select("id, slug, name, city, country, flag, lat, lng, hero_image_url, description, data")
     .eq("slug", slug)
     .maybeSingle();
   return data;
@@ -128,10 +150,19 @@ serve(async (req) => {
     if (!row) return json({ error: "Location not found" }, 404);
 
     const accessToken = await getVertexAccessToken(req, "location-enrichment-vertex");
+    const existing = (row.data && typeof row.data === "object") ? (row.data as Record<string, any>) : {};
     const result = await generateWithFallback<LocationEnrichmentPayload>(
       accessToken,
       {
-        prompt: buildPrompt(row.name as string, row.country as string | null),
+        prompt: buildPrompt(
+          row.name as string,
+          row.country as string | null,
+          {
+            description: row.description as string | null,
+            tagline: (existing.tagline as string | null) ?? null,
+            travelTips: Array.isArray(existing.travelTips) ? existing.travelTips as string[] : [],
+          }
+        ),
         responseSchema,
       },
       "location-enrichment-vertex"
@@ -140,7 +171,19 @@ serve(async (req) => {
     if (!result) return json({ error: "Vertex enrichment failed" }, 502);
 
     const payload = result.payload || {};
-    const existing = (row.data && typeof row.data === "object") ? (row.data as Record<string, any>) : {};
+
+    const verifiedSpots = await queryVerifiedNearbySpots(
+      (payload.city || row.city || row.name) as string | null,
+      (payload.country || row.country) as string | null
+    );
+
+    const nearbyFilmingSpots = verifiedSpots.length > 0
+      ? verifiedSpots.map((s) => ({ name: s.name, description: s.description || undefined }))
+      : (payload.nearbyFilmingSpots || existing.nearbyFilmingSpots || []).map((s: any) => ({
+          ...s,
+          aiSuggested: true,
+        }));
+
     const mergedData = {
       ...existing,
       name: payload.name || row.name,
@@ -153,7 +196,7 @@ serve(async (req) => {
       tagline: payload.tagline || existing.tagline,
       bestTimeToVisit: payload.bestTimeToVisit || existing.bestTimeToVisit,
       attractions: payload.attractions || existing.attractions || [],
-      nearbyFilmingSpots: payload.nearbyFilmingSpots || existing.nearbyFilmingSpots || [],
+      nearbyFilmingSpots,
       travelTips: payload.travelTips || existing.travelTips || [],
       heroImageQuery: payload.heroImageQuery || existing.heroImageQuery,
       sources: payload.sources || result.evidence,

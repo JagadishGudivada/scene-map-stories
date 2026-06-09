@@ -83,12 +83,23 @@ const responseSchema = {
   required: ["description"],
 };
 
-function buildPrompt(name: string, city?: string | null, country?: string | null): string {
+function buildPrompt(
+  name: string,
+  city?: string | null,
+  country?: string | null,
+  existing?: { description?: string | null; funFacts?: string[]; visitTips?: string[] }
+): string {
   const where = [city, country].filter(Boolean).join(", ");
+  const existingLines: string[] = [];
+  if (existing?.description) existingLines.push(`Existing description: ${existing.description}`);
+  if (existing?.funFacts?.length) existingLines.push(`Existing fun facts: ${existing.funFacts.slice(0, 3).join(" | ")}`);
+  if (existing?.visitTips?.length) existingLines.push(`Existing visit tips: ${existing.visitTips.slice(0, 3).join(" | ")}`);
   return [
     "You are enriching a single filming-spot page for a film-tourism website.",
     "Use grounded web retrieval. Prefer movie-locations sites, official tourism pages, Wikipedia, and reputable film publications.",
     "Return STRICT JSON only matching the provided schema. No commentary, no markdown.",
+    existingLines.length > 0 ? "Existing content — improve and extend it, do not simply repeat it:" : "",
+    ...existingLines,
     "Rules:",
     "- description: 2-4 sentence editorial paragraph about what was filmed here and why this spot is iconic",
     "- scenesShotHere: 1-6 real titles where this spot appears, with the scene description if known",
@@ -100,13 +111,34 @@ function buildPrompt(name: string, city?: string | null, country?: string | null
     "- imageQuery: a 4-7 word stock-photo search query for a cinematic shot",
     "- include at least 2 source URLs",
     `Target spot: ${name}${where ? ` (${where})` : ""}`,
-  ].join("\n");
+  ].filter(Boolean).join("\n");
+}
+
+async function linkScenesShotHere(
+  spotId: string,
+  scenes: Array<{ title: string; year?: number }>
+): Promise<number> {
+  let linked = 0;
+  for (const scene of scenes) {
+    const titleName = scene.title?.trim();
+    if (!titleName) continue;
+    let q = db().from("titles").select("id").ilike("title", `%${titleName}%`).limit(1);
+    if (scene.year) q = q.eq("year", scene.year);
+    const { data: titleRow } = await q.maybeSingle();
+    if (!titleRow?.id) continue;
+    const { error } = await db().from("title_spots").upsert(
+      { title_id: titleRow.id, spot_id: spotId, role: "filming" },
+      { onConflict: "title_id,spot_id" }
+    );
+    if (!error) linked++;
+  }
+  return linked;
 }
 
 async function resolveSpot(slug: string) {
   const { data } = await db()
     .from("spots")
-    .select("id, slug, name, address, city, country, lat, lng, image_url, description, fun_facts, visit_tips, data")
+    .select("id, slug, name, address, city, country, flag, lat, lng, image_url, description, fun_facts, visit_tips, data")
     .eq("slug", slug)
     .maybeSingle();
   return data;
@@ -128,7 +160,12 @@ serve(async (req) => {
         prompt: buildPrompt(
           row.name as string,
           row.city as string | null,
-          row.country as string | null
+          row.country as string | null,
+          {
+            description: row.description as string | null,
+            funFacts: Array.isArray(row.fun_facts) ? row.fun_facts as string[] : [],
+            visitTips: Array.isArray(row.visit_tips) ? row.visit_tips as string[] : [],
+          }
         ),
         responseSchema,
       },
@@ -167,6 +204,13 @@ serve(async (req) => {
 
     await upsertSpot(row.slug as string, merged);
 
+    const scenes = Array.isArray(merged.scenesShotHere)
+      ? merged.scenesShotHere as Array<{ title: string; year?: number }>
+      : [];
+    const titlesLinked = scenes.length > 0
+      ? await linkScenesShotHere(row.id as string, scenes)
+      : 0;
+
     return json({
       ok: true,
       slug: row.slug,
@@ -175,6 +219,7 @@ serve(async (req) => {
       enriched: {
         description: !!merged.description,
         scenesShotHere: (merged.scenesShotHere as unknown[]).length,
+        titlesLinked,
         funFacts: (merged.funFacts as unknown[]).length,
         visitTips: (merged.visitTips as unknown[]).length,
       },

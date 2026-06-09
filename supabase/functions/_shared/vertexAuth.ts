@@ -1,5 +1,9 @@
 import { GoogleAuth } from "npm:google-auth-library@9";
 
+// GCP service account tokens are valid for 60 min. Cache for 55 min to avoid clock-skew expiry.
+let _saToken: string | null = null;
+let _saTokenExpiry = 0;
+
 type VertexCredentialDiagnostics = {
   credentialType: string;
   hasAudience: boolean;
@@ -213,12 +217,19 @@ export async function getVertexAccessToken(req: Request, logPrefix = "vertex-aut
     scopes: ["https://www.googleapis.com/auth/cloud-platform"],
   });
   try {
+    const now = Date.now();
+    if (_saToken && now < _saTokenExpiry) {
+      console.info(`${logPrefix} using cached service account token`);
+      return _saToken;
+    }
     const client = await auth.getClient();
     const tokenRes = await client.getAccessToken();
     if (!tokenRes?.token) {
       console.error(`${logPrefix} Vertex service_account token empty`, diagnostics);
       throw new Error("GoogleAuth returned an empty access token");
     }
+    _saToken = tokenRes.token;
+    _saTokenExpiry = now + 55 * 60 * 1000;
     return tokenRes.token;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
