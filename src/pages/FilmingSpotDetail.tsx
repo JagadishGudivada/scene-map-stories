@@ -532,6 +532,8 @@ export default function FilmingSpotDetail() {
               <ShareMenu
                 title={spot.name}
                 text={`Visit ${spot.name} in ${spot.city} — a real filming location from ${spot.titles.join(", ")}`}
+                imageUrl={spot.image}
+                instaxCaption={`${spot.city}${spot.titles?.length ? ` · ${spot.titles[0]}` : ""}`}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl glass text-foreground font-medium text-sm hover:border-amber/40 transition-all"
               />
               <div className="flex justify-center pt-1">

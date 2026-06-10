@@ -1,11 +1,14 @@
-import { Share2 } from "lucide-react";
+import { useState } from "react";
+import { Share2, Image as ImageIcon, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { downloadDataUrl, generateInstaxImage, instaxFilename } from "@/lib/instaxShare";
 
 interface ShareMenuProps {
   title: string;
@@ -13,6 +16,11 @@ interface ShareMenuProps {
   url?: string;
   className?: string;
   iconOnly?: boolean;
+  /** When provided, an "Instax photo" download option is shown that renders
+   *  a polaroid-style PNG of this image plus the Sarevista lockup. */
+  imageUrl?: string;
+  /** Optional small caption shown under the title in the Instax card. */
+  instaxCaption?: string;
 }
 
 const platforms = [
@@ -66,8 +74,9 @@ const platforms = [
   },
 ];
 
-export default function ShareMenu({ title, text, url, className, iconOnly }: ShareMenuProps) {
+export default function ShareMenu({ title, text, url, className, iconOnly, imageUrl, instaxCaption }: ShareMenuProps) {
   const shareUrl = url || (typeof window !== "undefined" ? window.location.href : "");
+  const [instaxLoading, setInstaxLoading] = useState(false);
 
   const handleShare = (platform: typeof platforms[number]) => {
     if (platform.isCopy) {
@@ -76,6 +85,28 @@ export default function ShareMenu({ title, text, url, className, iconOnly }: Sha
       return;
     }
     window.open(platform.getUrl(shareUrl, `${title} — ${text}`), "_blank", "noopener,noreferrer,width=600,height=400");
+  };
+
+  const handleInstax = async () => {
+    if (!imageUrl || instaxLoading) return;
+    setInstaxLoading(true);
+    try {
+      const dataUrl = await generateInstaxImage({
+        imageUrl,
+        title,
+        caption: instaxCaption ?? text,
+      });
+      downloadDataUrl(dataUrl, instaxFilename(title));
+      toast({ title: "Instax saved!", description: "Share it on your favourite app." });
+    } catch (e) {
+      toast({
+        title: "Couldn't generate Instax",
+        description: "The image may not allow cross-origin export. Try a different photo.",
+        variant: "destructive",
+      });
+    } finally {
+      setInstaxLoading(false);
+    }
   };
 
   const triggerClass = className
@@ -91,7 +122,20 @@ export default function ShareMenu({ title, text, url, className, iconOnly }: Sha
           {!iconOnly && <span>Share</span>}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48 glass border-border">
+      <DropdownMenuContent align="end" className="w-56 glass border-border">
+        {imageUrl && (
+          <>
+            <DropdownMenuItem
+              onClick={(e) => { e.preventDefault(); void handleInstax(); }}
+              disabled={instaxLoading}
+              className="flex items-center gap-2.5 cursor-pointer"
+            >
+              {instaxLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
+              <span className="text-sm">{instaxLoading ? "Creating Instax…" : "Download Instax photo"}</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         {platforms.map((p) => (
           <DropdownMenuItem key={p.name} onClick={() => handleShare(p)} className="flex items-center gap-2.5 cursor-pointer">
             <p.icon />
@@ -102,3 +146,4 @@ export default function ShareMenu({ title, text, url, className, iconOnly }: Sha
     </DropdownMenu>
   );
 }
+
