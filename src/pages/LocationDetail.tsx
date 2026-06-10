@@ -694,6 +694,8 @@ export default function LocationDetail() {
               <ShareMenu
                 title={`${cityData.name} Filming Locations`}
                 text={`Discover ${cityData.totalLocations} filming locations in ${cityData.name}, ${cityData.country}`}
+                imageUrl={cityData.coverImage}
+                instaxCaption={`${cityData.name}, ${cityData.country}`}
                 className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all flex items-center gap-1.5"
               />
               <ReportInfoDialog entityType="location" slug={slug || ""} />
