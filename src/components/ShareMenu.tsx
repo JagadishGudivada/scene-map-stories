@@ -1,11 +1,14 @@
-import { Share2 } from "lucide-react";
+import { useState } from "react";
+import { Share2, Image as ImageIcon, Loader2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "@/hooks/use-toast";
+import { downloadDataUrl, generateInstaxImage, instaxFilename } from "@/lib/instaxShare";
 
 interface ShareMenuProps {
   title: string;
@@ -13,6 +16,11 @@ interface ShareMenuProps {
   url?: string;
   className?: string;
   iconOnly?: boolean;
+  /** When provided, an "Instax photo" download option is shown that renders
+   *  a polaroid-style PNG of this image plus the Sarevista lockup. */
+  imageUrl?: string;
+  /** Optional small caption shown under the title in the Instax card. */
+  instaxCaption?: string;
 }
 
 const platforms = [
