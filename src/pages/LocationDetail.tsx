@@ -661,6 +661,8 @@ export default function LocationDetail() {
               <ShareMenu
                 title={`${cityData.name} Filming Locations`}
                 text={`Discover ${cityData.totalLocations} filming locations in ${cityData.name}, ${cityData.country}`}
+                imageUrl={cityData.coverImage}
+                instaxCaption={`${cityData.name}, ${cityData.country}`}
                 iconOnly
               />
             </div>
