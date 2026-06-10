@@ -793,6 +793,8 @@ export default function TitleDetail() {
                   <ShareMenu
                     title={view.title}
                     text={`Explore ${displayLocationCount} filming locations from ${view.title} (${view.year})`}
+                    imageUrl={view.coverImage}
+                    instaxCaption={view.year ? `${view.title} · ${view.year}` : view.title}
                     iconOnly
                   />
                 </div>
@@ -805,6 +807,8 @@ export default function TitleDetail() {
                   <ShareMenu
                     title={view.title}
                     text={`Explore ${displayLocationCount} filming locations from ${view.title} (${view.year})`}
+                    imageUrl={view.coverImage}
+                    instaxCaption={view.year ? `${view.title} · ${view.year}` : view.title}
                   />
                 </div>
               </div>
