@@ -2,13 +2,13 @@
 // with REAL web-search context (DuckDuckGo + Wikipedia) so the model isn't
 // limited to its training cutoff.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
-import {
 import { createLogger } from "../_shared/logger.ts";
-
-const log = createLogger("verify-location-suggestion");
+import {
   buildVerifyLocationSuggestionPrompt,
   getVerifyLocationSuggestionSystemPrompt,
 } from "../_shared/locationScout.ts";
+
+const log = createLogger("verify-location-suggestion");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

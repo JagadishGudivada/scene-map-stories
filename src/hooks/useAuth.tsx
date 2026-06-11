@@ -23,8 +23,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Set up listener BEFORE getSession
+    let listenerFired = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
+        listenerFired = true;
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -32,6 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      // The listener has newer state; don't overwrite it with this snapshot.
+      if (listenerFired) return;
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -41,7 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error("Sign out failed:", error.message);
   };
 
   return (

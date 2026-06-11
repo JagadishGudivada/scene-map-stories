@@ -176,7 +176,7 @@ export default function TitleDetail() {
   );
 
   const [aiDetails, setAiDetails] = useState<AIDetails | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!mockTitle);
   const [streamStage, setStreamStage] = useState<"idle" | "ai_started" | "details" | "complete">("idle");
   const [error, setError] = useState<string | null>(null);
   const [selectedLocationPin, setSelectedLocationPin] = useState<LeafletMapPin | null>(null);
@@ -229,6 +229,7 @@ export default function TitleDetail() {
   useEffect(() => {
     if (mockTitle || !slug) return;
     let cancelled = false;
+    const controller = new AbortController();
     setLoading(true);
     setStreamStage("idle");
     setError(null);
@@ -267,6 +268,7 @@ export default function TitleDetail() {
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const response = await fetch(functionUrl, {
           method: "POST",
+          signal: controller.signal,
           headers: {
             "Content-Type": "application/json",
             Accept: "text/event-stream",
@@ -346,16 +348,21 @@ export default function TitleDetail() {
           const { done, value } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
-          const chunks = buffer.split("\n\n");
+          const chunks = buffer.split(/\r?\n\r?\n/);
           buffer = chunks.pop() || "";
           for (const chunk of chunks) processEvent(chunk);
+        }
+
+        // Some runtimes leave the final SSE frame in the buffer without a trailing delimiter.
+        if (!cancelled && buffer.trim()) {
+          processEvent(buffer);
         }
 
         if (!cancelled && loading) {
           setLoading(false);
         }
       } catch (e) {
-        if (!cancelled) {
+        if (!cancelled && !(e instanceof DOMException && e.name === "AbortError")) {
           setError(e instanceof Error ? e.message : "Failed to load title details");
           setLoading(false);
         }
@@ -365,8 +372,9 @@ export default function TitleDetail() {
     })();
     return () => {
       cancelled = true;
+      controller.abort();
     };
-  }, [slug, mockTitle, navState?.title, navState?.year]);
+  }, [slug, mockTitle, navState?.title, navState?.year, navState?.creator, navState?.type]);
 
   // Build a unified view-model
   const view = useMemo(() => {

@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useParams, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/hooks/use-theme";
 import { AuthProvider } from "@/hooks/useAuth";
 import Navigation from "@/components/Navigation";
@@ -25,6 +25,13 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Forces a full remount of TitleDetail whenever the slug changes so state
+// never bleeds from one title into the next during client-side navigation.
+function TitleDetailRoute() {
+  const { slug } = useParams<{ slug: string }>();
+  return <TitleDetail key={slug} />;
+}
+
 function AppRoutes() {
   const location = useLocation();
   const hideNav = ["/auth", "/reset-password"].includes(location.pathname);
@@ -35,7 +42,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/explore" element={<Explore />} />
-        <Route path="/title/:slug" element={<TitleDetail />} />
+        <Route path="/title/:slug" element={<TitleDetailRoute />} />
         <Route path="/map" element={<MapPage />} />
         <Route path="/add" element={<ProtectedRoute><AddTitle /></ProtectedRoute>} />
         <Route path="/scene-mode/:slug" element={<SceneMode />} />

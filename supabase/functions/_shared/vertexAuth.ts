@@ -1,8 +1,15 @@
-import { GoogleAuth } from "npm:google-auth-library@9";
+import {
+  ExternalAccountClient,
+  GoogleAuth,
+  type ExternalAccountClientOptions,
+} from "npm:google-auth-library@9";
 
 // GCP service account tokens are valid for 60 min. Cache for 55 min to avoid clock-skew expiry.
 let _saToken: string | null = null;
 let _saTokenExpiry = 0;
+
+// External-account tokens are per-user: keyed by the Supabase JWT used as the subject token.
+const _extTokenCache = new Map<string, { token: string; expiry: number }>();
 
 type VertexCredentialDiagnostics = {
   credentialType: string;
@@ -13,22 +20,17 @@ type VertexCredentialDiagnostics = {
   hasServiceAccountImpersonationUrl: boolean;
 };
 
-type ExternalAccountCredentials = {
-  type: "external_account";
-  audience: string;
-  subject_token_type: string;
-  token_url: string;
-  service_account_impersonation_url?: string;
-};
+function parseBearerToken(req: Request): string {
+  const auth = req.headers.get("Authorization") || "";
+  return auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
+}
 
 function getAuthHeaderInfo(req: Request) {
   const auth = req.headers.get("Authorization") || "";
-  const hasBearer = auth.startsWith("Bearer ");
-  const token = hasBearer ? auth.slice(7).trim() : "";
   return {
     hasAuthorizationHeader: auth.length > 0,
-    hasBearerPrefix: hasBearer,
-    tokenLength: token.length,
+    hasBearerPrefix: auth.startsWith("Bearer "),
+    tokenLength: parseBearerToken(req).length,
   };
 }
 
@@ -48,94 +50,9 @@ function getCredentialDiagnostics(credentials: Record<string, unknown>): VertexC
 }
 
 function getBearerToken(req: Request): string {
-  const auth = req.headers.get("Authorization") || "";
-  if (!auth.startsWith("Bearer ")) {
-    throw new Error("No Supabase bearer token found in Authorization header");
-  }
-  const token = auth.slice(7).trim();
-  if (!token) throw new Error("Supabase bearer token is empty");
+  const token = parseBearerToken(req);
+  if (!token) throw new Error("No Supabase bearer token found in Authorization header");
   return token;
-}
-
-function asExternalAccountCredentials(credentials: Record<string, unknown>): ExternalAccountCredentials {
-  if (credentials?.type !== "external_account") {
-    throw new Error("credentials.type is not external_account");
-  }
-
-  const audience = typeof credentials?.audience === "string" ? credentials.audience : "";
-  const subjectTokenType =
-    typeof credentials?.subject_token_type === "string" ? credentials.subject_token_type : "";
-  const tokenUrl = typeof credentials?.token_url === "string" ? credentials.token_url : "";
-  const impersonationUrl =
-    typeof credentials?.service_account_impersonation_url === "string"
-      ? credentials.service_account_impersonation_url
-      : undefined;
-
-  if (!audience || !subjectTokenType || !tokenUrl) {
-    throw new Error("external_account credentials missing audience, subject_token_type, or token_url");
-  }
-
-  return {
-    type: "external_account",
-    audience,
-    subject_token_type: subjectTokenType,
-    token_url: tokenUrl,
-    service_account_impersonation_url: impersonationUrl,
-  };
-}
-
-async function exchangeViaSts(
-  credentials: ExternalAccountCredentials,
-  subjectToken: string
-): Promise<string> {
-  const form = new URLSearchParams({
-    grant_type: "urn:ietf:params:oauth:grant-type:token-exchange",
-    requested_token_type: "urn:ietf:params:oauth:token-type:access_token",
-    subject_token_type: credentials.subject_token_type,
-    subject_token: subjectToken,
-    audience: credentials.audience,
-    scope: "https://www.googleapis.com/auth/cloud-platform",
-  });
-
-  const stsRes = await fetch(credentials.token_url, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: form.toString(),
-  });
-
-  if (!stsRes.ok) {
-    const text = await stsRes.text().catch(() => "");
-    throw new Error(`STS token exchange failed: ${stsRes.status} ${text.slice(0, 240)}`);
-  }
-
-  const stsJson = await stsRes.json();
-  const stsAccessToken = typeof stsJson?.access_token === "string" ? stsJson.access_token : "";
-  if (!stsAccessToken) throw new Error("STS token exchange returned no access_token");
-
-  if (!credentials.service_account_impersonation_url) {
-    return stsAccessToken;
-  }
-
-  const impersonationRes = await fetch(credentials.service_account_impersonation_url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${stsAccessToken}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      scope: ["https://www.googleapis.com/auth/cloud-platform"],
-    }),
-  });
-
-  if (!impersonationRes.ok) {
-    const text = await impersonationRes.text().catch(() => "");
-    throw new Error(`Service account impersonation failed: ${impersonationRes.status} ${text.slice(0, 240)}`);
-  }
-
-  const impersonationJson = await impersonationRes.json();
-  const accessToken = typeof impersonationJson?.accessToken === "string" ? impersonationJson.accessToken : "";
-  if (!accessToken) throw new Error("Service account impersonation returned no accessToken");
-  return accessToken;
 }
 
 export async function getVertexAccessToken(req: Request, logPrefix = "vertex-auth"): Promise<string> {
@@ -166,41 +83,47 @@ export async function getVertexAccessToken(req: Request, logPrefix = "vertex-aut
   });
 
   if (credentials?.type === "external_account") {
-    if (!diagnostics.hasCredentialSource) {
-      console.info(`${logPrefix} Vertex external_account fallback path`, {
-        reason: "missing credential_source",
-      });
-      try {
-        const externalCredentials = asExternalAccountCredentials(credentials);
-        const subjectToken = getBearerToken(req);
-        return await exchangeViaSts(externalCredentials, subjectToken);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        console.error(`${logPrefix} Vertex external_account fallback failed`, {
-          ...diagnostics,
-          ...authHeaderInfo,
-          error: message,
-        });
-        throw err;
-      }
+    const subjectToken = getBearerToken(req);
+
+    const now = Date.now();
+    const cached = _extTokenCache.get(subjectToken);
+    if (cached && now < cached.expiry) {
+      console.info(`${logPrefix} using cached external_account token`);
+      return cached.token;
     }
 
-    const auth = new GoogleAuth({
-      credentials,
-      identityPoolTokenProvider: {
-        getFederatedToken: async () => {
-          const token = getBearerToken(req);
-          return token;
-        },
+    // credential_source (a file/URL reference from the credential JSON) is unusable in
+    // edge functions and mutually exclusive with subject_token_supplier — drop it and
+    // exchange the per-request Supabase JWT instead.
+    const { credential_source: _credentialSource, ...externalOptions } = credentials;
+    const client = ExternalAccountClient.fromJSON({
+      ...externalOptions,
+      subject_token_supplier: {
+        getSubjectToken: async () => subjectToken,
       },
-    });
+    } as unknown as ExternalAccountClientOptions);
+    if (!client) {
+      console.error(`${logPrefix} Vertex external_account client init failed`, diagnostics);
+      throw new Error("Could not create an external account client from credentials");
+    }
+    client.scopes = ["https://www.googleapis.com/auth/cloud-platform"];
 
     try {
-      const client = await auth.getClient();
       const tokenRes = await client.getAccessToken();
-      if (tokenRes?.token) return tokenRes.token;
-      console.error(`${logPrefix} Vertex external_account token empty`, diagnostics);
-      throw new Error("GoogleAuth returned an empty access token");
+      if (!tokenRes?.token) {
+        console.error(`${logPrefix} Vertex external_account token empty`, diagnostics);
+        throw new Error("GoogleAuth returned an empty access token");
+      }
+      for (const [key, value] of _extTokenCache) {
+        if (value.expiry <= now) _extTokenCache.delete(key);
+      }
+      const expiryDate = client.credentials?.expiry_date;
+      _extTokenCache.set(subjectToken, {
+        token: tokenRes.token,
+        expiry:
+          typeof expiryDate === "number" ? expiryDate - 5 * 60 * 1000 : now + 55 * 60 * 1000,
+      });
+      return tokenRes.token;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(`${logPrefix} Vertex external_account token exchange failed`, {

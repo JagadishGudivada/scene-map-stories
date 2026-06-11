@@ -4,7 +4,7 @@
 // key as Authorization header.
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { db } from "../_shared/store.ts";
+import { db, getServiceKey } from "../_shared/store.ts";
 import { createLogger } from "../_shared/logger.ts";
 
 const log = createLogger("enrichment-cron");
@@ -16,7 +16,8 @@ const corsHeaders = {
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SERVICE_ROLE_KEY = getServiceKey();
+const isLegacyKey = SERVICE_ROLE_KEY.startsWith("eyJ");
 
 const BATCH_TITLES = Number(Deno.env.get("ENRICHMENT_CRON_BATCH_TITLES") || "10");
 const BATCH_LOCATIONS = Number(Deno.env.get("ENRICHMENT_CRON_BATCH_LOCATIONS") || "10");
@@ -31,14 +32,17 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function invoke(fn: string, body: Record<string, unknown>, authHeader: string) {
+async function invoke(fn: string, body: Record<string, unknown>) {
+  const headers: Record<string, string> = {
+    apikey: SERVICE_ROLE_KEY,
+    "Content-Type": "application/json",
+  };
+  // Legacy JWT key must also be sent as Authorization Bearer for verify_jwt-enabled functions.
+  // New opaque secret key is only valid on the apikey header.
+  if (isLegacyKey) headers.Authorization = `Bearer ${SERVICE_ROLE_KEY}`;
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
     method: "POST",
-    headers: {
-      Authorization: authHeader,
-      apikey: SERVICE_ROLE_KEY,
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify(body),
   });
   const text = await res.text();
@@ -71,13 +75,16 @@ serve(async (req) => {
   const dryRun = url.searchParams.get("dryRun") === "1";
   const rlog = log.forRequest(req, { dryRun });
 
-  // Auth: require either the service-role bearer OR x-cron-secret.
+  // Auth: require either the service-role key OR x-cron-secret.
+  // Legacy JWT key arrives as Authorization: Bearer <key>.
+  // New opaque secret key arrives on the apikey header (not Authorization).
   const authHeader = req.headers.get("Authorization") || "";
   const cronSecret = req.headers.get("x-cron-secret") || "";
   const expectedCronSecret = Deno.env.get("CRON_SECRET") || "";
-  const serviceRoleOk = authHeader.includes(SERVICE_ROLE_KEY);
+  const serviceRoleOk = isLegacyKey
+    ? authHeader.includes(SERVICE_ROLE_KEY)
+    : req.headers.get("apikey") === SERVICE_ROLE_KEY;
   const cronSecretOk = expectedCronSecret.length > 0 && cronSecret === expectedCronSecret;
-  const downstreamAuth = `Bearer ${SERVICE_ROLE_KEY}`;
   rlog.debug("auth resolved", { serviceRoleOk, cronSecretOk });
 
   // Throttle: refuse to run more than once per MIN_INTERVAL_HOURS.
@@ -126,7 +133,7 @@ serve(async (req) => {
     rlog.info(`picked stale ${kind}`, { count: slugs.length });
     for (const slug of slugs) {
       const startedAt = Date.now();
-      const r = await invoke(fnName, { slug, dryRun }, downstreamAuth);
+      const r = await invoke(fnName, { slug, dryRun });
       const duration_ms = Date.now() - startedAt;
       if (r.ok) {
         bucket.ok++;

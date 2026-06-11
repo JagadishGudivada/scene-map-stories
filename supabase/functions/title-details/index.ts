@@ -3,6 +3,14 @@ import { buildTitleScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/
 import { resolveTitleImage } from "../_shared/images.ts";
 import { getTitle, upsertTitle } from "../_shared/store.ts";
 import { createLogger } from "../_shared/logger.ts";
+import {
+  callAi,
+  HttpError,
+  isTruthyEnv,
+  jsonResponse,
+  resolveReasoningEffort,
+  sseResponse,
+} from "../_shared/ai.ts";
 
 const log = createLogger("title-details");
 
@@ -12,71 +20,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-class HttpError extends Error {
-  status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
-
-function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-function sseResponse(
-  run: (send: (event: string, data: unknown) => void) => Promise<void>
-): Response {
-  const encoder = new TextEncoder();
-
-  const stream = new ReadableStream<Uint8Array>({
-    async start(controller) {
-      const send = (event: string, data: unknown) => {
-        controller.enqueue(
-          encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-        );
-      };
-
-      try {
-        await run(send);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : "Unknown error";
-        send("error", { error: message });
-      } finally {
-        controller.close();
-      }
-    },
-  });
-
-  return new Response(stream, {
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache, no-transform",
-      Connection: "keep-alive",
-      "X-Accel-Buffering": "no",
-    },
-  });
-}
-
-function isTruthyEnv(value: string | undefined, defaultValue: boolean): boolean {
-  if (value == null) return defaultValue;
-  return !["0", "false", "no", "off"].includes(value.toLowerCase());
-}
-
-function resolveReasoningEffort(model: string, requested: string): "none" | "minimal" | "low" | "medium" | "high" {
-  const valid = new Set(["none", "minimal", "low", "medium", "high"]);
-  const normalized = valid.has(requested) ? requested : "minimal";
-  // Gemini 3 family does not support fully disabling thinking.
-  if (model.toLowerCase().includes("gemini-3") && normalized === "none") {
-    return "minimal";
-  }
-  return normalized as "none" | "minimal" | "low" | "medium" | "high";
-}
+const json = (body: unknown, status = 200) => jsonResponse(body, status, corsHeaders);
 
 function normalizeTitleType(value: unknown): "Movie" | "Series" | "Book" | undefined {
   return value === "Movie" || value === "Series" || value === "Book" ? value : undefined;
@@ -88,7 +32,7 @@ serve(async (req) => {
   try {
     const { slug, title: hintTitle, year: hintYear, creator: hintCreator, type: hintType } = await req.json();
     if (!slug || typeof slug !== "string") {
-      return jsonResponse({ error: "slug required" }, 400);
+      return json({ error: "slug required" }, 400);
     }
 
     // Persistent table read-through (preferred)
@@ -201,34 +145,19 @@ serve(async (req) => {
       },
     };
 
-    const callAi = async (payload: unknown) => {
-      let lastResp: Response | null = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const r = await fetch(AI_CHAT_COMPLETIONS_URL, {
-            method: "POST",
-            signal: AbortSignal.timeout(AI_TIMEOUT_MS),
-            headers: {
-              Authorization: `Bearer ${AI_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(payload),
-          });
-          if (r.ok || r.status === 429 || r.status === 402 || r.status === 400) return r;
-          lastResp = r;
-        } catch (err) {
-          console.error(`AI fetch attempt ${attempt + 1} failed:`, err);
-        }
-        await new Promise((res) => setTimeout(res, 500 * Math.pow(2, attempt)));
-      }
-      return lastResp ?? new Response("upstream unavailable", { status: 502 });
-    };
+    const runAi = (payload: unknown) =>
+      callAi(payload, {
+        url: AI_CHAT_COMPLETIONS_URL,
+        apiKey: AI_API_KEY!,
+        timeoutMs: AI_TIMEOUT_MS,
+        logger: log,
+      });
 
     const generateDetails = async () => {
-      let response = await callAi(AI_ENABLE_GOOGLE_GROUNDING ? withGrounding : basePayload);
+      let response = await runAi(AI_ENABLE_GOOGLE_GROUNDING ? withGrounding : basePayload);
 
       if (!response.ok && AI_ENABLE_GOOGLE_GROUNDING) {
-        response = await callAi(basePayload);
+        response = await runAi(basePayload);
       }
 
       if (!response.ok) {
@@ -259,6 +188,8 @@ serve(async (req) => {
         stage: "ai_started",
       });
 
+      // Resolve the hinted image in parallel with the AI call so the hero poster
+      // can ship with the first `details` frame instead of waiting for `complete`.
       const hintedImagePromise = resolveTitleImage({
         title: slugTitle,
         year: slugYear,
@@ -267,10 +198,11 @@ serve(async (req) => {
       });
 
       const parsed = await generateDetails();
-      send("details", parsed);
 
-      // Start image enrichment from search metadata in parallel with the AI call.
       let { coverImage, backdropImage } = await hintedImagePromise;
+      if (coverImage) parsed.coverImage = coverImage;
+      if (backdropImage) parsed.backdropImage = backdropImage;
+      send("details", parsed);
 
       const parsedType = normalizeTitleType(parsed.type);
       const shouldRetryImageLookup =
@@ -281,6 +213,8 @@ serve(async (req) => {
         parsedType !== hintedType;
 
       if (shouldRetryImageLookup) {
+        // A corrected image arrives on `complete`; the frontend merges it over
+        // the early hero. Keep the hinted image if the retry finds nothing.
         const resolvedImages = await resolveTitleImage({
           title: parsed.title,
           year: parsed.year,
@@ -289,21 +223,20 @@ serve(async (req) => {
         });
         coverImage = resolvedImages.coverImage;
         backdropImage = resolvedImages.backdropImage;
+        if (coverImage) parsed.coverImage = coverImage;
+        if (backdropImage) parsed.backdropImage = backdropImage;
       }
-
-      if (coverImage) parsed.coverImage = coverImage;
-      if (backdropImage) parsed.backdropImage = backdropImage;
 
       upsertTitle(slug, parsed).catch(() => {});
 
       send("complete", parsed);
-    });
+    }, corsHeaders);
   } catch (e) {
     log.error("title-details error:", e);
     if (e instanceof HttpError) {
-      return jsonResponse({ error: e.message }, e.status);
+      return json({ error: e.message }, e.status);
     }
-    return jsonResponse(
+    return json(
       { error: e instanceof Error ? e.message : "Unknown error" },
       500
     );

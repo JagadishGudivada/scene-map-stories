@@ -1,13 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { db } from "../_shared/store.ts";
 import { getCached } from "../_shared/aiCache.ts";
-import {
 import { createLogger } from "../_shared/logger.ts";
-
-const log = createLogger("reveal-cards");
+import {
   buildRevealCardsScoutPrompt,
   getRevealCardsScoutSystemPrompt,
 } from "../_shared/locationScout.ts";
+
+const log = createLogger("reveal-cards");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -15,8 +15,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FN = "reveal-cards";
 const TTL_DAYS = 7;
 
@@ -29,11 +27,6 @@ type Card =
 
 type Payload = { cards: Card[]; generatedAt: string };
 
-function db() {
-  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-    auth: { persistSession: false },
-  });
-}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -142,8 +135,8 @@ serve(async (req) => {
 
     return json(payload);
   } catch (e) {
-    log.error("reveal-cards error", 500, { status: e);
-    return json({ error: String(e?.message || e) } });
+    log.error("reveal-cards error", 500, { error: e });
+    return json({ error: String(e?.message || e) });
   }
 });
 

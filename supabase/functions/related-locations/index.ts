@@ -1,13 +1,13 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { normalizeKey } from "../_shared/aiCache.ts";
 import { resolveLocationImage } from "../_shared/images.ts";
-import {
 import { createLogger } from "../_shared/logger.ts";
-
-const log = createLogger("related-locations");
+import {
   buildRelatedLocationsScoutPrompt,
   getRelatedLocationsScoutSystemPrompt,
 } from "../_shared/locationScout.ts";
+
+const log = createLogger("related-locations");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

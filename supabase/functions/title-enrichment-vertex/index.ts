@@ -519,6 +519,14 @@ serve(async (req: Request) => {
       accepted.push({ ...candidateRecord, linked: true });
     }
 
+    if (!dryRun) {
+      const now = new Date().toISOString();
+      await db()
+        .from("titles")
+        .update({ last_fetched_at: now, enriched_at: now })
+        .eq("slug", resolved.slug);
+    }
+
     return json({
       ok: true,
       dryRun,
