@@ -10,11 +10,14 @@ export interface MapPin {
   lng: number;
   label: string;
   title?: string;
+  titles?: string[];
   city?: string;
   country?: string;
   type: MediaType;
   image?: string;
   visited?: boolean;
+  source?: "title" | "location" | "spot" | "ai";
+  slug?: string;
 }
 
 export interface VisitedCityRegion {

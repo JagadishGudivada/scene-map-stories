@@ -8,7 +8,7 @@ import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
-import { useTitleMapLocations } from "@/hooks/useTitleMapLocations";
+import { useConsolidatedMapPins } from "@/hooks/useConsolidatedMapPins";
 import { useNearbySpots } from "@/hooks/useNearbySpots";
 import { toast } from "@/hooks/use-toast";
 import Seo from "@/components/Seo";
@@ -37,7 +37,7 @@ export default function MapPage() {
   const mapInstanceRef = useRef<AppMap | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
-  const { pins: titlePins } = useTitleMapLocations();
+  const { pins: titlePins } = useConsolidatedMapPins();
   const { nearbyPins, loading: nearbyLoading } = useNearbySpots(nearMeCenter, nearMeRadius, nearMeMode);
 
   // Base pins shown on the map come from stored title payload locations.
