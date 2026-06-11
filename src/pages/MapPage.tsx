@@ -37,7 +37,7 @@ export default function MapPage() {
   const mapInstanceRef = useRef<AppMap | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
-  const { pins: titlePins } = useTitleMapLocations();
+  const { pins: titlePins } = useConsolidatedMapPins();
   const { nearbyPins, loading: nearbyLoading } = useNearbySpots(nearMeCenter, nearMeRadius, nearMeMode);
 
   // Base pins shown on the map come from stored title payload locations.
