@@ -35,23 +35,40 @@ function toLocArray(data: unknown): RawLoc[] {
   return [];
 }
 
-function normalizeLabel(s: string): string {
-  return s
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .trim();
+const MERGE_DISTANCE_KM = 0.15;
+const SPATIAL_BUCKET_DEGREES = 0.002;
+
+function haversineKm(aLat: number, aLng: number, bLat: number, bLng: number) {
+  const toRad = (n: number) => (n * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(bLat - aLat);
+  const dLng = toRad(bLng - aLng);
+  const s =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(aLat)) * Math.cos(toRad(bLat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(s));
 }
 
-/**
- * Dedupe key: normalized label + spatial bucket (~1km).
- * Same name in the same ~1km grid cell collapses into one marker.
- */
-function dedupeKey(label: string, lat: number, lng: number): string {
-  const bucket = `${lat.toFixed(2)},${lng.toFixed(2)}`;
-  const norm = normalizeLabel(label);
-  return norm ? `${norm}@${bucket}` : `unknown@${bucket}`;
+function bucketIndex(value: number) {
+  return Math.floor(value / SPATIAL_BUCKET_DEGREES);
+}
+
+function bucketKey(lat: number, lng: number) {
+  return `${bucketIndex(lat)}:${bucketIndex(lng)}`;
+}
+
+function nearbyBucketKeys(lat: number, lng: number) {
+  const latIdx = bucketIndex(lat);
+  const lngIdx = bucketIndex(lng);
+  const keys: string[] = [];
+
+  for (let dLat = -1; dLat <= 1; dLat += 1) {
+    for (let dLng = -1; dLng <= 1; dLng += 1) {
+      keys.push(`${latIdx + dLat}:${lngIdx + dLng}`);
+    }
+  }
+
+  return keys;
 }
 
 function mergePin(existing: MapPin, incoming: MapPin): MapPin {
@@ -67,6 +84,8 @@ function mergePin(existing: MapPin, incoming: MapPin): MapPin {
 
   return {
     ...prefer,
+    lat: existing.lat,
+    lng: existing.lng,
     titles: Array.from(titles),
     title: prefer.title ?? existing.title ?? incoming.title,
     image: prefer.image ?? existing.image ?? incoming.image,
@@ -75,10 +94,52 @@ function mergePin(existing: MapPin, incoming: MapPin): MapPin {
   };
 }
 
-function addPin(map: Map<string, MapPin>, pin: MapPin) {
-  const key = dedupeKey(pin.label, pin.lat, pin.lng);
-  const existing = map.get(key);
-  map.set(key, existing ? mergePin(existing, pin) : pin);
+function findNearbyPinKey(
+  pins: Map<string, MapPin>,
+  buckets: Map<string, string[]>,
+  pin: MapPin,
+) {
+  let bestKey: string | null = null;
+  let bestDistance = Infinity;
+
+  for (const key of nearbyBucketKeys(pin.lat, pin.lng)) {
+    for (const candidateKey of buckets.get(key) ?? []) {
+      const candidate = pins.get(candidateKey);
+      if (!candidate) continue;
+
+      const distance = haversineKm(candidate.lat, candidate.lng, pin.lat, pin.lng);
+      if (distance <= MERGE_DISTANCE_KM && distance < bestDistance) {
+        bestDistance = distance;
+        bestKey = candidateKey;
+      }
+    }
+  }
+
+  return bestKey;
+}
+
+function addPin(
+  pins: Map<string, MapPin>,
+  buckets: Map<string, string[]>,
+  pin: MapPin,
+) {
+  const existingKey = findNearbyPinKey(pins, buckets, pin);
+  if (existingKey) {
+    const existing = pins.get(existingKey);
+    if (existing) pins.set(existingKey, mergePin(existing, pin));
+    return;
+  }
+
+  const key = `${pin.lat.toFixed(6)}:${pin.lng.toFixed(6)}:${pins.size}`;
+  pins.set(key, pin);
+
+  const cell = bucketKey(pin.lat, pin.lng);
+  const existingBucket = buckets.get(cell);
+  if (existingBucket) {
+    existingBucket.push(key);
+  } else {
+    buckets.set(cell, [key]);
+  }
 }
 
 export function useConsolidatedMapPins() {
@@ -88,6 +149,7 @@ export function useConsolidatedMapPins() {
   useEffect(() => {
     let cancelled = false;
     const merged = new Map<string, MapPin>();
+    const spatialBuckets = new Map<string, string[]>();
 
     const commit = () => {
       if (!cancelled) setPins(Array.from(merged.values()));
@@ -104,7 +166,7 @@ export function useConsolidatedMapPins() {
         if (lat === null || lng === null) continue;
         const label = (row.name?.trim() || [row.city, row.country].filter(Boolean).join(", ")) as string;
         if (!label) continue;
-        addPin(merged, {
+        addPin(merged, spatialBuckets, {
           lat, lng, label,
           city: row.city ?? undefined,
           country: row.country ?? undefined,
@@ -127,7 +189,7 @@ export function useConsolidatedMapPins() {
         if (lat === null || lng === null) continue;
         const label = (row.name?.trim() || [row.city, row.country].filter(Boolean).join(", ")) as string;
         if (!label) continue;
-        addPin(merged, {
+        addPin(merged, spatialBuckets, {
           lat, lng, label,
           city: row.city ?? undefined,
           country: row.country ?? undefined,
@@ -159,7 +221,7 @@ export function useConsolidatedMapPins() {
               [loc.city, loc.country].filter(Boolean).join(", ") ||
               row.title;
             if (!label) continue;
-            addPin(merged, {
+            addPin(merged, spatialBuckets, {
               lat, lng, label,
               title: row.title,
               type,
