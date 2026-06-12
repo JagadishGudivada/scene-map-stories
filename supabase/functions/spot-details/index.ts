@@ -36,6 +36,10 @@ serve(async (req) => {
       });
     }
 
+    // Cold path: validate slug + per-IP throttle BEFORE AI invocation.
+    const guard = guardColdPath(req, { slug, kind: "spot" });
+    if (guard) return guard;
+
     const cacheKey = slug;
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
