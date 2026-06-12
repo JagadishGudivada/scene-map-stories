@@ -32,14 +32,19 @@ function json(body: unknown, status = 200) {
   });
 }
 
-async function invoke(fn: string, body: Record<string, unknown>) {
+async function invoke(fn: string, body: Record<string, unknown>, forwardedAuthorization = "") {
   const headers: Record<string, string> = {
     apikey: SERVICE_ROLE_KEY,
     "Content-Type": "application/json",
   };
+  if (forwardedAuthorization.startsWith("Bearer ")) {
+    headers.Authorization = forwardedAuthorization;
+  }
   // Legacy JWT key must also be sent as Authorization Bearer for verify_jwt-enabled functions.
   // New opaque secret key is only valid on the apikey header.
-  if (isLegacyKey) headers.Authorization = `Bearer ${SERVICE_ROLE_KEY}`;
+  if (!headers.Authorization && isLegacyKey) {
+    headers.Authorization = `Bearer ${SERVICE_ROLE_KEY}`;
+  }
   const res = await fetch(`${SUPABASE_URL}/functions/v1/${fn}`, {
     method: "POST",
     headers,
@@ -133,7 +138,7 @@ serve(async (req) => {
     rlog.info(`picked stale ${kind}`, { count: slugs.length });
     for (const slug of slugs) {
       const startedAt = Date.now();
-      const r = await invoke(fnName, { slug, dryRun });
+      const r = await invoke(fnName, { slug, dryRun }, authHeader);
       const duration_ms = Date.now() - startedAt;
       if (r.ok) {
         bucket.ok++;
