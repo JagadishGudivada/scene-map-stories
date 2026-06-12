@@ -4,6 +4,7 @@ import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
 import { buildLocationScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/locationScout.ts";
 import { getLocation, upsertLocation } from "../_shared/store.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { guardColdPath } from "../_shared/security.ts";
 import {
   callAi,
   HttpError,
@@ -49,6 +50,11 @@ serve(async (req) => {
         },
       });
     }
+
+    // Cold path: validate slug + per-IP throttle BEFORE AI cache lookup,
+    // preventing arbitrary city slugs from triggering AI generation.
+    const guard = guardColdPath(req, { slug, kind: "location" });
+    if (guard) return guard;
 
     const cacheKey = CACHE_VERSION + slug;
     const cached = await getCached<Record<string, unknown>>("location-details", cacheKey);
