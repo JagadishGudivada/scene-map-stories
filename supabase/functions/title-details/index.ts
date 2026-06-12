@@ -47,6 +47,11 @@ serve(async (req) => {
       });
     }
 
+    // Cold path: validate slug shape + per-IP throttle BEFORE invoking AI,
+    // so arbitrary URLs like /title/sskhsdhflsdhflkjhs can't burn credits.
+    const guard = guardColdPath(req, { slug, kind: "title" });
+    if (guard) return guard;
+
     const cacheKey = slug;
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
