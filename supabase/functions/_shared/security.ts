@@ -86,3 +86,78 @@ export function badRequest(message: string): Response {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
+
+export function jsonError(message: string, status: number, extra: Record<string, string> = {}): Response {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json", ...extra },
+  });
+}
+
+// =========================================================================
+// Slug validation — rejects obvious garbage so AI is never invoked for
+// arbitrary URLs like /title/sskhsdhflsdhflkjhs. Cached slugs still hit DB
+// first; this only gates the cold (AI) path.
+// =========================================================================
+
+const SLUG_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const VOWELS = /[aeiouy]/;
+const FOUR_CONSONANTS = /[bcdfghjklmnpqrstvwxz]{5,}/i;
+
+export type SlugKind = "title" | "location" | "spot";
+
+/**
+ * Returns true if the slug looks like a plausible human-readable identifier.
+ * Heuristics:
+ *  - kebab-case shape, 2..80 chars
+ *  - every dash-separated token is 1..24 chars
+ *  - at least one vowel overall
+ *  - no token contains 5+ consecutive consonants (catches keyboard mash)
+ *  - title slugs allow an optional trailing -YYYY year suffix
+ */
+export function isPlausibleSlug(raw: unknown, kind: SlugKind): raw is string {
+  if (typeof raw !== "string") return false;
+  const s = raw.trim().toLowerCase();
+  if (s.length < 2 || s.length > 80) return false;
+  if (!SLUG_SHAPE.test(s)) return false;
+  const tokens = s.split("-");
+  if (tokens.some((t) => t.length === 0 || t.length > 24)) return false;
+  // Strip trailing year for title slugs before linguistic checks.
+  let stem = s;
+  if (kind === "title") {
+    stem = s.replace(/-(\d{4})$/, "");
+    if (!stem) return false;
+  }
+  const letters = stem.replace(/[^a-z]/g, "");
+  if (letters.length < 2) return false;
+  if (!VOWELS.test(letters)) return false;
+  for (const t of stem.split("-")) {
+    const lettersOnly = t.replace(/[^a-z]/g, "");
+    if (!lettersOnly) continue;
+    if (!VOWELS.test(lettersOnly) && lettersOnly.length >= 4) return false;
+    if (FOUR_CONSONANTS.test(lettersOnly)) return false;
+  }
+  return true;
+}
+
+/**
+ * Cold-path guard. Call AFTER a DB/cache miss but BEFORE the AI invocation.
+ * - Rejects malformed/garbage slugs with 400
+ * - Per-IP rate-limits cold misses to prevent enumeration-driven AI spend
+ *
+ * Returns null if allowed; otherwise a Response to return immediately.
+ */
+export function guardColdPath(
+  req: Request,
+  opts: { slug: string; kind: SlugKind; limit?: number; windowMs?: number }
+): Response | null {
+  if (!isPlausibleSlug(opts.slug, opts.kind)) {
+    return jsonError("Not found", 404);
+  }
+  return rateLimit(req, {
+    key: `cold:${opts.kind}`,
+    limit: opts.limit ?? 8,
+    windowMs: opts.windowMs ?? 60 * 60 * 1000,
+  });
+}
+
