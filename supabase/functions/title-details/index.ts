@@ -3,6 +3,7 @@ import { buildTitleScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/
 import { resolveTitleImage } from "../_shared/images.ts";
 import { getTitle, upsertTitle } from "../_shared/store.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { guardColdPath } from "../_shared/security.ts";
 import {
   callAi,
   HttpError,
