@@ -4,6 +4,7 @@ import { resolveLocationImage, resolveTitleImage } from "../_shared/images.ts";
 import { buildLocationScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/locationScout.ts";
 import { getLocation, upsertLocation } from "../_shared/store.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { guardColdPath } from "../_shared/security.ts";
 import {
   callAi,
   HttpError,
