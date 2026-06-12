@@ -3,6 +3,7 @@ import { buildSpotScoutPrompt, getLocationScoutSystemPrompt } from "../_shared/l
 import { resolveLocationImage } from "../_shared/images.ts";
 import { getSpot, upsertSpot } from "../_shared/store.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { guardColdPath } from "../_shared/security.ts";
 
 const log = createLogger("spot-details");
 
