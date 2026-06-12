@@ -51,6 +51,11 @@ serve(async (req) => {
       });
     }
 
+    // Cold path: validate slug + per-IP throttle BEFORE AI cache lookup,
+    // preventing arbitrary city slugs from triggering AI generation.
+    const guard = guardColdPath(req, { slug, kind: "location" });
+    if (guard) return guard;
+
     const cacheKey = CACHE_VERSION + slug;
     const cached = await getCached<Record<string, unknown>>("location-details", cacheKey);
     if (cached) {
