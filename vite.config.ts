@@ -2,6 +2,25 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
+import { generateSitemap } from "./scripts/generate-sitemap.mjs";
+
+function sitemapPlugin() {
+  let ran = false;
+  const run = () => {
+    if (ran) return;
+    ran = true;
+    generateSitemap().catch((e) => console.warn("[sitemap] skipped:", e?.message || e));
+  };
+  return {
+    name: "sarevista-sitemap",
+    buildStart() {
+      run();
+    },
+    configureServer() {
+      run();
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -12,10 +31,15 @@ export default defineConfig(({ mode }) => ({
       overlay: false,
     },
   },
-  plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  plugins: [
+    react(),
+    sitemapPlugin(),
+    mode === "development" && componentTagger(),
+  ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
 }));
+
