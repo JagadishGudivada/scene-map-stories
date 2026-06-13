@@ -1,10 +1,2 @@
-# Proxy sitemap requests to the edge function so the URL stays on the canonical
-# domain (crawler-friendly) while the XML is generated dynamically and cached.
-/sitemap.xml                https://gsdtkzjiaydkearsngxy.supabase.co/functions/v1/sitemap                              200
-/sitemap-static.xml         https://gsdtkzjiaydkearsngxy.supabase.co/functions/v1/sitemap?type=static                  200
-/sitemap-titles-:n.xml      https://gsdtkzjiaydkearsngxy.supabase.co/functions/v1/sitemap?type=titles&page=:n          200
-/sitemap-locations-:n.xml   https://gsdtkzjiaydkearsngxy.supabase.co/functions/v1/sitemap?type=locations&page=:n       200
-/sitemap-spots-:n.xml       https://gsdtkzjiaydkearsngxy.supabase.co/functions/v1/sitemap?type=spots&page=:n           200
-
 # SPA fallback (must stay last)
 /*    /index.html   200
