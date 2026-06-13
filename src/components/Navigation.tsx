@@ -152,6 +152,7 @@ export default function Navigation() {
                       <button
                         type="button"
                         onClick={closeSearch}
+                        aria-label="Close search"
                         className="absolute right-2.5 top-1/2 -translate-y-1/2"
                       >
                         <X className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />

@@ -146,6 +146,7 @@ export default function Index() {
         title="Sarevista — Filming Locations Map for Movies, Series & Books"
         description="Discover, save, and share real filming locations from your favourite movies, series, and books. Cinema meets travel — your memory map."
       />
+      <h1 className="sr-only">Sarevista — Your Map to Filming Locations from Movies, Series & Books</h1>
       {/* === HERO SECTION === */}
       <div className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20">

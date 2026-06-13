@@ -10,6 +10,7 @@ import {
   Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { citiesFilmingData, type FilmingSpotData } from "@/lib/filmingSpotsData";
+import Seo from "@/components/Seo";
 
 const typeIcons: Record<string, React.ElementType> = {
   Movie: Film,
@@ -71,6 +72,10 @@ export default function FilmingSpots() {
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-20">
+      <Seo
+        title={`${city.name} Filming Spots — On-Screen Locations`}
+        description={`Explore ${city.spots.length}+ real filming spots in ${city.name} from movies, series, and books. Map, scenes, and visit tips.`}
+      />
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-2">
         <Breadcrumb>
