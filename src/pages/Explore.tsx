@@ -5,6 +5,7 @@ import { Compass, MapPin, Film, Loader2, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import Seo from "@/components/Seo";
 
 type PostRow = {
   id: string;
@@ -87,6 +88,10 @@ export default function Explore() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
+      <Seo
+        title="Explore — Community Posts & Filming Trails"
+        description="Browse community-shared filming locations, scene visits, and travel notes from movies, series, and books around the world."
+      />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-24">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center gap-2 mb-2">

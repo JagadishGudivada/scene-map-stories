@@ -12,6 +12,7 @@ import { usePassportBadges } from "@/hooks/usePassportBadges";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import Seo from "@/components/Seo";
 
 type PostRow = {
   id: string;
@@ -235,6 +236,10 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
+      <Seo
+        title={`${displayName} (@${username}) — Memory Map`}
+        description={`Filming locations, saved spots, and cinema journeys from ${displayName} on Sarevista.`}
+      />
       {/* Cover */}
       <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-gradient-to-br from-amber/20 via-background to-teal/20">
         {coverUrl && <img src={coverUrl} alt="" className="w-full h-full object-cover" />}
