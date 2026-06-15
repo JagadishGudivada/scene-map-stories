@@ -235,82 +235,103 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8">
+    <div className="min-h-screen bg-background pb-24 md:pb-12">
       <Seo
         title={`${displayName} (@${username}) — Memory Map`}
         description={`Filming locations, saved spots, and cinema journeys from ${displayName} on Sarevista.`}
       />
-      {/* Cover */}
-      <div className="relative h-48 sm:h-64 w-full overflow-hidden bg-gradient-to-br from-amber/20 via-background to-teal/20">
-        {coverUrl && <img src={coverUrl} alt="" className="w-full h-full object-cover" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        {/* Profile Header */}
-        <div className="-mt-16 relative z-10 mb-6">
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-            <div className="flex items-end gap-4">
-              <div className="w-28 h-28 rounded-full overflow-hidden amber-ring border-4 border-background shrink-0 shadow-float bg-muted flex items-center justify-center">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 space-y-10 sm:space-y-14">
+        {/* Editorial header */}
+        <header className="relative flex flex-col items-center text-center">
+          {/* Cover wash */}
+          <div className="pointer-events-none absolute inset-x-0 -top-10 h-56 sm:h-64 bg-gradient-to-b from-amber/10 via-background/0 to-transparent rounded-3xl -z-10" aria-hidden />
+          {coverUrl && (
+            <div className="pointer-events-none absolute inset-x-0 -top-10 h-56 sm:h-64 overflow-hidden rounded-3xl -z-10">
+              <img src={coverUrl} alt="" className="w-full h-full object-cover opacity-40" />
+              <div className="absolute inset-0 bg-gradient-to-b from-background/40 via-background/60 to-background" />
+            </div>
+          )}
+
+          {/* Avatar with amber halo */}
+          <div className="relative group">
+            <div className="absolute inset-0 bg-amber/25 rounded-full blur-2xl group-hover:bg-amber/40 transition-all" aria-hidden />
+            <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 border-amber/40 p-1 bg-background shadow-float">
+              <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-muted to-card flex items-center justify-center">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-serif text-3xl text-amber">{initials || "?"}</span>
+                  <span className="font-serif italic text-4xl text-amber">{initials || "?"}</span>
                 )}
               </div>
-              <div className="pb-1">
-                <h1 className="font-serif text-2xl text-foreground leading-tight">{displayName}</h1>
-                <p className="text-muted-foreground text-sm">@{username}</p>
-              </div>
             </div>
+          </div>
 
-            <div className="flex items-center gap-2 flex-wrap">
-              {isOwnProfile && (
-                <>
-                  <Button size="sm" onClick={() => setPostOpen(true)} className="rounded-xl">
-                    <Plus className="w-4 h-4" /> Post
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="rounded-xl">
-                    <Pencil className="w-4 h-4" /> Edit profile
-                  </Button>
-                </>
+          <div className="mt-5 sm:mt-6 space-y-1.5">
+            <h1 className="font-serif text-4xl sm:text-5xl text-foreground tracking-tight leading-none">
+              {displayName}
+            </h1>
+            <p className="font-mono text-xs sm:text-sm text-muted-foreground tracking-wider">
+              @{username}
+            </p>
+          </div>
+
+          {bio && (
+            <p className="mt-5 max-w-xl text-sm sm:text-[15px] text-foreground/85 leading-relaxed whitespace-pre-wrap">
+              {bio}
+            </p>
+          )}
+
+          {(userLocation || website || (isOwnProfile && authUser?.email)) && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-muted-foreground text-xs sm:text-sm">
+              {userLocation && (
+                <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-amber" />{userLocation}</span>
               )}
-              <button
-                onClick={handleShare}
-                className="h-9 px-4 rounded-xl glass border border-border text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-2"
+              {website && (
+                <a href={website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+                  <Globe className="w-3.5 h-3.5 text-teal" />{website.replace(/^https?:\/\//, "")}
+                </a>
+              )}
+              {isOwnProfile && authUser?.email && (
+                <span className="flex items-center gap-1.5 opacity-70 font-mono text-[11px]">{authUser.email}</span>
+              )}
+            </div>
+          )}
+
+          {/* Action pills */}
+          <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+            {isOwnProfile && (
+              <>
+                <Button size="sm" onClick={() => setPostOpen(true)} className="rounded-full px-5 h-9">
+                  <Plus className="w-4 h-4" /> Post
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="rounded-full px-5 h-9">
+                  <Pencil className="w-4 h-4" /> Edit profile
+                </Button>
+              </>
+            )}
+            <button
+              onClick={handleShare}
+              className="h-9 px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center gap-2"
+            >
+              <Share2 className="w-4 h-4 text-amber" /> Share Profile
+            </button>
+            {isOwnProfile && (
+              <Link
+                to="/auth"
+                className="h-9 w-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                title="Account settings"
               >
-                <Share2 className="w-4 h-4" /> Share
-              </button>
-              {isOwnProfile && (
-                <Link
-                  to="/auth"
-                  className="h-9 w-9 rounded-xl glass border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
-                  title="Account settings"
-                >
-                  <Settings className="w-4 h-4" />
-                </Link>
-              )}
-            </div>
-          </div>
-
-          {bio && <p className="mt-4 text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">{bio}</p>}
-
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-muted-foreground text-sm">
-            {userLocation && (
-              <span className="flex items-center gap-1.5"><MapPin className="w-4 h-4 text-amber" />{userLocation}</span>
-            )}
-            {website && (
-              <a href={website} target="_blank" rel="noreferrer" className="flex items-center gap-1.5 hover:text-foreground">
-                <Globe className="w-4 h-4 text-teal" />{website.replace(/^https?:\/\//, "")}
-              </a>
-            )}
-            {isOwnProfile && authUser?.email && (
-              <span className="flex items-center gap-1.5 opacity-70">{authUser.email}</span>
+                <Settings className="w-4 h-4" />
+              </Link>
             )}
           </div>
+        </header>
 
-          {/* Stats — tap to jump */}
-          <div className="grid grid-cols-4 gap-2 mt-5">
+        {/* Stats + Passport bento */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
+          {/* Stats */}
+          <div className="md:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {stats.map((stat) => (
               <button
                 key={stat.label}
@@ -320,49 +341,56 @@ export default function Profile() {
                   setActiveTab(stat.jump.tab);
                   if (stat.jump.filter) setSavedFilter(stat.jump.filter);
                 }}
-                className="glass rounded-2xl border border-border py-3 px-2 flex flex-col items-center gap-1 active:scale-95 hover:border-amber/40 transition-all"
+                className="bg-card/40 border border-border/60 px-4 py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:border-amber/30 transition-all active:scale-[0.97] group"
               >
-                <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
-                <span className={`text-xl font-bold font-serif leading-none ${stat.color}`}>{stat.value}</span>
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground">{stat.label}</span>
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                  {stat.label}
+                </span>
+                <span className={`font-serif text-3xl sm:text-4xl leading-none ${stat.color}`}>
+                  {stat.value}
+                </span>
               </button>
             ))}
           </div>
 
-
-          <section className="mt-5 glass rounded-2xl border border-border p-4 sm:p-5">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <div>
-                <h2 className="font-serif text-lg text-foreground">My Passport</h2>
-                <p className="text-xs text-muted-foreground">Country stamps earned from visited filming spots</p>
+          {/* Passport */}
+          <section className="md:col-span-4 relative bg-card/40 border border-border/60 rounded-2xl p-5 overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber/10 blur-3xl rounded-full group-hover:bg-amber/15 transition-colors" aria-hidden />
+            <div className="relative flex items-start justify-between gap-3 mb-4">
+              <div className="space-y-0.5">
+                <h2 className="font-serif text-lg text-foreground leading-tight">Passport Stamps</h2>
+                <p className="text-[11px] text-muted-foreground">Unlocked through site visits</p>
               </div>
-              <span className="text-xs px-2 py-1 rounded-full bg-amber/10 text-amber font-medium">
-                {passportBadges.length} unlocked
+              <span className="px-2 py-1 rounded bg-amber/10 text-amber font-mono text-[10px] font-bold uppercase tracking-tighter whitespace-nowrap">
+                {passportBadges.length} earned
               </span>
             </div>
 
             {visitedSpotsLoading ? (
-              <p className="text-sm text-muted-foreground">Loading passport stamps...</p>
+              <div className="grid grid-cols-5 gap-2.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-full bg-muted/40 animate-pulse" />
+                ))}
+              </div>
             ) : passportBadges.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-border p-5 text-center">
-                <p className="text-sm text-muted-foreground">No passport stamps yet. Mark your first spot with "I've Been Here" to unlock one.</p>
+              <div className="grid grid-cols-5 gap-2.5">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="aspect-square rounded-full border border-dashed border-border/80" />
+                ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {passportBadges.map((badge) => (
-                  <div key={badge.id} className="flex flex-col items-center text-center gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                {passportBadges.slice(0, 10).map((badge) => (
+                  <div key={badge.id} className="flex flex-col items-center text-center gap-1">
                     <PassportStampBadge
                       badge={badge}
                       country={badge.country}
                       size="sm"
                       generateOnMiss={isOwnProfile}
                     />
-                    <div>
-                      <p className="text-xs font-semibold text-foreground truncate max-w-[9rem]">{badge.country}</p>
-                      {badge.tier !== "bronze" && (
-                        <p className="text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{badge.tier}</p>
-                      )}
-                    </div>
+                    <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground truncate w-full">
+                      {badge.country}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -371,24 +399,31 @@ export default function Profile() {
         </div>
 
         {/* Tabs */}
-        <div className="relative z-20 flex border-b border-border mb-6 overflow-x-auto no-scrollbar bg-background">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`touch-manipulation flex items-center gap-2 px-5 py-3 text-sm font-medium border-b-2 transition-all duration-200 whitespace-nowrap ${
-                activeTab === tab.id
-                  ? "border-amber text-amber"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
+        <div>
+          <nav className="flex justify-center border-b border-border">
+            <div className="flex gap-2 sm:gap-6 overflow-x-auto no-scrollbar pb-px">
+              {tabs.map((tab) => {
+                const active = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`relative px-3 sm:px-4 pb-3.5 pt-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
+                      active ? "text-amber" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <tab.icon className="w-3.5 h-3.5" />
+                    {tab.label}
+                    {active && <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-amber rounded-full" />}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
         </div>
 
+        {/* Tab content */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -398,54 +433,62 @@ export default function Profile() {
             transition={{ duration: 0.3 }}
           >
             {activeTab === "map" && (
-              <div>
-                <p className="text-sm text-muted-foreground mb-4">
-                  {visitedMapPins.length} locations pinned across {visitedCountriesCount} countries
-                </p>
-                <LeafletMap pins={visitedMapPins} visitedCities={visitedCities} className="h-80" />
+              <div className="space-y-6">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="font-mono uppercase tracking-[0.18em]">
+                    {visitedMapPins.length} locations · {visitedCountriesCount} countries
+                  </span>
+                </div>
+                <LeafletMap pins={visitedMapPins} visitedCities={visitedCities} className="h-80 sm:h-96 rounded-2xl overflow-hidden border border-border" />
                 {visitedSpotsLoading ? (
-                  <div className="glass rounded-2xl border border-border p-8 text-center mt-6">
-                    <p className="text-muted-foreground text-sm">Loading your visited spots…</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                      <div key={i} className="h-20 rounded-xl bg-muted/40 animate-pulse" />
+                    ))}
                   </div>
                 ) : visitedSpotsData.length > 0 ? (
-                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {visitedSpotsData.slice(0, 6).map((spot, i) => (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {visitedSpotsData.map((spot, i) => (
                       <motion.div
                         key={spot.slug}
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        className="glass rounded-xl p-4 border border-border flex items-center justify-between"
+                        transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                        className="group bg-card/30 rounded-xl p-4 border border-border/60 hover:border-teal/40 hover:-translate-y-0.5 transition-all flex items-center justify-between gap-3"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-lg bg-teal/10 flex items-center justify-center shrink-0">
                             <MapPin className="w-4 h-4 text-teal" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{spot.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{spot.city}, {spot.country}</p>
+                            <p className="text-sm font-medium text-foreground truncate group-hover:text-amber transition-colors">{spot.name}</p>
+                            <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+                              {spot.city}{spot.country ? ` · ${spot.country}` : ""}
+                            </p>
                           </div>
                         </div>
-                        <span className="text-xs text-teal font-medium">Been here</span>
+                        <span className="font-mono text-[10px] uppercase tracking-wider text-teal">Been</span>
                       </motion.div>
                     ))}
                   </div>
                 ) : (
-                  <div className="glass rounded-2xl border border-border p-8 text-center mt-6">
-                    <MapPin className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">No visited spots yet. Mark a spot with "I've Been Here" to populate your memory map.</p>
+                  <div className="bg-card/30 rounded-2xl border border-dashed border-border p-12 text-center">
+                    <MapPin className="w-7 h-7 text-muted-foreground/60 mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                      No visited spots yet. Mark a spot with "I've Been Here" to populate your memory map.
+                    </p>
                   </div>
                 )}
               </div>
             )}
 
             {activeTab === "saved" && (() => {
-              const filters: { id: SavedFilter; label: string; count: number; icon: typeof Bookmark; color: string }[] = [
-                { id: "titles", label: "Titles", count: savedTitleSlugs.length, icon: Bookmark, color: "amber" },
-                { id: "locations", label: "Locations", count: savedLocationSlugs.length, icon: MapPin, color: "teal" },
-                { id: "spots", label: "Wishlist", count: savedSpotSlugs.length, icon: Sparkles, color: "amber" },
-                { id: "been", label: "Been Here", count: visitedSpotSlugs.length, icon: CheckCircle2, color: "teal" },
-                { id: "watched", label: "Watched", count: watchedTitleSlugs.length, icon: Film, color: "teal" },
+              const filters: { id: SavedFilter; label: string; count: number; icon: typeof Bookmark }[] = [
+                { id: "titles", label: "Titles", count: savedTitleSlugs.length, icon: Bookmark },
+                { id: "locations", label: "Locations", count: savedLocationSlugs.length, icon: MapPin },
+                { id: "spots", label: "Wishlist", count: savedSpotSlugs.length, icon: Sparkles },
+                { id: "been", label: "Been Here", count: visitedSpotSlugs.length, icon: CheckCircle2 },
+                { id: "watched", label: "Watched", count: watchedTitleSlugs.length, icon: Film },
               ];
 
               const renderGrid = (
@@ -456,14 +499,14 @@ export default function Profile() {
                 if (items.length === 0) {
                   const EmptyIcon = emptyIcon;
                   return (
-                    <div className="glass rounded-2xl border border-dashed border-border p-10 text-center">
-                      <EmptyIcon className="w-7 h-7 text-muted-foreground mx-auto mb-3 opacity-60" />
-                      <p className="text-muted-foreground text-sm max-w-xs mx-auto">{emptyMsg}</p>
+                    <div className="bg-card/30 rounded-2xl border border-dashed border-border p-12 text-center">
+                      <EmptyIcon className="w-7 h-7 text-muted-foreground/60 mx-auto mb-3" />
+                      <p className="text-muted-foreground text-sm max-w-md mx-auto">{emptyMsg}</p>
                     </div>
                   );
                 }
                 return (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                     {items.map((item, i) => {
                       const Icon = item.icon;
                       const accentBg = item.accent === "amber" ? "bg-amber/10" : "bg-teal/10";
@@ -471,22 +514,27 @@ export default function Profile() {
                       return (
                         <motion.div
                           key={item.slug}
-                          initial={{ opacity: 0, scale: 0.96 }}
-                          animate={{ opacity: 1, scale: 1 }}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                          className="group relative glass rounded-2xl border border-border p-3 aspect-square flex flex-col justify-between overflow-hidden hover:border-amber/40 transition-all active:scale-[0.97]"
+                          className="group relative bg-card/30 rounded-2xl border border-border/60 p-4 aspect-square flex flex-col justify-between overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all"
                         >
                           <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
                           <div className={`w-9 h-9 rounded-xl ${accentBg} ${accentText} flex items-center justify-center`}>
                             <Icon className="w-4 h-4" />
                           </div>
-                          <span className="text-[13px] font-medium text-foreground capitalize leading-snug line-clamp-2 relative z-0">
-                            {item.label}
-                          </span>
+                          <div className="relative z-0 space-y-1">
+                            <span className="block text-sm font-medium text-foreground capitalize leading-snug line-clamp-2 group-hover:text-amber transition-colors">
+                              {item.label}
+                            </span>
+                            <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+                              {item.accent === "amber" ? "Saved" : "Visited"}
+                            </span>
+                          </div>
                           {item.onUnsave && (
                             <button
                               onClick={(e) => { e.preventDefault(); e.stopPropagation(); item.onUnsave!(item.slug); }}
-                              className="absolute top-2 right-2 z-20 w-6 h-6 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-red-400 hover:bg-red-400/10 opacity-0 group-hover:opacity-100 transition-all"
+                              className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
                               title="Remove"
                             >
                               <X className="w-3 h-3" />
@@ -499,9 +547,10 @@ export default function Profile() {
                 );
               };
 
-              const grids: Record<SavedFilter, { loading: boolean; node: React.ReactNode }> = {
+              const grids: Record<SavedFilter, { loading: boolean; node: React.ReactNode; count: number }> = {
                 titles: {
                   loading: savedTitlesLoading,
+                  count: savedTitleSlugs.length,
                   node: renderGrid(
                     savedTitleSlugs.map((slug) => ({ slug, label: prettifySlug(slug), href: `/title/${slug}`, accent: "amber", icon: Bookmark, onUnsave: handleUnsaveTitle })),
                     "No saved titles yet. Browse a title and tap Save to Map.",
@@ -510,6 +559,7 @@ export default function Profile() {
                 },
                 locations: {
                   loading: savedLocationsLoading,
+                  count: savedLocationSlugs.length,
                   node: renderGrid(
                     savedLocationSlugs.map((slug) => ({ slug, label: slug.replace(/-/g, " "), href: `/location/${slug}`, accent: "teal", icon: MapPin, onUnsave: handleUnsaveLocation })),
                     "No saved locations yet. Open a location and tap Save City.",
@@ -518,6 +568,7 @@ export default function Profile() {
                 },
                 spots: {
                   loading: savedSpotsLoading,
+                  count: savedSpotSlugs.length,
                   node: renderGrid(
                     savedSpotSlugs.map((slug) => ({ slug, label: slug.replace(/-/g, " "), href: `/spot/${slug}`, accent: "amber", icon: Sparkles, onUnsave: handleUnsaveSpot })),
                     "No spots on your wishlist yet. Open a spot and tap Save Spot.",
@@ -526,6 +577,7 @@ export default function Profile() {
                 },
                 been: {
                   loading: visitedSpotsLoading,
+                  count: visitedSpotSlugs.length,
                   node: renderGrid(
                     visitedSpotSlugs.map((slug) => {
                       const p = visitedSpots.find((s) => s.spot_slug === slug);
@@ -537,6 +589,7 @@ export default function Profile() {
                 },
                 watched: {
                   loading: watchedTitlesLoading,
+                  count: watchedTitleSlugs.length,
                   node: renderGrid(
                     watchedTitleSlugs.map((slug) => ({ slug, label: prettifySlug(slug), href: `/title/${slug}`, accent: "teal" as const, icon: Film })),
                     "No watched titles yet. Open a title and tap Watched.",
@@ -545,10 +598,13 @@ export default function Profile() {
                 },
               };
 
+              const currentLabel = filters.find((f) => f.id === savedFilter)?.label ?? "Items";
+              const currentCount = grids[savedFilter].count;
+
               return (
-                <div>
-                  {/* Sub-filter pill chips — horizontal scroll on mobile */}
-                  <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mb-5 overflow-x-auto no-scrollbar">
+                <div className="space-y-6">
+                  {/* Filter pills */}
+                  <div className="-mx-4 sm:mx-0 px-4 sm:px-0 overflow-x-auto no-scrollbar">
                     <div className="flex items-center gap-2 min-w-max">
                       {filters.map((f) => {
                         const active = savedFilter === f.id;
@@ -557,21 +613,28 @@ export default function Profile() {
                             key={f.id}
                             type="button"
                             onClick={() => setSavedFilter(f.id)}
-                            className={`h-9 px-3.5 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                            className={`h-9 px-4 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                               active
                                 ? "bg-foreground text-background border border-foreground"
-                                : "glass border border-border text-muted-foreground hover:text-foreground"
+                                : "bg-card/30 border border-border text-muted-foreground hover:text-foreground hover:border-amber/30"
                             }`}
                           >
                             <f.icon className="w-3.5 h-3.5" />
                             {f.label}
-                            <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${active ? "bg-background/20" : "bg-muted"}`}>
+                            <span className={`ml-0.5 px-1.5 py-0.5 rounded-full font-mono text-[10px] font-semibold ${active ? "bg-background/20" : "bg-muted"}`}>
                               {f.count}
                             </span>
                           </button>
                         );
                       })}
                     </div>
+                  </div>
+
+                  {/* Count strip */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground border-b border-border/50 pb-3">
+                    <span className="font-mono uppercase tracking-[0.18em]">
+                      {currentCount} {currentLabel}
+                    </span>
                   </div>
 
                   <AnimatePresence mode="wait">
@@ -583,8 +646,8 @@ export default function Profile() {
                       transition={{ duration: 0.2 }}
                     >
                       {grids[savedFilter].loading ? (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
-                          {Array.from({ length: 6 }).map((_, i) => (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                          {Array.from({ length: 8 }).map((_, i) => (
                             <div key={i} className="aspect-square rounded-2xl bg-muted/40 animate-pulse" />
                           ))}
                         </div>
@@ -597,60 +660,65 @@ export default function Profile() {
               );
             })()}
 
-
             {activeTab === "posts" && (
-              <div>
+              <div className="space-y-5">
                 {isOwnProfile && (
                   <button
                     onClick={() => setPostOpen(true)}
-                    className="w-full glass rounded-2xl border border-dashed border-border p-4 mb-4 flex items-center gap-3 text-left hover:border-amber/60 transition-colors"
+                    className="w-full bg-card/30 rounded-2xl border border-dashed border-border p-4 flex items-center gap-3 text-left hover:border-amber/60 transition-colors"
                   >
-                    <div className="w-10 h-10 rounded-full bg-amber/10 flex items-center justify-center text-amber">
+                    <div className="w-10 h-10 rounded-full bg-amber/10 flex items-center justify-center text-amber shrink-0">
                       <Plus className="w-5 h-5" />
                     </div>
                     <span className="text-sm text-muted-foreground">Share a scene, memory, or recommendation…</span>
                   </button>
                 )}
                 {posts.length === 0 ? (
-                  <div className="glass rounded-2xl border border-border p-10 text-center">
-                    <Grid3X3 className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-muted-foreground text-sm">No posts yet.{isOwnProfile && " Tap “Post” to share your first one."}</p>
+                  <div className="bg-card/30 rounded-2xl border border-dashed border-border p-12 text-center">
+                    <Grid3X3 className="w-7 h-7 text-muted-foreground/60 mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                      No posts yet.{isOwnProfile && " Tap “Post” to share your first one."}
+                    </p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     {posts.map((p, i) => (
                       <motion.article
                         key={p.id}
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.04 }}
-                        className="glass rounded-2xl border border-border overflow-hidden"
+                        transition={{ delay: Math.min(i * 0.04, 0.3) }}
+                        className="group bg-card/30 rounded-2xl border border-border/60 overflow-hidden hover:border-amber/30 hover:-translate-y-0.5 transition-all"
                       >
                         {p.image_url && (
-                          <img src={p.image_url} alt="" className="w-full max-h-96 object-cover" />
+                          <div className="aspect-[16/10] overflow-hidden bg-muted">
+                            <img src={p.image_url} alt="" className="w-full h-full object-cover" />
+                          </div>
                         )}
-                        <div className="p-4">
+                        <div className="p-5">
                           <div className="flex items-start justify-between gap-3">
                             <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed flex-1">{p.content}</p>
                             {isOwnProfile && (
                               <button
                                 onClick={() => handleDeletePost(p.id)}
-                                className="text-muted-foreground hover:text-red-400 transition-colors"
+                                className="text-muted-foreground hover:text-destructive transition-colors shrink-0"
                                 title="Delete post"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
                             )}
                           </div>
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                            <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
+                              {new Date(p.created_at).toLocaleDateString(undefined, { day: "2-digit", month: "short", year: "numeric" })}
+                            </span>
                             {p.title_slug && (
-                              <Link to={`/title/${p.title_slug}`} className="px-2 py-0.5 rounded-full bg-amber/10 text-amber capitalize">
+                              <Link to={`/title/${p.title_slug}`} className="px-2 py-0.5 rounded bg-amber/10 text-amber font-mono text-[10px] uppercase tracking-tighter font-bold capitalize">
                                 {prettifySlug(p.title_slug)}
                               </Link>
                             )}
                             {p.spot_slug && (
-                              <Link to={`/spot/${p.spot_slug}`} className="px-2 py-0.5 rounded-full bg-teal/10 text-teal capitalize">
+                              <Link to={`/spot/${p.spot_slug}`} className="px-2 py-0.5 rounded bg-teal/10 text-teal font-mono text-[10px] uppercase tracking-tighter font-bold capitalize">
                                 {p.spot_slug.replace(/-/g, " ")}
                               </Link>
                             )}
@@ -664,9 +732,11 @@ export default function Profile() {
             )}
 
             {activeTab === "lists" && (
-              <div className="glass rounded-2xl border border-border p-10 text-center">
-                <List className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
-                <p className="text-muted-foreground text-sm">No lists yet. Curated collections are coming soon — your saved titles, locations and spots already live in the Saved tab.</p>
+              <div className="bg-card/30 rounded-2xl border border-dashed border-border p-12 text-center">
+                <List className="w-7 h-7 text-muted-foreground/60 mx-auto mb-3" />
+                <p className="text-muted-foreground text-sm max-w-md mx-auto">
+                  No lists yet. Curated collections are coming soon — your saved titles, locations and spots already live in the Saved tab.
+                </p>
               </div>
             )}
           </motion.div>
