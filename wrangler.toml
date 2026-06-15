@@ -1,0 +1,36 @@
+# Cloudflare Workers configuration for Sarevista (Vite SPA).
+# Docs: https://developers.cloudflare.com/workers/static-assets/
+#
+# This is a static-assets-only Worker — no server-side code runs on the Worker.
+# The Vite build output in ./dist is uploaded and served from Cloudflare's edge.
+# SPA fallback (history-mode routing) is handled by `not_found_handling`.
+
+name = "sarevista"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets (the built SPA).
+[assets]
+directory = "./dist"
+# Serve index.html for any unknown path so React Router can handle the route.
+not_found_handling = "single-page-application"
+# Strip trailing ".html" / serve clean URLs.
+html_handling = "auto-trailing-slash"
+
+# Build step Wrangler runs before deploying.
+[build]
+command = "npm run build"
+
+# Observability (logs in the Cloudflare dashboard).
+[observability]
+enabled = true
+
+# --- Environments ---------------------------------------------------------
+# Use `wrangler deploy --env production` for the production Worker.
+# Add a custom domain via the Cloudflare dashboard (Workers → Triggers → Custom Domains).
+
+[env.production]
+name = "sarevista"
+
+[env.preview]
+name = "sarevista-preview"
