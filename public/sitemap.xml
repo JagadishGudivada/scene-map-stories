@@ -180,6 +180,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/disclosure-day-2026</loc>
+    <lastmod>2026-06-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/dune-2021</loc>
     <lastmod>2026-05-21</lastmod>
     <changefreq>weekly</changefreq>
@@ -384,6 +390,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/source-code-2011</loc>
+    <lastmod>2026-06-15</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/spider-man-no-way-home-2021</loc>
     <lastmod>2026-05-27</lastmod>
     <changefreq>weekly</changefreq>
@@ -578,6 +590,12 @@
   <url>
     <loc>https://sarevista.com/location/new-york-city</loc>
     <lastmod>2026-05-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/location/oia</loc>
+    <lastmod>2026-06-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
