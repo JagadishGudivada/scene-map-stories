@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, MapPin, Flame, Instagram } from "lucide-react";
+import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
 
 type TrendySpot = {
   id: string;
