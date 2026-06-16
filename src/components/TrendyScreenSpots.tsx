@@ -1,6 +1,7 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, MapPin, Flame, Instagram } from "lucide-react";
+import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
 
 type TrendySpot = {
   id: string;
@@ -14,6 +15,7 @@ type TrendySpot = {
   hashtag: string;
   blurb: string;
   image: string;
+  query: string;
 };
 
 // Curated trendy on-screen spots from 2025–2026 hit movies & series
@@ -30,6 +32,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#EmilyInParisCafe",
     blurb: "Pastel macarons and Trocadéro views — still the most Instagrammed café in Paris.",
     image: "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&w=900&q=80",
+    query: "Paris café pastries Trocadero",
   },
   {
     id: "ts2",
@@ -43,6 +46,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#WhiteLotusThailand",
     blurb: "The jungle-meets-ocean resort that made 2025 the year of Thai screen tourism.",
     image: "https://images.unsplash.com/photo-1552465011-b4e21bf6e79a?auto=format&fit=crop&w=900&q=80",
+    query: "Koh Samui Thailand luxury resort ocean",
   },
   {
     id: "ts3",
@@ -56,6 +60,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#WednesdayAddams",
     blurb: "The real-life Nevermore Academy — gothic spires drawing fans from across Europe.",
     image: "https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=900&q=80",
+    query: "gothic castle Romania misty",
   },
   {
     id: "ts4",
@@ -69,6 +74,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#DuneProphecy",
     blurb: "Mars-red dunes and sandstone arches — the sci-fi backdrop everyone wants to visit.",
     image: "https://images.unsplash.com/photo-1547234935-497c6f2d94ea?auto=format&fit=crop&w=900&q=80",
+    query: "Wadi Rum desert Jordan red dunes",
   },
   {
     id: "ts5",
@@ -82,6 +88,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#ChallengersAesthetic",
     blurb: "Mediterranean cool where Zendaya's tennis trio simmered on screen.",
     image: "https://images.unsplash.com/photo-1582719508461-905c673771fd?auto=format&fit=crop&w=900&q=80",
+    query: "Capri Italy boutique hotel terrace sea",
   },
   {
     id: "ts6",
@@ -95,6 +102,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#BridgertonBath",
     blurb: "The Royal Crescent — Penelope and Colin's regency promenade returns in 2025.",
     image: "https://images.unsplash.com/photo-1597211833712-5e41faa202ea?auto=format&fit=crop&w=900&q=80",
+    query: "Bath England Royal Crescent regency architecture",
   },
   {
     id: "ts7",
@@ -108,6 +116,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#ACompleteUnknown",
     blurb: "Timothée as Bob Dylan — Greenwich Village and European press tour glamour.",
     image: "https://images.unsplash.com/photo-1520175480921-4edfa2983e0f?auto=format&fit=crop&w=900&q=80",
+    query: "Venice Italy luxury hotel canal",
   },
   {
     id: "ts8",
@@ -121,6 +130,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#TheBrutalist",
     blurb: "Budapest's brutalist architecture doubled as mid-century America — Oscar bait and aesthetic.",
     image: "https://images.unsplash.com/photo-1489923423629-b50e91f2026e?auto=format&fit=crop&w=900&q=80",
+    query: "Budapest bridge architecture Danube",
   },
   {
     id: "ts9",
@@ -134,6 +144,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#F1Movie",
     blurb: "Brad Pitt's racing drama turned the Aegean into the hottest pit-stop of 2025.",
     image: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=900&q=80",
+    query: "Santorini Oia cliffside sunset",
   },
   {
     id: "ts10",
@@ -147,6 +158,7 @@ const trendySpots: TrendySpot[] = [
     hashtag: "#SeveranceS2",
     blurb: "The Lumon-adjacent moody diner aesthetic that took over TikTok coffee culture.",
     image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80",
+    query: "New York moody vintage café interior",
   },
 ];
 
@@ -160,6 +172,23 @@ const kindBadge: Record<TrendySpot["kind"], string> = {
 
 export default function TrendyScreenSpots() {
   const rowRef = useRef<HTMLDivElement>(null);
+  const [images, setImages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        trendySpots.map(async (s) => {
+          const img = await fetchPexelsImage(s.query);
+          return [s.id, img || s.image || DEFAULT_PEXELS_IMAGE] as const;
+        })
+      );
+      if (!cancelled) setImages(Object.fromEntries(results));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const scroll = (dir: "left" | "right") => {
     if (!rowRef.current) return;
@@ -215,7 +244,7 @@ export default function TrendyScreenSpots() {
           >
             <div className="relative h-44 overflow-hidden">
               <img
-                src={spot.image}
+                src={images[spot.id] || spot.image}
                 alt={`${spot.name}, ${spot.city} — featured in ${spot.title}`}
                 loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
