@@ -7,6 +7,7 @@ import TrendingRow from "@/components/TrendingRow";
 import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
 import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
+import TrendyScreenSpots from "@/components/TrendyScreenSpots";
 import Footer from "@/components/Footer";
 import Seo from "@/components/Seo";
 import CinematicRoulette from "@/components/CinematicRoulette";
