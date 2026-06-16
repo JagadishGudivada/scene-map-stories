@@ -244,7 +244,7 @@ export default function TrendyScreenSpots() {
           >
             <div className="relative h-44 overflow-hidden">
               <img
-                src={spot.image}
+                src={images[spot.id] || spot.image}
                 alt={`${spot.name}, ${spot.city} — featured in ${spot.title}`}
                 loading="lazy"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
