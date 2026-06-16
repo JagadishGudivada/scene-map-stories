@@ -437,6 +437,11 @@ export default function Index() {
                     <TrendingRow titles={homepageTitles} />
                   </div>
 
+                  {/* Trendy On-Screen Spots (cafés, hotels from this year's hits) */}
+                  <div className="mb-14">
+                    <TrendyScreenSpots />
+                  </div>
+
                   {/* Bento Grid */}
                   <section className="mb-14">
                     <div className="flex items-center justify-between mb-5">
