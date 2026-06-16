@@ -172,6 +172,23 @@ const kindBadge: Record<TrendySpot["kind"], string> = {
 
 export default function TrendyScreenSpots() {
   const rowRef = useRef<HTMLDivElement>(null);
+  const [images, setImages] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const results = await Promise.all(
+        trendySpots.map(async (s) => {
+          const img = await fetchPexelsImage(s.query);
+          return [s.id, img || s.image || DEFAULT_PEXELS_IMAGE] as const;
+        })
+      );
+      if (!cancelled) setImages(Object.fromEntries(results));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const scroll = (dir: "left" | "right") => {
     if (!rowRef.current) return;
