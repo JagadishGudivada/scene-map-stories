@@ -15,6 +15,7 @@ type TrendySpot = {
   hashtag: string;
   blurb: string;
   image: string;
+  query: string;
 };
 
 // Curated trendy on-screen spots from 2025–2026 hit movies & series
