@@ -173,14 +173,14 @@ export default function TrendyScreenSpots() {
           <div className="flex items-center gap-2 mb-1">
             <Flame className="w-4 h-4 text-amber" />
             <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-amber">
-              Trending On-Screen · 2024–2025
+              Trending On-Screen · 2025–2026
             </span>
           </div>
           <h2 className="font-serif text-2xl text-foreground leading-tight">
             Cafés & Spots from this year's hits
           </h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Instagram-famous locations from Emily in Paris, White Lotus, Saltburn, Challengers & more.
+            Instagram-famous locations from White Lotus S3, Bridgerton S4, Wednesday S2, Dune: Prophecy & more.
           </p>
         </div>
         <div className="flex items-center gap-1 shrink-0">
