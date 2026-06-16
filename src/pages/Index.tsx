@@ -7,6 +7,7 @@ import TrendingRow from "@/components/TrendingRow";
 import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
 import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
+import TrendyScreenSpots from "@/components/TrendyScreenSpots";
 import Footer from "@/components/Footer";
 import Seo from "@/components/Seo";
 import CinematicRoulette from "@/components/CinematicRoulette";
@@ -434,6 +435,11 @@ export default function Index() {
                   {/* Trending Row */}
                   <div className="mb-14">
                     <TrendingRow titles={homepageTitles} />
+                  </div>
+
+                  {/* Trendy On-Screen Spots (cafés, hotels from this year's hits) */}
+                  <div className="mb-14">
+                    <TrendyScreenSpots />
                   </div>
 
                   {/* Bento Grid */}

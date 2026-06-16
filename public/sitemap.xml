@@ -582,6 +582,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/location/los-angeles</loc>
+    <lastmod>2026-06-16</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/location/mumbai</loc>
     <lastmod>2026-06-08</lastmod>
     <changefreq>weekly</changefreq>
