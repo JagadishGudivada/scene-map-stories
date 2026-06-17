@@ -589,7 +589,10 @@ export default function Profile() {
                   loading: savedTitlesLoading,
                   count: savedTitleSlugs.length,
                   node: renderGrid(
-                    savedTitleSlugs.map((slug) => ({ slug, label: prettifySlug(slug), href: `/title/${slug}`, accent: "amber", icon: Bookmark, onUnsave: handleUnsaveTitle })),
+                    savedTitleSlugs.map((slug) => {
+                      const label = prettifySlug(slug);
+                      return { slug, label, href: `/title/${slug}`, accent: "amber", icon: Bookmark, onUnsave: handleUnsaveTitle, query: `${label} movie poster cinematic` };
+                    }),
                     "No saved titles yet. Browse a title and tap Save to Map.",
                     Bookmark
                   ),
@@ -598,7 +601,10 @@ export default function Profile() {
                   loading: savedLocationsLoading,
                   count: savedLocationSlugs.length,
                   node: renderGrid(
-                    savedLocationSlugs.map((slug) => ({ slug, label: slug.replace(/-/g, " "), href: `/location/${slug}`, accent: "teal", icon: MapPin, onUnsave: handleUnsaveLocation })),
+                    savedLocationSlugs.map((slug) => {
+                      const label = slug.replace(/-/g, " ");
+                      return { slug, label, href: `/location/${slug}`, accent: "teal", icon: MapPin, onUnsave: handleUnsaveLocation, query: `${label} cityscape travel` };
+                    }),
                     "No saved locations yet. Open a location and tap Save City.",
                     MapPin
                   ),
@@ -607,7 +613,10 @@ export default function Profile() {
                   loading: savedSpotsLoading,
                   count: savedSpotSlugs.length,
                   node: renderGrid(
-                    savedSpotSlugs.map((slug) => ({ slug, label: slug.replace(/-/g, " "), href: `/spot/${slug}`, accent: "amber", icon: Sparkles, onUnsave: handleUnsaveSpot })),
+                    savedSpotSlugs.map((slug) => {
+                      const label = slug.replace(/-/g, " ");
+                      return { slug, label, href: `/spot/${slug}`, accent: "amber", icon: Sparkles, onUnsave: handleUnsaveSpot, query: `${label} landmark` };
+                    }),
                     "No spots on your wishlist yet. Open a spot and tap Save Spot.",
                     Sparkles
                   ),
@@ -618,7 +627,9 @@ export default function Profile() {
                   node: renderGrid(
                     visitedSpotSlugs.map((slug) => {
                       const p = visitedSpots.find((s) => s.spot_slug === slug);
-                      return { slug, label: p?.spot_name ?? slug.replace(/-/g, " "), href: `/spot/${slug}`, accent: "teal" as const, icon: CheckCircle2, onUnsave: handleUnvisitSpot };
+                      const label = p?.spot_name ?? slug.replace(/-/g, " ");
+                      const place = [p?.city, p?.country].filter(Boolean).join(" ");
+                      return { slug, label, href: `/spot/${slug}`, accent: "teal" as const, icon: CheckCircle2, onUnsave: handleUnvisitSpot, query: `${label} ${place}`.trim() };
                     }),
                     "No visited spots yet. Tap I've Been Here on any spot.",
                     CheckCircle2
@@ -628,7 +639,10 @@ export default function Profile() {
                   loading: watchedTitlesLoading,
                   count: watchedTitleSlugs.length,
                   node: renderGrid(
-                    watchedTitleSlugs.map((slug) => ({ slug, label: prettifySlug(slug), href: `/title/${slug}`, accent: "teal" as const, icon: Film })),
+                    watchedTitleSlugs.map((slug) => {
+                      const label = prettifySlug(slug);
+                      return { slug, label, href: `/title/${slug}`, accent: "teal" as const, icon: Film, query: `${label} movie cinematic scene` };
+                    }),
                     "No watched titles yet. Open a title and tap Watched.",
                     Film
                   ),
