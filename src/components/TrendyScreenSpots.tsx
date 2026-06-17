@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MapPin, Flame, Instagram } from "lucide-react";
 import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
 
 type TrendySpot = {
   id: string;
+  slug: string;
   name: string;
   city: string;
   country: string;
@@ -22,6 +24,7 @@ type TrendySpot = {
 const trendySpots: TrendySpot[] = [
   {
     id: "ts1",
+    slug: "carette-paris",
     name: "Carette",
     city: "Paris",
     country: "France",
@@ -36,6 +39,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts2",
+    slug: "four-seasons-koh-samui",
     name: "Four Seasons Koh Samui",
     city: "Koh Samui",
     country: "Thailand",
@@ -50,6 +54,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts3",
+    slug: "cantacuzino-castle",
     name: "Cantacuzino Castle",
     city: "Bușteni",
     country: "Romania",
@@ -64,6 +69,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts4",
+    slug: "wadi-rum",
     name: "Wadi Rum",
     city: "Aqaba Governorate",
     country: "Jordan",
@@ -78,6 +84,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts5",
+    slug: "hotel-la-palma",
     name: "Hotel La Palma",
     city: "Capri",
     country: "Italy",
@@ -92,6 +99,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts6",
+    slug: "rah-bath",
     name: "RAH Bath",
     city: "Bath",
     country: "UK",
@@ -106,6 +114,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts7",
+    slug: "hotel-danieli",
     name: "Hotel Danieli",
     city: "Venice",
     country: "Italy",
@@ -120,6 +129,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts8",
+    slug: "szabadsag-hid",
     name: "Szabadság híd",
     city: "Budapest",
     country: "Hungary",
@@ -134,6 +144,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts9",
+    slug: "santorini-cliffside",
     name: "Santorini Cliffside",
     city: "Oia",
     country: "Greece",
@@ -148,6 +159,7 @@ const trendySpots: TrendySpot[] = [
   },
   {
     id: "ts10",
+    slug: "cafe-sabarsky",
     name: "Cafe Sabarsky",
     city: "New York",
     country: "USA",
@@ -173,6 +185,7 @@ const kindBadge: Record<TrendySpot["kind"], string> = {
 export default function TrendyScreenSpots() {
   const rowRef = useRef<HTMLDivElement>(null);
   const [images, setImages] = useState<Record<string, string>>({});
+  const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
@@ -240,6 +253,16 @@ export default function TrendyScreenSpots() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.05, duration: 0.4 }}
+            onClick={() => {
+              navigate(`/spot/${spot.slug}`, {
+                state: {
+                  label: spot.name,
+                  titleHint: spot.title,
+                  type: "Movie", // Default fallback if needed, but FilmingSpotDetail handles it
+                  description: spot.blurb
+                }
+              });
+            }}
             className="group flex-shrink-0 w-[280px] sm:w-[300px] snap-start rounded-2xl overflow-hidden glass border border-border hover:border-amber/40 transition-all duration-300 cursor-pointer"
           >
             <div className="relative h-44 overflow-hidden">
