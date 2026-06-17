@@ -634,8 +634,15 @@ export default function Profile() {
                   count: savedTitleSlugs.length,
                   node: renderGrid(
                     savedTitleSlugs.map((slug) => {
-                      const label = prettifySlug(slug);
-                      return { slug, label, href: `/title/${slug}`, accent: "amber", icon: Bookmark, onUnsave: handleUnsaveTitle, query: `${label} movie poster cinematic` };
+                      const meta = titleMeta[slug];
+                      const label = meta?.title ?? prettifySlug(slug);
+                      return {
+                        slug, label, href: `/title/${slug}`, accent: "amber",
+                        icon: Bookmark, onUnsave: handleUnsaveTitle,
+                        imageUrl: meta?.poster ?? undefined,
+                        imageFit: meta?.poster ? "poster" : "cover",
+                        query: `${label} movie poster`,
+                      };
                     }),
                     "No saved titles yet. Browse a title and tap Save to Map.",
                     Bookmark
@@ -646,8 +653,14 @@ export default function Profile() {
                   count: savedLocationSlugs.length,
                   node: renderGrid(
                     savedLocationSlugs.map((slug) => {
-                      const label = slug.replace(/-/g, " ");
-                      return { slug, label, href: `/location/${slug}`, accent: "teal", icon: MapPin, onUnsave: handleUnsaveLocation, query: `${label} cityscape travel` };
+                      const meta = locationMeta[slug];
+                      const label = meta?.name ?? slug.replace(/-/g, " ");
+                      const place = [meta?.city, meta?.country].filter(Boolean).join(" ");
+                      return {
+                        slug, label, href: `/location/${slug}`, accent: "teal",
+                        icon: MapPin, onUnsave: handleUnsaveLocation,
+                        query: `${label} ${place} cityscape travel landmark`.trim(),
+                      };
                     }),
                     "No saved locations yet. Open a location and tap Save City.",
                     MapPin
@@ -658,8 +671,14 @@ export default function Profile() {
                   count: savedSpotSlugs.length,
                   node: renderGrid(
                     savedSpotSlugs.map((slug) => {
-                      const label = slug.replace(/-/g, " ");
-                      return { slug, label, href: `/spot/${slug}`, accent: "amber", icon: Sparkles, onUnsave: handleUnsaveSpot, query: `${label} landmark` };
+                      const meta = spotMeta[slug];
+                      const label = meta?.name ?? slug.replace(/-/g, " ");
+                      const place = [meta?.city, meta?.country].filter(Boolean).join(" ");
+                      return {
+                        slug, label, href: `/spot/${slug}`, accent: "amber",
+                        icon: Sparkles, onUnsave: handleUnsaveSpot,
+                        query: `${label} ${place} landmark`.trim(),
+                      };
                     }),
                     "No spots on your wishlist yet. Open a spot and tap Save Spot.",
                     Sparkles
@@ -673,7 +692,11 @@ export default function Profile() {
                       const p = visitedSpots.find((s) => s.spot_slug === slug);
                       const label = p?.spot_name ?? slug.replace(/-/g, " ");
                       const place = [p?.city, p?.country].filter(Boolean).join(" ");
-                      return { slug, label, href: `/spot/${slug}`, accent: "teal" as const, icon: CheckCircle2, onUnsave: handleUnvisitSpot, query: `${label} ${place}`.trim() };
+                      return {
+                        slug, label, href: `/spot/${slug}`, accent: "teal" as const,
+                        icon: CheckCircle2, onUnsave: handleUnvisitSpot,
+                        query: `${label} ${place} landmark`.trim(),
+                      };
                     }),
                     "No visited spots yet. Tap I've Been Here on any spot.",
                     CheckCircle2
@@ -684,8 +707,15 @@ export default function Profile() {
                   count: watchedTitleSlugs.length,
                   node: renderGrid(
                     watchedTitleSlugs.map((slug) => {
-                      const label = prettifySlug(slug);
-                      return { slug, label, href: `/title/${slug}`, accent: "teal" as const, icon: Film, query: `${label} movie cinematic scene` };
+                      const meta = titleMeta[slug];
+                      const label = meta?.title ?? prettifySlug(slug);
+                      return {
+                        slug, label, href: `/title/${slug}`, accent: "teal" as const,
+                        icon: Film,
+                        imageUrl: meta?.poster ?? undefined,
+                        imageFit: meta?.poster ? "poster" : "cover",
+                        query: `${label} movie poster`,
+                      };
                     }),
                     "No watched titles yet. Open a title and tap Watched.",
                     Film
