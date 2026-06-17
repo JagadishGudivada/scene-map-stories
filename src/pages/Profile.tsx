@@ -12,6 +12,7 @@ import { usePassportBadges } from "@/hooks/usePassportBadges";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { fetchPexelsImage, DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 import Seo from "@/components/Seo";
 
 type PostRow = {
