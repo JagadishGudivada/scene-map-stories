@@ -47,15 +47,18 @@ type SavedItem = {
   icon: React.ComponentType<{ className?: string }>;
   onUnsave?: (s: string) => void;
   query?: string;
+  imageUrl?: string;
+  imageFit?: "cover" | "poster";
 };
 
 function SavedCard({ item, index }: { item: SavedItem; index: number }) {
   const Icon = item.icon;
   const accentBg = item.accent === "amber" ? "bg-amber/15" : "bg-teal/15";
   const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
-  const [image, setImage] = useState<string>(DEFAULT_PEXELS_IMAGE);
+  const [image, setImage] = useState<string>(item.imageUrl || DEFAULT_PEXELS_IMAGE);
 
   useEffect(() => {
+    if (item.imageUrl) { setImage(item.imageUrl); return; }
     let cancelled = false;
     const q = (item.query || item.label).trim();
     if (!q) return;
@@ -64,7 +67,7 @@ function SavedCard({ item, index }: { item: SavedItem; index: number }) {
       if (url) setImage(url);
     });
     return () => { cancelled = true; };
-  }, [item.query, item.label]);
+  }, [item.query, item.label, item.imageUrl]);
 
   return (
     <motion.div
