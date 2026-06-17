@@ -12,6 +12,7 @@ import { usePassportBadges } from "@/hooks/usePassportBadges";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { fetchPexelsImage, DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 import Seo from "@/components/Seo";
 
 type PostRow = {
@@ -36,6 +37,75 @@ const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: st
 
 function prettifySlug(slug: string) {
   return slug.replace(/-\d{4}$/, "").replace(/-/g, " ");
+}
+
+type SavedItem = {
+  slug: string;
+  label: string;
+  href: string;
+  accent: "amber" | "teal";
+  icon: React.ComponentType<{ className?: string }>;
+  onUnsave?: (s: string) => void;
+  query?: string;
+};
+
+function SavedCard({ item, index }: { item: SavedItem; index: number }) {
+  const Icon = item.icon;
+  const accentBg = item.accent === "amber" ? "bg-amber/15" : "bg-teal/15";
+  const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
+  const [image, setImage] = useState<string>(DEFAULT_PEXELS_IMAGE);
+
+  useEffect(() => {
+    let cancelled = false;
+    const q = (item.query || item.label).trim();
+    if (!q) return;
+    fetchPexelsImage(q).then((url) => {
+      if (cancelled) return;
+      if (url) setImage(url);
+    });
+    return () => { cancelled = true; };
+  }, [item.query, item.label]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.02, 0.3) }}
+      className="group relative rounded-2xl border border-border/60 aspect-square overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all bg-card/30"
+    >
+      <img
+        src={image}
+        alt={item.label}
+        loading="lazy"
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-background/10" />
+      <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
+
+      <div className={`absolute top-3 left-3 z-10 w-9 h-9 rounded-xl ${accentBg} ${accentText} backdrop-blur flex items-center justify-center border border-border/40`}>
+        <Icon className="w-4 h-4" />
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 z-10 p-4 space-y-1">
+        <span className="block text-sm font-medium text-foreground capitalize leading-snug line-clamp-2 group-hover:text-amber transition-colors">
+          {item.label}
+        </span>
+        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+          {item.accent === "amber" ? "Saved" : "Visited"}
+        </span>
+      </div>
+
+      {item.onUnsave && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); item.onUnsave!(item.slug); }}
+          className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+          title="Remove"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </motion.div>
+  );
 }
 
 export default function Profile() {
@@ -492,7 +562,7 @@ export default function Profile() {
               ];
 
               const renderGrid = (
-                items: { slug: string; label: string; onUnsave?: (s: string) => void; href: string; accent: "amber" | "teal"; icon: typeof Bookmark }[],
+                items: { slug: string; label: string; onUnsave?: (s: string) => void; href: string; accent: "amber" | "teal"; icon: typeof Bookmark; query?: string }[],
                 emptyMsg: string,
                 emptyIcon: typeof Bookmark
               ) => {
@@ -507,42 +577,9 @@ export default function Profile() {
                 }
                 return (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                    {items.map((item, i) => {
-                      const Icon = item.icon;
-                      const accentBg = item.accent === "amber" ? "bg-amber/10" : "bg-teal/10";
-                      const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
-                      return (
-                        <motion.div
-                          key={item.slug}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                          className="group relative bg-card/30 rounded-2xl border border-border/60 p-4 aspect-square flex flex-col justify-between overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all"
-                        >
-                          <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
-                          <div className={`w-9 h-9 rounded-xl ${accentBg} ${accentText} flex items-center justify-center`}>
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <div className="relative z-0 space-y-1">
-                            <span className="block text-sm font-medium text-foreground capitalize leading-snug line-clamp-2 group-hover:text-amber transition-colors">
-                              {item.label}
-                            </span>
-                            <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-                              {item.accent === "amber" ? "Saved" : "Visited"}
-                            </span>
-                          </div>
-                          {item.onUnsave && (
-                            <button
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); item.onUnsave!(item.slug); }}
-                              className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
-                              title="Remove"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </motion.div>
-                      );
-                    })}
+                    {items.map((item, i) => (
+                      <SavedCard key={item.slug} item={item} index={i} />
+                    ))}
                   </div>
                 );
               };
@@ -552,7 +589,10 @@ export default function Profile() {
                   loading: savedTitlesLoading,
                   count: savedTitleSlugs.length,
                   node: renderGrid(
-                    savedTitleSlugs.map((slug) => ({ slug, label: prettifySlug(slug), href: `/title/${slug}`, accent: "amber", icon: Bookmark, onUnsave: handleUnsaveTitle })),
+                    savedTitleSlugs.map((slug) => {
+                      const label = prettifySlug(slug);
+                      return { slug, label, href: `/title/${slug}`, accent: "amber", icon: Bookmark, onUnsave: handleUnsaveTitle, query: `${label} movie poster cinematic` };
+                    }),
                     "No saved titles yet. Browse a title and tap Save to Map.",
                     Bookmark
                   ),
@@ -561,7 +601,10 @@ export default function Profile() {
                   loading: savedLocationsLoading,
                   count: savedLocationSlugs.length,
                   node: renderGrid(
-                    savedLocationSlugs.map((slug) => ({ slug, label: slug.replace(/-/g, " "), href: `/location/${slug}`, accent: "teal", icon: MapPin, onUnsave: handleUnsaveLocation })),
+                    savedLocationSlugs.map((slug) => {
+                      const label = slug.replace(/-/g, " ");
+                      return { slug, label, href: `/location/${slug}`, accent: "teal", icon: MapPin, onUnsave: handleUnsaveLocation, query: `${label} cityscape travel` };
+                    }),
                     "No saved locations yet. Open a location and tap Save City.",
                     MapPin
                   ),
@@ -570,7 +613,10 @@ export default function Profile() {
                   loading: savedSpotsLoading,
                   count: savedSpotSlugs.length,
                   node: renderGrid(
-                    savedSpotSlugs.map((slug) => ({ slug, label: slug.replace(/-/g, " "), href: `/spot/${slug}`, accent: "amber", icon: Sparkles, onUnsave: handleUnsaveSpot })),
+                    savedSpotSlugs.map((slug) => {
+                      const label = slug.replace(/-/g, " ");
+                      return { slug, label, href: `/spot/${slug}`, accent: "amber", icon: Sparkles, onUnsave: handleUnsaveSpot, query: `${label} landmark` };
+                    }),
                     "No spots on your wishlist yet. Open a spot and tap Save Spot.",
                     Sparkles
                   ),
@@ -581,7 +627,9 @@ export default function Profile() {
                   node: renderGrid(
                     visitedSpotSlugs.map((slug) => {
                       const p = visitedSpots.find((s) => s.spot_slug === slug);
-                      return { slug, label: p?.spot_name ?? slug.replace(/-/g, " "), href: `/spot/${slug}`, accent: "teal" as const, icon: CheckCircle2, onUnsave: handleUnvisitSpot };
+                      const label = p?.spot_name ?? slug.replace(/-/g, " ");
+                      const place = [p?.city, p?.country].filter(Boolean).join(" ");
+                      return { slug, label, href: `/spot/${slug}`, accent: "teal" as const, icon: CheckCircle2, onUnsave: handleUnvisitSpot, query: `${label} ${place}`.trim() };
                     }),
                     "No visited spots yet. Tap I've Been Here on any spot.",
                     CheckCircle2
@@ -591,7 +639,10 @@ export default function Profile() {
                   loading: watchedTitlesLoading,
                   count: watchedTitleSlugs.length,
                   node: renderGrid(
-                    watchedTitleSlugs.map((slug) => ({ slug, label: prettifySlug(slug), href: `/title/${slug}`, accent: "teal" as const, icon: Film })),
+                    watchedTitleSlugs.map((slug) => {
+                      const label = prettifySlug(slug);
+                      return { slug, label, href: `/title/${slug}`, accent: "teal" as const, icon: Film, query: `${label} movie cinematic scene` };
+                    }),
                     "No watched titles yet. Open a title and tap Watched.",
                     Film
                   ),
