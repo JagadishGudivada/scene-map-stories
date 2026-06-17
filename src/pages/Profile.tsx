@@ -47,15 +47,18 @@ type SavedItem = {
   icon: React.ComponentType<{ className?: string }>;
   onUnsave?: (s: string) => void;
   query?: string;
+  imageUrl?: string;
+  imageFit?: "cover" | "poster";
 };
 
 function SavedCard({ item, index }: { item: SavedItem; index: number }) {
   const Icon = item.icon;
   const accentBg = item.accent === "amber" ? "bg-amber/15" : "bg-teal/15";
   const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
-  const [image, setImage] = useState<string>(DEFAULT_PEXELS_IMAGE);
+  const [image, setImage] = useState<string>(item.imageUrl || DEFAULT_PEXELS_IMAGE);
 
   useEffect(() => {
+    if (item.imageUrl) { setImage(item.imageUrl); return; }
     let cancelled = false;
     const q = (item.query || item.label).trim();
     if (!q) return;
@@ -64,7 +67,7 @@ function SavedCard({ item, index }: { item: SavedItem; index: number }) {
       if (url) setImage(url);
     });
     return () => { cancelled = true; };
-  }, [item.query, item.label]);
+  }, [item.query, item.label, item.imageUrl]);
 
   return (
     <motion.div
@@ -73,13 +76,21 @@ function SavedCard({ item, index }: { item: SavedItem; index: number }) {
       transition={{ delay: Math.min(index * 0.02, 0.3) }}
       className="group relative rounded-2xl border border-border/60 aspect-square overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all bg-card/30"
     >
+      {item.imageFit === "poster" && (
+        <img
+          src={image}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60"
+        />
+      )}
       <img
         src={image}
         alt={item.label}
         loading="lazy"
-        className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+        className={`absolute inset-0 w-full h-full ${item.imageFit === "poster" ? "object-contain" : "object-cover"} group-hover:scale-[1.04] transition-transform duration-500`}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-background/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
       <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
 
       <div className={`absolute top-3 left-3 z-10 w-9 h-9 rounded-xl ${accentBg} ${accentText} backdrop-blur flex items-center justify-center border border-border/40`}>
@@ -119,6 +130,39 @@ export default function Profile() {
   const { slugs: savedSpotSlugs, loading: savedSpotsLoading, refresh: refreshSavedSpots } = useAllSavedSpots();
   const { slugs: visitedSpotSlugs, spots: visitedSpots, loading: visitedSpotsLoading, refresh: refreshVisitedSpots } = useAllVisitedSpots();
   const { slugs: watchedTitleSlugs, loading: watchedTitlesLoading } = useAllWatchedTitles();
+
+  // Metadata for pretty cards (poster for titles, name/city for locations/spots)
+  const [titleMeta, setTitleMeta] = useState<Record<string, { title: string; year: number | null; poster: string | null }>>({});
+  const [locationMeta, setLocationMeta] = useState<Record<string, { name: string; city: string | null; country: string | null }>>({});
+  const [spotMeta, setSpotMeta] = useState<Record<string, { name: string; city: string | null; country: string | null }>>({});
+
+  useEffect(() => {
+    const slugs = Array.from(new Set([...savedTitleSlugs, ...watchedTitleSlugs]));
+    if (!slugs.length) { setTitleMeta({}); return; }
+    supabase.from("titles").select("slug, title, year, poster_url").in("slug", slugs).then(({ data }) => {
+      const map: Record<string, { title: string; year: number | null; poster: string | null }> = {};
+      (data ?? []).forEach((r: any) => { map[r.slug] = { title: r.title, year: r.year, poster: r.poster_url }; });
+      setTitleMeta(map);
+    });
+  }, [savedTitleSlugs, watchedTitleSlugs]);
+
+  useEffect(() => {
+    if (!savedLocationSlugs.length) { setLocationMeta({}); return; }
+    supabase.from("locations").select("slug, name, city, country").in("slug", savedLocationSlugs).then(({ data }) => {
+      const map: Record<string, { name: string; city: string | null; country: string | null }> = {};
+      (data ?? []).forEach((r: any) => { map[r.slug] = { name: r.name, city: r.city, country: r.country }; });
+      setLocationMeta(map);
+    });
+  }, [savedLocationSlugs]);
+
+  useEffect(() => {
+    if (!savedSpotSlugs.length) { setSpotMeta({}); return; }
+    supabase.from("spots").select("slug, name, city, country").in("slug", savedSpotSlugs).then(({ data }) => {
+      const map: Record<string, { name: string; city: string | null; country: string | null }> = {};
+      (data ?? []).forEach((r: any) => { map[r.slug] = { name: r.name, city: r.city, country: r.country }; });
+      setSpotMeta(map);
+    });
+  }, [savedSpotSlugs]);
 
   // Load profile row (own or by username param)
   const [profile, setProfile] = useState<ProfileRow | null>(null);
@@ -590,8 +634,15 @@ export default function Profile() {
                   count: savedTitleSlugs.length,
                   node: renderGrid(
                     savedTitleSlugs.map((slug) => {
-                      const label = prettifySlug(slug);
-                      return { slug, label, href: `/title/${slug}`, accent: "amber", icon: Bookmark, onUnsave: handleUnsaveTitle, query: `${label} movie poster cinematic` };
+                      const meta = titleMeta[slug];
+                      const label = meta?.title ?? prettifySlug(slug);
+                      return {
+                        slug, label, href: `/title/${slug}`, accent: "amber",
+                        icon: Bookmark, onUnsave: handleUnsaveTitle,
+                        imageUrl: meta?.poster ?? undefined,
+                        imageFit: meta?.poster ? "poster" : "cover",
+                        query: `${label} movie poster`,
+                      };
                     }),
                     "No saved titles yet. Browse a title and tap Save to Map.",
                     Bookmark
@@ -602,8 +653,14 @@ export default function Profile() {
                   count: savedLocationSlugs.length,
                   node: renderGrid(
                     savedLocationSlugs.map((slug) => {
-                      const label = slug.replace(/-/g, " ");
-                      return { slug, label, href: `/location/${slug}`, accent: "teal", icon: MapPin, onUnsave: handleUnsaveLocation, query: `${label} cityscape travel` };
+                      const meta = locationMeta[slug];
+                      const label = meta?.name ?? slug.replace(/-/g, " ");
+                      const place = [meta?.city, meta?.country].filter(Boolean).join(" ");
+                      return {
+                        slug, label, href: `/location/${slug}`, accent: "teal",
+                        icon: MapPin, onUnsave: handleUnsaveLocation,
+                        query: `${label} ${place} cityscape travel landmark`.trim(),
+                      };
                     }),
                     "No saved locations yet. Open a location and tap Save City.",
                     MapPin
@@ -614,8 +671,14 @@ export default function Profile() {
                   count: savedSpotSlugs.length,
                   node: renderGrid(
                     savedSpotSlugs.map((slug) => {
-                      const label = slug.replace(/-/g, " ");
-                      return { slug, label, href: `/spot/${slug}`, accent: "amber", icon: Sparkles, onUnsave: handleUnsaveSpot, query: `${label} landmark` };
+                      const meta = spotMeta[slug];
+                      const label = meta?.name ?? slug.replace(/-/g, " ");
+                      const place = [meta?.city, meta?.country].filter(Boolean).join(" ");
+                      return {
+                        slug, label, href: `/spot/${slug}`, accent: "amber",
+                        icon: Sparkles, onUnsave: handleUnsaveSpot,
+                        query: `${label} ${place} landmark`.trim(),
+                      };
                     }),
                     "No spots on your wishlist yet. Open a spot and tap Save Spot.",
                     Sparkles
@@ -629,7 +692,11 @@ export default function Profile() {
                       const p = visitedSpots.find((s) => s.spot_slug === slug);
                       const label = p?.spot_name ?? slug.replace(/-/g, " ");
                       const place = [p?.city, p?.country].filter(Boolean).join(" ");
-                      return { slug, label, href: `/spot/${slug}`, accent: "teal" as const, icon: CheckCircle2, onUnsave: handleUnvisitSpot, query: `${label} ${place}`.trim() };
+                      return {
+                        slug, label, href: `/spot/${slug}`, accent: "teal" as const,
+                        icon: CheckCircle2, onUnsave: handleUnvisitSpot,
+                        query: `${label} ${place} landmark`.trim(),
+                      };
                     }),
                     "No visited spots yet. Tap I've Been Here on any spot.",
                     CheckCircle2
@@ -640,8 +707,15 @@ export default function Profile() {
                   count: watchedTitleSlugs.length,
                   node: renderGrid(
                     watchedTitleSlugs.map((slug) => {
-                      const label = prettifySlug(slug);
-                      return { slug, label, href: `/title/${slug}`, accent: "teal" as const, icon: Film, query: `${label} movie cinematic scene` };
+                      const meta = titleMeta[slug];
+                      const label = meta?.title ?? prettifySlug(slug);
+                      return {
+                        slug, label, href: `/title/${slug}`, accent: "teal" as const,
+                        icon: Film,
+                        imageUrl: meta?.poster ?? undefined,
+                        imageFit: meta?.poster ? "poster" : "cover",
+                        query: `${label} movie poster`,
+                      };
                     }),
                     "No watched titles yet. Open a title and tap Watched.",
                     Film
