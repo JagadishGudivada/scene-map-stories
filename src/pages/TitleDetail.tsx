@@ -793,10 +793,16 @@ export default function TitleDetail() {
 
                 <div className="flex sm:hidden items-center gap-2">
                   <button
-                    aria-label="Watched ?"
-                    className="h-11 w-11 rounded-full glass border border-border text-foreground hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
+                    onClick={toggleWatched}
+                    disabled={watchedLoading}
+                    aria-label={watched ? "Watched" : "Mark as watched"}
+                    className={`h-11 w-11 rounded-full glass border transition-all flex items-center justify-center disabled:opacity-50 ${
+                      watched
+                        ? "border-teal/40 text-teal bg-teal/10"
+                        : "border-border text-foreground hover:bg-muted/50 hover:text-amber"
+                    }`}
                   >
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className={`w-4 h-4 ${watched ? "fill-teal/20" : ""}`} />
                   </button>
                   <AddLocationDialog titleSlug={titleSlug} titleName={view.title} iconOnly />
                   <ShareMenu
@@ -807,8 +813,17 @@ export default function TitleDetail() {
                 </div>
 
                 <div className="hidden sm:flex items-center gap-3">
-                  <button className="h-11 px-6 rounded-full glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Watched ?
+                  <button
+                    onClick={toggleWatched}
+                    disabled={watchedLoading}
+                    className={`h-11 px-6 rounded-full glass border font-medium text-sm transition-all flex items-center gap-2 disabled:opacity-50 ${
+                      watched
+                        ? "border-teal/40 text-teal bg-teal/10 hover:bg-teal/15"
+                        : "border-border text-foreground hover:bg-muted/50"
+                    }`}
+                  >
+                    <CheckCircle2 className={`w-4 h-4 ${watched ? "fill-teal/20" : ""}`} />
+                    {watched ? "Watched" : "Mark Watched"}
                   </button>
                   <AddLocationDialog titleSlug={titleSlug} titleName={view.title} />
                   <ShareMenu
