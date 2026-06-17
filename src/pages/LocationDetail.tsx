@@ -683,7 +683,7 @@ export default function LocationDetail() {
                 }`}
               >
                 {locationSaved ? <BookmarkCheck className="w-4 h-4 inline mr-1.5" /> : <Bookmark className="w-4 h-4 inline mr-1.5" />}
-                {locationSaved ? "City Saved" : "Save City to My List"}
+                {locationSaved ? "Saved" : "Saveß"}
               </button>
               <button className="px-6 py-3 rounded-full border border-border/40 text-foreground text-sm font-medium hover:border-amber hover:text-amber transition-all">
                 <Bell className="w-4 h-4 inline mr-1.5" />
@@ -1202,7 +1202,7 @@ export default function LocationDetail() {
 
       {/* SECTION 7: RELATED LOCATIONS */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
-        <h2 className="font-serif italic text-2xl text-foreground mb-5">Also Popular in Europe</h2>
+        <h2 className="font-serif italic text-2xl text-foreground mb-5">Also Popular</h2>
         <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
           {relatedLocations.map((loc) => (
             <Link
@@ -1212,10 +1212,10 @@ export default function LocationDetail() {
             >
               <span className="text-base leading-none">{loc.flag}</span>
               <span className="text-sm font-medium text-foreground">{loc.name}</span>
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+           {/*    <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="w-3 h-3 text-amber" />
                 {loc.count} titles
-              </span>
+              </span> */}
             </Link>
           ))}
         </div>

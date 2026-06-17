@@ -28,10 +28,10 @@ export default function PopularLocations() {
             >
               <span className="text-base leading-none">{loc.country}</span>
               <span className="text-sm font-medium text-foreground">{loc.name}</span>
-              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+             {/*  <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <MapPin className="w-3 h-3 text-amber" />
-                {loc.count} titles
-              </span>
+                {loc.count} titles 
+              </span> */}
             </motion.div>
           </Link>
         ))}

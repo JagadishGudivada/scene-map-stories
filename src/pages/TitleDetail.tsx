@@ -792,7 +792,7 @@ export default function TitleDetail() {
 
                 <div className="flex sm:hidden items-center gap-2">
                   <button
-                    aria-label="I've been here"
+                    aria-label="Watched ?"
                     className="h-11 w-11 rounded-full glass border border-border text-foreground hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
                   >
                     <CheckCircle2 className="w-4 h-4" />
@@ -807,7 +807,7 @@ export default function TitleDetail() {
 
                 <div className="hidden sm:flex items-center gap-3">
                   <button className="h-11 px-6 rounded-full glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> I've Been Here
+                    <CheckCircle2 className="w-4 h-4" /> Watched ?
                   </button>
                   <AddLocationDialog titleSlug={titleSlug} titleName={view.title} />
                   <ShareMenu

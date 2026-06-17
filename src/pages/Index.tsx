@@ -394,7 +394,7 @@ export default function Index() {
             </motion.section> */}
 
             {/* === SECTION TABS === */}
-            <div className="flex items-center gap-1 mb-8 border-b border-border">
+            {/* <div className="flex items-center gap-1 mb-8 border-b border-border">
               <button
                 onClick={() => setActiveSection("discover")}
                 className={`px-5 py-3 text-sm font-medium transition-all border-b-2 -mb-px ${
@@ -421,7 +421,7 @@ export default function Index() {
                   Community
                 </span>
               </button>
-            </div>
+            </div> */}
 
             <AnimatePresence mode="wait">
               {activeSection === "discover" ? (
@@ -433,9 +433,9 @@ export default function Index() {
                   transition={{ duration: 0.3 }}
                 >
                   {/* Trending Row */}
-                  <div className="mb-14">
+                 {/*  <div className="mb-14">
                     <TrendingRow titles={homepageTitles} />
-                  </div>
+                  </div> */}
 
                   {/* Trendy On-Screen Spots (cafés, hotels from this year's hits) */}
                   <div className="mb-14">
@@ -563,7 +563,7 @@ export default function Index() {
               <div className="glass border border-amber/20 p-10 text-center relative z-10">
                 <div className="inline-flex items-center gap-2 mb-4 glass rounded-full px-4 py-2 border border-amber/20">
                   <Sparkles className="w-4 h-4 text-amber" />
-                  <span className="text-sm font-medium text-amber">Join 40,000+ film explorers</span>
+                  <span className="text-sm font-medium text-amber">Join Sarevista film explorers</span>
                 </div>
                 <h2 className="font-serif text-4xl text-foreground mb-4">
                   Start mapping your<br />

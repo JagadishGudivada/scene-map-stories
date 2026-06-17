@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen } as const;
 
 const navLinks = [
-  { label: "Explore", href: "/explore", icon: Compass },
+/*   { label: "Explore", href: "/explore", icon: Compass }, */
   { label: "Map", href: "/map", icon: MapPin },
 ];
 
@@ -50,7 +50,7 @@ export default function Navigation() {
   const profileHref = profileUsername ? `/u/${profileUsername}` : "/auth";
   const mobileLinks = [
     { label: "Home", href: "/", icon: Film },
-    { label: "Explore", href: "/explore", icon: Compass },
+    /* { label: "Explore", href: "/explore", icon: Compass }, */
     { label: "Map", href: "/map", icon: MapPin },
     { label: "Profile", href: profileHref, icon: User },
   ];
@@ -236,7 +236,7 @@ export default function Navigation() {
               <NotificationsDropdown />
 
               {/* Add button */}
-              {user && (
+{/*               {user && (
                 <Link
                   to="/add"
                   className="hidden sm:flex h-9 px-3 rounded-lg items-center gap-1.5 bg-gradient-amber text-charcoal text-sm font-semibold hover:opacity-90 transition-opacity shadow-amber"
@@ -244,7 +244,7 @@ export default function Navigation() {
                   <Plus className="w-4 h-4" strokeWidth={2.5} />
                   Add Title
                 </Link>
-              )}
+              )} */}
 
               {/* Auth-dependent UI */}
               {user ? (
