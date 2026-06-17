@@ -493,7 +493,7 @@ export default function Profile() {
               ];
 
               const renderGrid = (
-                items: { slug: string; label: string; onUnsave?: (s: string) => void; href: string; accent: "amber" | "teal"; icon: typeof Bookmark }[],
+                items: { slug: string; label: string; onUnsave?: (s: string) => void; href: string; accent: "amber" | "teal"; icon: typeof Bookmark; query?: string }[],
                 emptyMsg: string,
                 emptyIcon: typeof Bookmark
               ) => {
@@ -508,42 +508,9 @@ export default function Profile() {
                 }
                 return (
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                    {items.map((item, i) => {
-                      const Icon = item.icon;
-                      const accentBg = item.accent === "amber" ? "bg-amber/10" : "bg-teal/10";
-                      const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
-                      return (
-                        <motion.div
-                          key={item.slug}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                          className="group relative bg-card/30 rounded-2xl border border-border/60 p-4 aspect-square flex flex-col justify-between overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all"
-                        >
-                          <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
-                          <div className={`w-9 h-9 rounded-xl ${accentBg} ${accentText} flex items-center justify-center`}>
-                            <Icon className="w-4 h-4" />
-                          </div>
-                          <div className="relative z-0 space-y-1">
-                            <span className="block text-sm font-medium text-foreground capitalize leading-snug line-clamp-2 group-hover:text-amber transition-colors">
-                              {item.label}
-                            </span>
-                            <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-                              {item.accent === "amber" ? "Saved" : "Visited"}
-                            </span>
-                          </div>
-                          {item.onUnsave && (
-                            <button
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); item.onUnsave!(item.slug); }}
-                              className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
-                              title="Remove"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          )}
-                        </motion.div>
-                      );
-                    })}
+                    {items.map((item, i) => (
+                      <SavedCard key={item.slug} item={item} index={i} />
+                    ))}
                   </div>
                 );
               };
