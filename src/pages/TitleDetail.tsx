@@ -474,6 +474,7 @@ export default function TitleDetail() {
   // titleSlug and saved state must be computed before any conditional returns (Rules of Hooks)
   const titleSlug = view ? slugify(view.title, view.year) : "";
   const { saved, toggle: toggleSave, loading: saveLoading } = useSavedTitle(titleSlug);
+  const { watched, toggle: toggleWatched, loading: watchedLoading } = useWatchedTitle(titleSlug);
 
   const validPins = view ? view.locations.filter((l) => l.lat !== 0 || l.lng !== 0) : [];
   const mapCenter: [number, number] = validPins.length
