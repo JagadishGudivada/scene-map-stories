@@ -131,6 +131,39 @@ export default function Profile() {
   const { slugs: visitedSpotSlugs, spots: visitedSpots, loading: visitedSpotsLoading, refresh: refreshVisitedSpots } = useAllVisitedSpots();
   const { slugs: watchedTitleSlugs, loading: watchedTitlesLoading } = useAllWatchedTitles();
 
+  // Metadata for pretty cards (poster for titles, name/city for locations/spots)
+  const [titleMeta, setTitleMeta] = useState<Record<string, { title: string; year: number | null; poster: string | null }>>({});
+  const [locationMeta, setLocationMeta] = useState<Record<string, { name: string; city: string | null; country: string | null }>>({});
+  const [spotMeta, setSpotMeta] = useState<Record<string, { name: string; city: string | null; country: string | null }>>({});
+
+  useEffect(() => {
+    const slugs = Array.from(new Set([...savedTitleSlugs, ...watchedTitleSlugs]));
+    if (!slugs.length) { setTitleMeta({}); return; }
+    supabase.from("titles").select("slug, title, year, poster_url").in("slug", slugs).then(({ data }) => {
+      const map: Record<string, { title: string; year: number | null; poster: string | null }> = {};
+      (data ?? []).forEach((r: any) => { map[r.slug] = { title: r.title, year: r.year, poster: r.poster_url }; });
+      setTitleMeta(map);
+    });
+  }, [savedTitleSlugs, watchedTitleSlugs]);
+
+  useEffect(() => {
+    if (!savedLocationSlugs.length) { setLocationMeta({}); return; }
+    supabase.from("locations").select("slug, name, city, country").in("slug", savedLocationSlugs).then(({ data }) => {
+      const map: Record<string, { name: string; city: string | null; country: string | null }> = {};
+      (data ?? []).forEach((r: any) => { map[r.slug] = { name: r.name, city: r.city, country: r.country }; });
+      setLocationMeta(map);
+    });
+  }, [savedLocationSlugs]);
+
+  useEffect(() => {
+    if (!savedSpotSlugs.length) { setSpotMeta({}); return; }
+    supabase.from("spots").select("slug, name, city, country").in("slug", savedSpotSlugs).then(({ data }) => {
+      const map: Record<string, { name: string; city: string | null; country: string | null }> = {};
+      (data ?? []).forEach((r: any) => { map[r.slug] = { name: r.name, city: r.city, country: r.country }; });
+      setSpotMeta(map);
+    });
+  }, [savedSpotSlugs]);
+
   // Load profile row (own or by username param)
   const [profile, setProfile] = useState<ProfileRow | null>(null);
   const [posts, setPosts] = useState<PostRow[]>([]);
