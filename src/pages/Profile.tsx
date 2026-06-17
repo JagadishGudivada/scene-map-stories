@@ -39,6 +39,75 @@ function prettifySlug(slug: string) {
   return slug.replace(/-\d{4}$/, "").replace(/-/g, " ");
 }
 
+type SavedItem = {
+  slug: string;
+  label: string;
+  href: string;
+  accent: "amber" | "teal";
+  icon: React.ComponentType<{ className?: string }>;
+  onUnsave?: (s: string) => void;
+  query?: string;
+};
+
+function SavedCard({ item, index }: { item: SavedItem; index: number }) {
+  const Icon = item.icon;
+  const accentBg = item.accent === "amber" ? "bg-amber/15" : "bg-teal/15";
+  const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
+  const [image, setImage] = useState<string>(DEFAULT_PEXELS_IMAGE);
+
+  useEffect(() => {
+    let cancelled = false;
+    const q = (item.query || item.label).trim();
+    if (!q) return;
+    fetchPexelsImage(q).then((url) => {
+      if (cancelled) return;
+      if (url) setImage(url);
+    });
+    return () => { cancelled = true; };
+  }, [item.query, item.label]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: Math.min(index * 0.02, 0.3) }}
+      className="group relative rounded-2xl border border-border/60 aspect-square overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all bg-card/30"
+    >
+      <img
+        src={image}
+        alt={item.label}
+        loading="lazy"
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-background/10" />
+      <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
+
+      <div className={`absolute top-3 left-3 z-10 w-9 h-9 rounded-xl ${accentBg} ${accentText} backdrop-blur flex items-center justify-center border border-border/40`}>
+        <Icon className="w-4 h-4" />
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 z-10 p-4 space-y-1">
+        <span className="block text-sm font-medium text-foreground capitalize leading-snug line-clamp-2 group-hover:text-amber transition-colors">
+          {item.label}
+        </span>
+        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
+          {item.accent === "amber" ? "Saved" : "Visited"}
+        </span>
+      </div>
+
+      {item.onUnsave && (
+        <button
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); item.onUnsave!(item.slug); }}
+          className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
+          title="Remove"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("map");
   const [savedFilter, setSavedFilter] = useState<SavedFilter>("titles");
