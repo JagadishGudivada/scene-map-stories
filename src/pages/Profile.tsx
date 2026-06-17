@@ -76,13 +76,21 @@ function SavedCard({ item, index }: { item: SavedItem; index: number }) {
       transition={{ delay: Math.min(index * 0.02, 0.3) }}
       className="group relative rounded-2xl border border-border/60 aspect-square overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all bg-card/30"
     >
+      {item.imageFit === "poster" && (
+        <img
+          src={image}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60"
+        />
+      )}
       <img
         src={image}
         alt={item.label}
         loading="lazy"
-        className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+        className={`absolute inset-0 w-full h-full ${item.imageFit === "poster" ? "object-contain" : "object-cover"} group-hover:scale-[1.04] transition-transform duration-500`}
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/50 to-background/10" />
+      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
       <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
 
       <div className={`absolute top-3 left-3 z-10 w-9 h-9 rounded-xl ${accentBg} ${accentText} backdrop-blur flex items-center justify-center border border-border/40`}>
