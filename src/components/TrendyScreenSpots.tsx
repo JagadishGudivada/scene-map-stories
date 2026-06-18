@@ -265,12 +265,23 @@ export default function TrendyScreenSpots() {
             }}
             className="group flex-shrink-0 w-[280px] sm:w-[300px] snap-start rounded-2xl overflow-hidden glass border border-border hover:border-amber/40 transition-all duration-300 cursor-pointer"
           >
-            <div className="relative h-44 overflow-hidden">
+            <div className="relative h-44 overflow-hidden bg-gradient-to-br from-amber/10 via-charcoal to-charcoal">
+              <div className="absolute inset-0 animate-pulse bg-muted/20" aria-hidden />
               <img
                 src={images[spot.id] || spot.image}
                 alt={`${spot.name}, ${spot.city} — featured in ${spot.title}`}
                 loading="lazy"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                onError={(e) => {
+                  const img = e.currentTarget;
+                  if (img.src !== spot.image) {
+                    img.src = spot.image;
+                  } else if (img.src !== DEFAULT_PEXELS_IMAGE) {
+                    img.src = DEFAULT_PEXELS_IMAGE;
+                  } else {
+                    img.style.display = "none";
+                  }
+                }}
+                className="relative w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-charcoal/95 via-charcoal/20 to-transparent" />
 
