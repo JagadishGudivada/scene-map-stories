@@ -156,6 +156,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/clarkson-s-farm-2021</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/cruella-2021</loc>
     <lastmod>2026-05-24</lastmod>
     <changefreq>weekly</changefreq>
@@ -348,6 +354,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/over-your-dead-body-2026</loc>
+    <lastmod>2026-06-17</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/predator-badlands-2025</loc>
     <lastmod>2026-05-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -380,6 +392,12 @@
   <url>
     <loc>https://sarevista.com/title/scary-movie-2026</loc>
     <lastmod>2026-06-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/title/scary-movie-reboot-2026</loc>
+    <lastmod>2026-06-17</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -662,6 +680,12 @@
   <url>
     <loc>https://sarevista.com/spot/alnwick-castle-northumberland</loc>
     <lastmod>2026-05-25</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/spot/cantacuzino-castle</loc>
+    <lastmod>2026-06-18</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
