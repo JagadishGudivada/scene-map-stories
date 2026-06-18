@@ -55,19 +55,40 @@ function SavedCard({ item, index }: { item: SavedItem; index: number }) {
   const Icon = item.icon;
   const accentBg = item.accent === "amber" ? "bg-amber/15" : "bg-teal/15";
   const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
-  const [image, setImage] = useState<string>(item.imageUrl || DEFAULT_PEXELS_IMAGE);
+  const [image, setImage] = useState<string | null>(item.imageUrl || null);
+  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
 
   useEffect(() => {
-    if (item.imageUrl) { setImage(item.imageUrl); return; }
+    if (item.imageUrl) {
+      setImage(item.imageUrl);
+      setStatus("loading");
+      return;
+    }
     let cancelled = false;
     const q = (item.query || item.label).trim();
-    if (!q) return;
-    fetchPexelsImage(q).then((url) => {
-      if (cancelled) return;
-      if (url) setImage(url);
-    });
-    return () => { cancelled = true; };
+    if (!q) {
+      setStatus("error");
+      return;
+    }
+    fetchPexelsImage(q)
+      .then((url) => {
+        if (cancelled) return;
+        if (url) {
+          setImage(url);
+          setStatus("loading");
+        } else {
+          setStatus("error");
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setStatus("error");
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [item.query, item.label, item.imageUrl]);
+
+  const showImage = image && status !== "error";
 
   return (
     <motion.div
@@ -76,20 +97,46 @@ function SavedCard({ item, index }: { item: SavedItem; index: number }) {
       transition={{ delay: Math.min(index * 0.02, 0.3) }}
       className="group relative rounded-2xl border border-border/60 aspect-square overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all bg-card/30"
     >
-      {item.imageFit === "poster" && (
+      {status === "loading" && (
+        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/40 via-muted/20 to-muted/40" />
+      )}
+
+      {!showImage && (
+        <div
+          className={`absolute inset-0 flex items-center justify-center ${
+            item.accent === "amber"
+              ? "bg-gradient-to-br from-amber/20 via-background to-background"
+              : "bg-gradient-to-br from-teal/20 via-background to-background"
+          }`}
+          aria-hidden
+        >
+          <Icon className={`w-12 h-12 ${accentText} opacity-30`} />
+        </div>
+      )}
+
+      {showImage && item.imageFit === "poster" && (
         <img
-          src={image}
+          src={image!}
           alt=""
           aria-hidden
           className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60"
+          onError={() => setStatus("error")}
         />
       )}
-      <img
-        src={image}
-        alt={item.label}
-        loading="lazy"
-        className={`absolute inset-0 w-full h-full ${item.imageFit === "poster" ? "object-contain" : "object-cover"} group-hover:scale-[1.04] transition-transform duration-500`}
-      />
+      {showImage && (
+        <img
+          src={image!}
+          alt={item.label}
+          loading="lazy"
+          onLoad={() => setStatus("loaded")}
+          onError={() => setStatus("error")}
+          className={`absolute inset-0 w-full h-full ${
+            item.imageFit === "poster" ? "object-contain" : "object-cover"
+          } group-hover:scale-[1.04] transition-transform duration-500 ${
+            status === "loaded" ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
       <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
 
