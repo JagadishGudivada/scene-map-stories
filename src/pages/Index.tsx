@@ -10,7 +10,6 @@ import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import TrendyScreenSpots from "@/components/TrendyScreenSpots";
 import Footer from "@/components/Footer";
 import Seo from "@/components/Seo";
-import CinematicRoulette from "@/components/CinematicRoulette";
 import SpotRadarFab from "@/components/SpotRadarFab";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
@@ -593,7 +592,6 @@ export default function Index() {
         )}
       </div>
       <Footer />
-      <CinematicRoulette />
       <SpotRadarFab />
     </div>
   );
