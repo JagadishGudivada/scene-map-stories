@@ -727,12 +727,12 @@ export default function TitleDetail() {
 
           <Link
             to="/"
-            className="absolute top-4 left-4 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors lg:left-auto lg:right-4"
+            className="absolute top-4 left-4 z-10 glass rounded-xl p-2.5 border border-border text-overlay-foreground hover:bg-muted/50 transition-colors lg:left-auto lg:right-4"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
 
-          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:px-8 lg:pb-8 lg:pt-0">
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:px-8 lg:pb-8 lg:pt-0 text-overlay-foreground">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3 badge-${view.type.toLowerCase()}`}>
                 <TypeIcon className="w-3 h-3" />
