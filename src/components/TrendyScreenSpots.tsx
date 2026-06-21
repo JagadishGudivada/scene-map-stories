@@ -265,7 +265,7 @@ export default function TrendyScreenSpots() {
             }}
             className="group flex-shrink-0 w-[280px] sm:w-[300px] snap-start rounded-2xl overflow-hidden glass border border-border hover:border-amber/40 transition-all duration-300 cursor-pointer"
           >
-            <div className="relative h-44 overflow-hidden bg-gradient-to-br from-amber/10 via-charcoal to-charcoal">
+            <div className="relative h-44 overflow-hidden bg-gradient-to-br from-amber/10 via-overlay to-overlay text-overlay-foreground">
               <div className="absolute inset-0 animate-pulse bg-muted/20" aria-hidden />
               <img
                 src={images[spot.id] || spot.image}
@@ -283,7 +283,7 @@ export default function TrendyScreenSpots() {
                 }}
                 className="relative w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-charcoal/95 via-charcoal/20 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-overlay/95 via-overlay/20 to-transparent" />
 
               <div className="absolute top-3 left-3 flex items-center gap-1.5">
                 <span className={`text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full border ${kindBadge[spot.kind]}`}>
@@ -293,7 +293,7 @@ export default function TrendyScreenSpots() {
 
               <div className="absolute top-3 right-3 glass rounded-full px-2 py-0.5 flex items-center gap-1 border border-border">
                 <Instagram className="w-2.5 h-2.5 text-amber" />
-                <span className="text-[10px] font-mono text-foreground">Viral</span>
+                <span className="text-[10px] font-mono text-current">Viral</span>
               </div>
 
               <div className="absolute bottom-3 left-3 right-3">
@@ -302,7 +302,7 @@ export default function TrendyScreenSpots() {
                   <MapPin className="w-2.5 h-2.5" />
                   <span className="uppercase tracking-wider truncate">{spot.city}, {spot.country}</span>
                 </div>
-                <h3 className="font-serif text-lg text-foreground leading-tight truncate">
+                <h3 className="font-serif text-lg text-current leading-tight truncate">
                   {spot.name}
                 </h3>
               </div>
