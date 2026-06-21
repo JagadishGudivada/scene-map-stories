@@ -75,6 +75,10 @@ export default {
         },
         ivory: "hsl(var(--ivory))",
         charcoal: "hsl(var(--charcoal))",
+        overlay: {
+          DEFAULT: "hsl(var(--overlay))",
+          foreground: "hsl(var(--overlay-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
