@@ -722,26 +722,26 @@ export default function TitleDetail() {
             alt={view.title}
             className="absolute inset-0 h-full w-full object-cover object-center lg:object-[center_22%]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/55 via-background/15 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/25 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-overlay/55 via-overlay/15 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-overlay/25 via-transparent to-transparent" />
 
           <Link
             to="/"
-            className="absolute top-4 left-4 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors lg:left-auto lg:right-4"
+            className="absolute top-4 left-4 z-10 glass rounded-xl p-2.5 border border-border text-overlay-foreground hover:bg-muted/50 transition-colors lg:left-auto lg:right-4"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
 
-          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:px-8 lg:pb-8 lg:pt-0">
+          <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8 lg:px-8 lg:pb-8 lg:pt-0 text-overlay-foreground">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mb-3 badge-${view.type.toLowerCase()}`}>
                 <TypeIcon className="w-3 h-3" />
                 {view.type}
               </div>
 
-              <h1 className="font-serif text-4xl sm:text-6xl text-foreground mb-2 leading-tight">{view.title}</h1>
+              <h1 className="font-serif text-4xl sm:text-6xl mb-2 leading-tight">{view.title}</h1>
 
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-5">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-overlay-foreground/70 mb-5">
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" /> {view.year}
                 </span>
@@ -764,15 +764,15 @@ export default function TitleDetail() {
               {view.genres.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-5">
                   {view.genres.map((g) => (
-                    <span
-                      key={g}
-                      className="glass rounded-full px-3 py-1 text-xs text-foreground border border-border inline-flex items-center gap-1.5"
-                      title={g}
-                      aria-label={g}
-                    >
-                      <span className="sm:hidden" aria-hidden="true">{getGenreIcon(g)}</span>
-                      <span className="hidden sm:inline">{g}</span>
-                    </span>
+                  <span
+                    key={g}
+                    className="glass rounded-full px-3 py-1 text-xs text-current border border-border inline-flex items-center gap-1.5"
+                    title={g}
+                    aria-label={g}
+                  >
+                    <span className="sm:hidden" aria-hidden="true">{getGenreIcon(g)}</span>
+                    <span className="hidden sm:inline">{g}</span>
+                  </span>
                   ))}
                 </div>
               )}
@@ -799,7 +799,7 @@ export default function TitleDetail() {
                     className={`h-11 w-11 rounded-full glass border transition-all flex items-center justify-center disabled:opacity-50 ${
                       watched
                         ? "border-teal/40 text-teal bg-teal/10"
-                        : "border-border text-foreground hover:bg-muted/50 hover:text-amber"
+                        : "border-border text-current hover:bg-muted/50 hover:text-amber"
                     }`}
                   >
                     <CheckCircle2 className={`w-4 h-4 ${watched ? "fill-teal/20" : ""}`} />
@@ -819,7 +819,7 @@ export default function TitleDetail() {
                     className={`h-11 px-6 rounded-full glass border font-medium text-sm transition-all flex items-center gap-2 disabled:opacity-50 ${
                       watched
                         ? "border-teal/40 text-teal bg-teal/10 hover:bg-teal/15"
-                        : "border-border text-foreground hover:bg-muted/50"
+                        : "border-border text-current hover:bg-muted/50"
                     }`}
                   >
                     <CheckCircle2 className={`w-4 h-4 ${watched ? "fill-teal/20" : ""}`} />
