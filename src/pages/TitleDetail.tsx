@@ -722,8 +722,8 @@ export default function TitleDetail() {
             alt={view.title}
             className="absolute inset-0 h-full w-full object-cover object-center lg:object-[center_22%]"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/55 via-background/15 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/25 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-overlay/55 via-overlay/15 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-overlay/25 via-transparent to-transparent" />
 
           <Link
             to="/"
