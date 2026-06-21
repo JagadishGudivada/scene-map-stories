@@ -147,8 +147,8 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             />
           </picture>
           {/* Gradient layers */}
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-overlay/80 via-overlay/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-overlay/90 via-overlay/50 to-transparent" />
           {/* Grain */}
           <div
             className="absolute inset-0 opacity-25 mix-blend-overlay"
@@ -160,7 +160,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
       </AnimatePresence>
 
       {/* Content */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 sm:p-10">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 sm:p-10 text-overlay-foreground">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id + "-content"}
@@ -174,17 +174,17 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeBadgeClass[slide.type]}`}>
                 {slide.type}
               </span>
-              <span className="text-xs text-muted-foreground">{slide.year}</span>
+              <span className="text-xs text-overlay-foreground/70">{slide.year}</span>
             </div>
 
-            <h1 className="font-serif text-4xl sm:text-5xl text-foreground mb-2 leading-tight">
+            <h1 className="font-serif text-4xl sm:text-5xl mb-2 leading-tight">
               {slide.title}
             </h1>
 
             <div className="flex flex-wrap items-center gap-2 mb-5">
               <MapPin className="w-4 h-4 text-amber" />
-              <span className="text-muted-foreground text-sm">{slide.locationTag}</span>
-              <span className="text-muted/50">·</span>
+              <span className="text-overlay-foreground/70 text-sm">{slide.locationTag}</span>
+              <span className="text-overlay-foreground/40">·</span>
               <span className="text-amber text-sm font-medium">{slide.tagline}</span>
             </div>
 
@@ -204,7 +204,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               >
                 Explore Locations
               </button>
-              <button className="px-5 py-2.5 rounded-xl glass text-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
+              <button className="px-5 py-2.5 rounded-xl glass text-overlay-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
                 Save to Map
               </button>
             </div>
@@ -215,13 +215,13 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
       {/* Navigation Arrows */}
       <button
         onClick={prev}
-        className="absolute z-30 left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
+        className="absolute z-30 left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-overlay-foreground hover:glass-hover transition-all"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button
         onClick={next}
-        className="absolute z-30 right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
+        className="absolute z-30 right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-overlay-foreground hover:glass-hover transition-all"
       >
         <ChevronRight className="w-5 h-5" />
       </button>
