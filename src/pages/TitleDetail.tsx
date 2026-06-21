@@ -739,9 +739,9 @@ export default function TitleDetail() {
                 {view.type}
               </div>
 
-              <h1 className="font-serif text-4xl sm:text-6xl text-foreground mb-2 leading-tight">{view.title}</h1>
+              <h1 className="font-serif text-4xl sm:text-6xl mb-2 leading-tight">{view.title}</h1>
 
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-5">
+              <div className="flex flex-wrap items-center gap-4 text-sm text-overlay-foreground/70 mb-5">
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-4 h-4" /> {view.year}
                 </span>
