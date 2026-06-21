@@ -233,7 +233,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             key={i}
             onClick={() => go(i)}
             className={`rounded-full transition-all duration-300 ${
-              i === current ? "w-6 h-2 bg-amber" : "w-2 h-2 bg-foreground/30 hover:bg-foreground/50"
+              i === current ? "w-6 h-2 bg-amber" : "w-2 h-2 bg-overlay-foreground/30 hover:bg-overlay-foreground/50"
             }`}
           />
         ))}
