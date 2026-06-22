@@ -101,7 +101,7 @@ export default function Navigation() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
             {/* Logo */}
             <Link to="/" className="flex items-center shrink-0 text-foreground">
-              <Logo size="md" variant="full" showBeta={true} />
+              <Logo size="md" variant="full" showBeta={true} responsive />
             </Link>
 
             {/* Nav Links */}

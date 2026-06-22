@@ -6,6 +6,7 @@ export interface LogoProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   variant?: "full" | "icon" | "wordmark";
   showBeta?: boolean;
+  responsive?: boolean;
   className?: string;
 }
 
@@ -25,10 +26,27 @@ const WORDMARK_SIZE: Record<NonNullable<LogoProps["size"]>, number> = {
   xl: 36,
 };
 
+const RESPONSIVE_ICON: Record<NonNullable<LogoProps["size"]>, string> = {
+  xs: "h-5 sm:h-6 md:h-6",
+  sm: "h-6 sm:h-7 md:h-8",
+  md: "h-7 sm:h-8 md:h-10",
+  lg: "h-8 sm:h-10 md:h-14",
+  xl: "h-10 sm:h-12 md:h-[72px]",
+};
+
+const RESPONSIVE_TEXT: Record<NonNullable<LogoProps["size"]>, string> = {
+  xs: "text-xs sm:text-xs md:text-sm",
+  sm: "text-sm sm:text-sm md:text-base",
+  md: "text-base sm:text-lg md:text-[22px]",
+  lg: "text-lg sm:text-xl md:text-[28px]",
+  xl: "text-xl sm:text-2xl md:text-[36px]",
+};
+
 export default function Logo({
   size = "md",
   variant = "full",
   showBeta = false,
+  responsive = false,
   className = "",
 }: LogoProps) {
   const { theme } = useTheme();
@@ -42,20 +60,20 @@ export default function Logo({
       alt="Sarevista"
       width={px}
       height={px}
-      className="sarevista-logo-img select-none"
-      style={{ height: px, width: "auto", display: "block" }}
+      className={`sarevista-logo-img select-none w-auto ${responsive ? RESPONSIVE_ICON[size] : ""}`}
+      style={responsive ? undefined : { height: px, width: "auto", display: "block" }}
       draggable={false}
     />
   );
 
   const wordmark = (
     <span
-      className="sarevista-logo-wordmark font-mono tracking-tight"
-      style={{
-        fontSize: `${fontSize}px`,
-        lineHeight: 1,
-        color: "currentColor",
-      }}
+      className={`sarevista-logo-wordmark font-mono tracking-tight ${responsive ? RESPONSIVE_TEXT[size] : ""}`}
+      style={
+        responsive
+          ? { lineHeight: 1, color: "currentColor" }
+          : { fontSize: `${fontSize}px`, lineHeight: 1, color: "currentColor" }
+      }
     >
       sarevista
     </span>
@@ -77,4 +95,5 @@ export default function Logo({
     </span>
   );
 }
+
 
