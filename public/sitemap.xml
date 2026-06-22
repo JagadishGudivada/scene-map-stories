@@ -276,6 +276,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/house-of-the-dragon-2022</loc>
+    <lastmod>2026-06-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/interstellar-2014</loc>
     <lastmod>2026-05-17</lastmod>
     <changefreq>weekly</changefreq>
@@ -308,6 +314,12 @@
   <url>
     <loc>https://sarevista.com/title/maro-charitra-1978</loc>
     <lastmod>2026-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/title/masters-of-the-universe-2026</loc>
+    <lastmod>2026-06-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
