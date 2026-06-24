@@ -310,6 +310,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_public_passport: boolean
           location: string | null
           updated_at: string
           user_id: string
@@ -323,6 +324,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_public_passport?: boolean
           location?: string | null
           updated_at?: string
           user_id: string
@@ -336,6 +338,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_public_passport?: boolean
           location?: string | null
           updated_at?: string
           user_id?: string
@@ -674,6 +677,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_passport_public: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
