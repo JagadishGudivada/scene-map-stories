@@ -375,13 +375,15 @@ export default function Profile() {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url = profile?.username
+      ? `${window.location.origin}/passport/${profile.username}`
+      : window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: displayName, url });
+        await navigator.share({ title: `${displayName}'s Cinematic Passport`, url });
       } else {
         await navigator.clipboard.writeText(url);
-        toast({ title: "Link copied", description: "Profile URL copied to clipboard." });
+        toast({ title: "Passport link copied", description: "Share your cinematic passport anywhere." });
       }
     } catch {
       /* user cancelled */
@@ -475,8 +477,16 @@ export default function Profile() {
               onClick={handleShare}
               className="h-9 px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center gap-2"
             >
-              <Share2 className="w-4 h-4 text-amber" /> Share Profile
+              <Share2 className="w-4 h-4 text-amber" /> Share passport
             </button>
+            {isOwnProfile && profile?.username && (
+              <Link
+                to={`/passport/${profile.username}`}
+                className="h-9 px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center gap-2"
+              >
+                <Globe className="w-4 h-4 text-teal" /> View public passport
+              </Link>
+            )}
             {isOwnProfile && (
               <Link
                 to="/auth"

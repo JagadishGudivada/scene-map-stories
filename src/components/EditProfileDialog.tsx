@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, Upload } from "lucide-react";
+import { Camera, Loader2, Upload, Globe, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,7 @@ export type ProfileRow = {
   cover_url: string | null;
   location: string | null;
   website: string | null;
+  is_public_passport?: boolean;
 };
 
 interface Props {
@@ -38,6 +40,7 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
   const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [isPublicPassport, setIsPublicPassport] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null);
@@ -52,6 +55,7 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
       setWebsite(profile.website ?? "");
       setAvatarUrl(profile.avatar_url);
       setCoverUrl(profile.cover_url);
+      setIsPublicPassport(profile.is_public_passport ?? true);
     }
   }, [open, profile]);
 
@@ -98,6 +102,7 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
       website: website.trim() || null,
       avatar_url: avatarUrl,
       cover_url: coverUrl,
+      is_public_passport: isPublicPassport,
     };
     const { data, error } = await supabase
       .from("profiles")
@@ -177,7 +182,23 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
               <Input id="web" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://…" />
             </div>
           </div>
+
+          <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-card/40 p-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-amber/10 text-amber flex items-center justify-center shrink-0">
+                {isPublicPassport ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </div>
+              <div className="min-w-0">
+                <Label htmlFor="pub" className="text-sm font-medium">Public passport</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Let anyone view your stamps and visited spots at <span className="font-mono">/passport/{username || "you"}</span>.
+                </p>
+              </div>
+            </div>
+            <Switch id="pub" checked={isPublicPassport} onCheckedChange={setIsPublicPassport} />
+          </div>
         </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
