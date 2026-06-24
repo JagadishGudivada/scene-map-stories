@@ -40,6 +40,7 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
   const [website, setWebsite] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [isPublicPassport, setIsPublicPassport] = useState(true);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
   const avatarInput = useRef<HTMLInputElement>(null);
