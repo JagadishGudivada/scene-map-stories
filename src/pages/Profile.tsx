@@ -477,8 +477,16 @@ export default function Profile() {
               onClick={handleShare}
               className="h-9 px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center gap-2"
             >
-              <Share2 className="w-4 h-4 text-amber" /> Share Profile
+              <Share2 className="w-4 h-4 text-amber" /> Share passport
             </button>
+            {isOwnProfile && profile?.username && (
+              <Link
+                to={`/passport/${profile.username}`}
+                className="h-9 px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center gap-2"
+              >
+                <Globe className="w-4 h-4 text-teal" /> View public passport
+              </Link>
+            )}
             {isOwnProfile && (
               <Link
                 to="/auth"
