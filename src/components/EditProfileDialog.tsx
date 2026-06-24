@@ -55,6 +55,7 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
       setWebsite(profile.website ?? "");
       setAvatarUrl(profile.avatar_url);
       setCoverUrl(profile.cover_url);
+      setIsPublicPassport(profile.is_public_passport ?? true);
     }
   }, [open, profile]);
 
