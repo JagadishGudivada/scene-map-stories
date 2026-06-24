@@ -182,7 +182,23 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
               <Input id="web" value={website} onChange={(e) => setWebsite(e.target.value)} placeholder="https://…" />
             </div>
           </div>
+
+          <div className="flex items-start justify-between gap-4 rounded-xl border border-border/60 bg-card/40 p-3">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-amber/10 text-amber flex items-center justify-center shrink-0">
+                {isPublicPassport ? <Globe className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+              </div>
+              <div className="min-w-0">
+                <Label htmlFor="pub" className="text-sm font-medium">Public passport</Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Let anyone view your stamps and visited spots at <span className="font-mono">/passport/{username || "you"}</span>.
+                </p>
+              </div>
+            </div>
+            <Switch id="pub" checked={isPublicPassport} onCheckedChange={setIsPublicPassport} />
+          </div>
         </div>
+
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
