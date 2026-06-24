@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Camera, Loader2, Upload } from "lucide-react";
+import { Camera, Loader2, Upload, Globe, Lock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,7 @@ export type ProfileRow = {
   cover_url: string | null;
   location: string | null;
   website: string | null;
+  is_public_passport?: boolean;
 };
 
 interface Props {
