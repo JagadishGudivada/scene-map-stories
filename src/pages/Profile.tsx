@@ -375,13 +375,15 @@ export default function Profile() {
   };
 
   const handleShare = async () => {
-    const url = window.location.href;
+    const url = profile?.username
+      ? `${window.location.origin}/passport/${profile.username}`
+      : window.location.href;
     try {
       if (navigator.share) {
-        await navigator.share({ title: displayName, url });
+        await navigator.share({ title: `${displayName}'s Cinematic Passport`, url });
       } else {
         await navigator.clipboard.writeText(url);
-        toast({ title: "Link copied", description: "Profile URL copied to clipboard." });
+        toast({ title: "Passport link copied", description: "Share your cinematic passport anywhere." });
       }
     } catch {
       /* user cancelled */
