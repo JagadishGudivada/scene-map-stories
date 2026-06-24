@@ -22,6 +22,7 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import SitePageRoute from "./pages/SitePageRoute";
 import NotFound from "./pages/NotFound";
+import PublicPassport from "./pages/PublicPassport";
 
 const queryClient = new QueryClient();
 
