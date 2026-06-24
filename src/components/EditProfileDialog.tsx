@@ -102,6 +102,7 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
       website: website.trim() || null,
       avatar_url: avatarUrl,
       cover_url: coverUrl,
+      is_public_passport: isPublicPassport,
     };
     const { data, error } = await supabase
       .from("profiles")
