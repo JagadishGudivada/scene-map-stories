@@ -800,14 +800,16 @@ export default function Profile() {
                             key={f.id}
                             type="button"
                             onClick={() => setSavedFilter(f.id)}
-                            className={`h-9 px-4 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                            aria-label={f.label}
+                            title={f.label}
+                            className={`h-9 px-3 sm:px-4 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                               active
                                 ? "bg-foreground text-background border border-foreground"
                                 : "bg-card/30 border border-border text-muted-foreground hover:text-foreground hover:border-amber/30"
                             }`}
                           >
-                            <f.icon className="w-3.5 h-3.5" />
-                            {f.label}
+                            <f.icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                            <span className="hidden sm:inline">{f.label}</span>
                             <span className={`ml-0.5 px-1.5 py-0.5 rounded-full font-mono text-[10px] font-semibold ${active ? "bg-background/20" : "bg-muted"}`}>
                               {f.count}
                             </span>
