@@ -583,12 +583,14 @@ export default function Profile() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
+                    aria-label={tab.label}
+                    title={tab.label}
                     className={`relative px-3 sm:px-4 pb-3.5 pt-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
                       active ? "text-amber" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <tab.icon className="w-3.5 h-3.5" />
-                    {tab.label}
+                    <tab.icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    <span className="hidden sm:inline">{tab.label}</span>
                     {active && <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-amber rounded-full" />}
                   </button>
                 );
