@@ -465,26 +465,30 @@ export default function Profile() {
           <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
             {isOwnProfile && (
               <>
-                <Button size="sm" onClick={() => setPostOpen(true)} className="rounded-full px-5 h-9">
-                  <Plus className="w-4 h-4" /> Post
+                <Button size="sm" onClick={() => setPostOpen(true)} aria-label="Post" title="Post" className="rounded-full h-9 w-9 sm:w-auto sm:px-5 p-0 sm:p-2">
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Post</span>
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} className="rounded-full px-5 h-9">
-                  <Pencil className="w-4 h-4" /> Edit profile
+                <Button size="sm" variant="outline" onClick={() => setEditOpen(true)} aria-label="Edit profile" title="Edit profile" className="rounded-full h-9 w-9 sm:w-auto sm:px-5 p-0 sm:p-2">
+                  <Pencil className="w-4 h-4" /> <span className="hidden sm:inline">Edit profile</span>
                 </Button>
               </>
             )}
             <button
               onClick={handleShare}
-              className="h-9 px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center gap-2"
+              aria-label="Share passport"
+              title="Share passport"
+              className="h-9 w-9 sm:w-auto sm:px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center justify-center gap-2"
             >
-              <Share2 className="w-4 h-4 text-amber" /> Share passport
+              <Share2 className="w-4 h-4 text-amber" /> <span className="hidden sm:inline">Share passport</span>
             </button>
             {isOwnProfile && profile?.username && (
               <Link
                 to={`/passport/${profile.username}`}
-                className="h-9 px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center gap-2"
+                aria-label="View public passport"
+                title="View public passport"
+                className="h-9 w-9 sm:w-auto sm:px-5 rounded-full bg-card border border-border text-sm font-medium text-foreground hover:border-amber/40 transition-colors flex items-center justify-center gap-2"
               >
-                <Globe className="w-4 h-4 text-teal" /> View public passport
+                <Globe className="w-4 h-4 text-teal" /> <span className="hidden sm:inline">View public passport</span>
               </Link>
             )}
             {isOwnProfile && (
