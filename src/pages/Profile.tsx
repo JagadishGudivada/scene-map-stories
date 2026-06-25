@@ -502,22 +502,25 @@ export default function Profile() {
         {/* Stats + Passport bento */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
           {/* Stats */}
-          <div className="md:col-span-8 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="md:col-span-8 grid grid-cols-4 gap-2 sm:gap-4">
             {stats.map((stat) => (
               <button
                 key={stat.label}
                 type="button"
+                aria-label={stat.label}
+                title={stat.label}
                 onClick={() => {
                   if (!stat.jump) return;
                   setActiveTab(stat.jump.tab);
                   if (stat.jump.filter) setSavedFilter(stat.jump.filter);
                 }}
-                className="bg-card/40 border border-border/60 px-4 py-5 rounded-2xl flex flex-col items-center justify-center gap-1.5 hover:border-amber/30 transition-all active:scale-[0.97] group"
+                className="bg-card/40 border border-border/60 px-2 sm:px-4 py-3 sm:py-5 rounded-2xl flex flex-col items-center justify-center gap-1 sm:gap-1.5 hover:border-amber/30 transition-all active:scale-[0.97] group"
               >
-                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+                <stat.icon className={`w-4 h-4 sm:hidden ${stat.color}`} />
+                <span className="hidden sm:block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
                   {stat.label}
                 </span>
-                <span className={`font-serif text-3xl sm:text-4xl leading-none ${stat.color}`}>
+                <span className={`font-serif text-2xl sm:text-4xl leading-none ${stat.color}`}>
                   {stat.value}
                 </span>
               </button>
@@ -580,12 +583,14 @@ export default function Profile() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
+                    aria-label={tab.label}
+                    title={tab.label}
                     className={`relative px-3 sm:px-4 pb-3.5 pt-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
                       active ? "text-amber" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <tab.icon className="w-3.5 h-3.5" />
-                    {tab.label}
+                    <tab.icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                    <span className="hidden sm:inline">{tab.label}</span>
                     {active && <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-amber rounded-full" />}
                   </button>
                 );
@@ -795,14 +800,16 @@ export default function Profile() {
                             key={f.id}
                             type="button"
                             onClick={() => setSavedFilter(f.id)}
-                            className={`h-9 px-4 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
+                            aria-label={f.label}
+                            title={f.label}
+                            className={`h-9 px-3 sm:px-4 rounded-full text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition-all active:scale-95 ${
                               active
                                 ? "bg-foreground text-background border border-foreground"
                                 : "bg-card/30 border border-border text-muted-foreground hover:text-foreground hover:border-amber/30"
                             }`}
                           >
-                            <f.icon className="w-3.5 h-3.5" />
-                            {f.label}
+                            <f.icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                            <span className="hidden sm:inline">{f.label}</span>
                             <span className={`ml-0.5 px-1.5 py-0.5 rounded-full font-mono text-[10px] font-semibold ${active ? "bg-background/20" : "bg-muted"}`}>
                               {f.count}
                             </span>
