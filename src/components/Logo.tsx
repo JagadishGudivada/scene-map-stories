@@ -1,6 +1,5 @@
-import { useTheme } from "@/hooks/use-theme";
-import logoForDarkTheme from "@/assets/sarevista-logo-dark.png";
-import logoForLightTheme from "@/assets/sarevista-logo-light.png";
+import transparentLogo from "@/assets/sarevista-logo-transparent.png.asset.json";
+
 
 export interface LogoProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
@@ -49,14 +48,12 @@ export default function Logo({
   responsive = false,
   className = "",
 }: LogoProps) {
-  const { theme } = useTheme();
-  const src = theme === "dark" ? logoForDarkTheme : logoForLightTheme;
   const px = SIZE_PX[size];
   const fontSize = WORDMARK_SIZE[size];
 
   const icon = (
     <img
-      src={src}
+      src={transparentLogo.url}
       alt="Sarevista"
       width={px}
       height={px}
