@@ -1,6 +1,7 @@
 import transparentLogo from "@/assets/sarevista-logo-transparent-cropped.png.asset.json";
 
 
+
 export interface LogoProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   variant?: "full" | "icon" | "wordmark";
