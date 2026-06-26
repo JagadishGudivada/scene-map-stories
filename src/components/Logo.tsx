@@ -1,4 +1,4 @@
-import transparentLogo from "@/assets/sarevista-logo-transparent.png.asset.json";
+import transparentLogo from "@/assets/sarevista-logo-transparent-cropped.png.asset.json";
 
 
 export interface LogoProps {
