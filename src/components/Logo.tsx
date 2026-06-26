@@ -77,10 +77,10 @@ export default function Logo({
   );
 
   return (
-    <span className={`sarevista-logo inline-flex items-center gap-2 ${className}`}>
+    <span className={`sarevista-logo inline-flex items-center gap-1 ${className}`}>
       {variant !== "wordmark" && icon}
       {variant !== "icon" && (
-        <span className="inline-flex items-center gap-2 text-foreground">
+        <span className="inline-flex items-center gap-1 text-foreground">
           {wordmark}
           {showBeta && (
             <span className="bg-amber/15 border border-amber/40 text-amber rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest">
