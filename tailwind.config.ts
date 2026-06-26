@@ -20,6 +20,7 @@ export default {
         serif: ["Instrument Serif", "Georgia", "serif"],
         sans: ["Inter", "system-ui", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "monospace"],
+        share: ["Share Tech Mono", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",

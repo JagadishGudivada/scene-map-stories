@@ -167,7 +167,7 @@ export default function Auth() {
             <div className="w-10 h-10 rounded-xl bg-gradient-amber flex items-center justify-center">
               <Film className="w-5 h-5 text-charcoal" strokeWidth={2.5} />
             </div>
-            <span className="font-serif text-2xl text-foreground tracking-tight">Sarevista</span>
+            <span className="font-share text-2xl text-foreground tracking-tight">SAREVISTA</span>
           </div>
           <h2 className="font-serif text-4xl text-foreground leading-tight mb-4">
             Not a list.<br />Your memory map.
@@ -188,7 +188,7 @@ export default function Auth() {
             <div className="w-8 h-8 rounded-lg bg-gradient-amber flex items-center justify-center">
               <Film className="w-4 h-4 text-charcoal" strokeWidth={2.5} />
             </div>
-            <span className="font-serif text-xl text-foreground tracking-tight">Sarevista</span>
+            <span className="font-share text-xl text-foreground tracking-tight">SAREVISTA</span>
           </button>
           <button
             onClick={() => navigate("/")}

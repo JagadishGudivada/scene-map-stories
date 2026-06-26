@@ -1,6 +1,6 @@
 import { useTheme } from "@/hooks/use-theme";
-import logoDark from "@/assets/sarevista-logo-dark.png";
-import logoLight from "@/assets/sarevista-logo-light.png";
+import logoForDarkTheme from "@/assets/sarevista-logo-dark.png";
+import logoForLightTheme from "@/assets/sarevista-logo-light.png";
 
 export interface LogoProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
@@ -23,7 +23,7 @@ const WORDMARK_SIZE: Record<NonNullable<LogoProps["size"]>, number> = {
   sm: 18,
   md: 22,
   lg: 28,
-  xl: 36,
+  xl: 48,
 };
 
 const RESPONSIVE_ICON: Record<NonNullable<LogoProps["size"]>, string> = {
@@ -39,7 +39,7 @@ const RESPONSIVE_TEXT: Record<NonNullable<LogoProps["size"]>, string> = {
   sm: "text-sm sm:text-sm md:text-base",
   md: "text-base sm:text-lg md:text-[22px]",
   lg: "text-lg sm:text-xl md:text-[28px]",
-  xl: "text-xl sm:text-2xl md:text-[36px]",
+  xl: "text-xl sm:text-2xl md:text-[48px]",
 };
 
 export default function Logo({
@@ -50,7 +50,7 @@ export default function Logo({
   className = "",
 }: LogoProps) {
   const { theme } = useTheme();
-  const src = theme === "light" ? logoLight : logoDark;
+  const src = theme === "dark" ? logoForDarkTheme : logoForLightTheme;
   const px = SIZE_PX[size];
   const fontSize = WORDMARK_SIZE[size];
 
@@ -68,14 +68,14 @@ export default function Logo({
 
   const wordmark = (
     <span
-      className={`sarevista-logo-wordmark font-mono tracking-tight ${responsive ? RESPONSIVE_TEXT[size] : ""}`}
+      className={`sarevista-logo-wordmark font-share tracking-tight ${responsive ? RESPONSIVE_TEXT[size] : ""}`}
       style={
         responsive
           ? { lineHeight: 1, color: "currentColor" }
           : { fontSize: `${fontSize}px`, lineHeight: 1, color: "currentColor" }
       }
     >
-      sarevista
+      SAREVISTA
     </span>
   );
 
@@ -83,7 +83,7 @@ export default function Logo({
     <span className={`sarevista-logo inline-flex items-center gap-2 ${className}`}>
       {variant !== "wordmark" && icon}
       {variant !== "icon" && (
-        <span className="inline-flex items-center gap-2">
+        <span className="inline-flex items-center gap-2 text-foreground">
           {wordmark}
           {showBeta && (
             <span className="bg-amber/15 border border-amber/40 text-amber rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest">
