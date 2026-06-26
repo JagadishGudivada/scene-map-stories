@@ -48,14 +48,12 @@ export default function Logo({
   responsive = false,
   className = "",
 }: LogoProps) {
-  const { theme } = useTheme();
-  const src = theme === "dark" ? logoForDarkTheme : logoForLightTheme;
   const px = SIZE_PX[size];
   const fontSize = WORDMARK_SIZE[size];
 
   const icon = (
     <img
-      src={src}
+      src={transparentLogo.url}
       alt="Sarevista"
       width={px}
       height={px}
