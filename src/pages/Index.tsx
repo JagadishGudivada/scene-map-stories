@@ -13,9 +13,11 @@ import Seo from "@/components/Seo";
 import SpotRadarFab from "@/components/SpotRadarFab";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
+import { supabase } from "@/integrations/supabase/client";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
 import { useRecentTitleDetails } from "@/hooks/useRecentTitleDetails";
 import { mockPosts, type MediaType } from "@/lib/mockData";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sparkles,
   TrendingUp,
@@ -28,6 +30,9 @@ import {
   Film,
   ArrowRight,
   Loader2,
+  Compass,
+  Plus,
+  User,
 } from "lucide-react";
 
 const genres = ["All", "Drama", "Romance", "Crime", "Mystery", "Musical", "Fantasy", "Self-help"];
@@ -47,6 +52,8 @@ const trendingTags = [
 
 export default function Index() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -70,6 +77,27 @@ export default function Index() {
 
   const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
   const { aiResults: locResults, isSearching: isLocSearching, searchLocations, clearResults: clearLocations } = useAILocationSearch();
+
+  // Resolve the logged-in user's profile slug for quick links
+  useEffect(() => {
+    let active = true;
+    if (!user) { setProfileUsername(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!active) return;
+      const fallback =
+        (user.user_metadata as any)?.user_name ||
+        (user.user_metadata as any)?.preferred_username ||
+        user.email?.split("@")[0] ||
+        "me";
+      setProfileUsername(data?.username || fallback);
+    })();
+    return () => { active = false; };
+  }, [user]);
 
   const homepageTitles = useMemo(() => {
     if (weeklyTitles.length === 0) return [];
@@ -559,32 +587,73 @@ export default function Index() {
               transition={{ duration: 0.6 }}
               className="mb-10 rounded-2xl overflow-hidden relative"
             >
-              <div className="glass border border-amber/20 p-10 text-center relative z-10">
-                <div className="inline-flex items-center gap-2 mb-4 glass rounded-full px-4 py-2 border border-amber/20">
-                  <Sparkles className="w-4 h-4 text-amber" />
-                  <span className="text-sm font-medium text-amber">Join Sarevista film explorers</span>
-                </div>
-                <h2 className="font-serif text-4xl text-foreground mb-4">
-                  Start mapping your<br />
-                  <span className="text-amber-gradient italic">cinema memories</span>
-                </h2>
-                <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                  Discover filming locations from your favourite titles and map the places that made those scenes unforgettable.
-                </p>
-                <div className="flex items-center justify-center gap-3 flex-wrap">
-                  <Link
-                    to="/auth"
-                    className="px-8 py-3 rounded-xl bg-gradient-amber text-charcoal font-bold hover:opacity-90 transition-opacity shadow-amber"
-                  >
-                    Create Free Account
-                  </Link>
-                  <Link
-                    to="/map"
-                    className="px-8 py-3 rounded-xl glass border border-border text-foreground font-medium hover:glass-hover transition-all"
-                  >
-                    Explore Map
-                  </Link>
-                </div>
+              <div className="glass border border-amber/20 p-8 sm:p-10 text-center relative z-10">
+                {user ? (
+                  <>
+                    <div className="inline-flex items-center gap-2 mb-4 glass rounded-full px-4 py-2 border border-amber/20">
+                      <Sparkles className="w-4 h-4 text-amber" />
+                      <span className="text-sm font-medium text-amber">Welcome back, explorer</span>
+                    </div>
+                    <h2 className="font-serif text-3xl sm:text-4xl text-foreground mb-4">
+                      Continue your<br />
+                      <span className="text-amber-gradient italic">cinematic journey</span>
+                    </h2>
+                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                      Jump back into your passport, add a new title, or discover the next location to visit.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
+                      <Link
+                        to={profileUsername ? `/u/${profileUsername}` : "/auth"}
+                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-amber text-charcoal font-bold hover:opacity-90 transition-opacity shadow-amber"
+                      >
+                        <User className="w-4 h-4" />
+                        Open Passport
+                      </Link>
+                      <Link
+                        to="/add"
+                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl glass border border-border text-foreground font-medium hover:glass-hover transition-all"
+                      >
+                        <Plus className="w-4 h-4" />
+                        Add Title
+                      </Link>
+                      <Link
+                        to="/map"
+                        className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl glass border border-border text-foreground font-medium hover:glass-hover transition-all"
+                      >
+                        <Compass className="w-4 h-4" />
+                        Explore Map
+                      </Link>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="inline-flex items-center gap-2 mb-4 glass rounded-full px-4 py-2 border border-amber/20">
+                      <Sparkles className="w-4 h-4 text-amber" />
+                      <span className="text-sm font-medium text-amber">Join Sarevista film explorers</span>
+                    </div>
+                    <h2 className="font-serif text-4xl text-foreground mb-4">
+                      Start mapping your<br />
+                      <span className="text-amber-gradient italic">cinema memories</span>
+                    </h2>
+                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                      Discover filming locations from your favourite titles and map the places that made those scenes unforgettable.
+                    </p>
+                    <div className="flex items-center justify-center gap-3 flex-wrap">
+                      <Link
+                        to="/auth"
+                        className="px-8 py-3 rounded-xl bg-gradient-amber text-charcoal font-bold hover:opacity-90 transition-opacity shadow-amber"
+                      >
+                        Create Free Account
+                      </Link>
+                      <Link
+                        to="/map"
+                        className="px-8 py-3 rounded-xl glass border border-border text-foreground font-medium hover:glass-hover transition-all"
+                      >
+                        Explore Map
+                      </Link>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="absolute inset-0 bg-gradient-to-br from-amber/5 via-transparent to-teal/5 pointer-events-none" />
             </motion.section>
