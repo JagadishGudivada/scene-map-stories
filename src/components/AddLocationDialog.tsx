@@ -86,11 +86,11 @@ export default function AddLocationDialog({ titleSlug, titleName, iconOnly }: Pr
       <button
         onClick={handleClick}
         aria-label="Add location"
-        className={
-          iconOnly
-            ? "h-11 w-11 rounded-full glass border border-border text-current hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
-            : "h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-current font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2"
-        }
+          className={
+            iconOnly
+              ? "h-11 w-11 rounded-full glass border border-border text-foreground hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
+              : "h-10 sm:h-11 px-4 sm:px-6 rounded-xl glass border border-border text-foreground font-medium text-xs sm:text-sm hover:bg-muted/50 transition-all flex items-center gap-1.5 sm:gap-2"
+          }
       >
         <Plus className="w-4 h-4" />
         {!iconOnly && <span>Add Location</span>}
