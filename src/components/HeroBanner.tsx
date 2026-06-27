@@ -204,7 +204,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               >
                 Explore Locations
               </button>
-              <button className="px-5 py-2.5 rounded-xl glass text-overlay-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
+              <button className="px-5 py-2.5 rounded-xl glass text-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
                 Save to Map
               </button>
             </div>
@@ -215,13 +215,13 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
       {/* Navigation Arrows */}
       <button
         onClick={prev}
-        className="absolute z-30 left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-overlay-foreground hover:glass-hover transition-all"
+        className="absolute z-30 left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button
         onClick={next}
-        className="absolute z-30 right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-overlay-foreground hover:glass-hover transition-all"
+        className="absolute z-30 right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
       >
         <ChevronRight className="w-5 h-5" />
       </button>

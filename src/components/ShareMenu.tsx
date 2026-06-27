@@ -80,8 +80,8 @@ export default function ShareMenu({ title, text, url, className, iconOnly }: Sha
 
   const triggerClass = className
     ?? (iconOnly
-      ? "h-11 w-11 rounded-full glass border border-border text-current hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
-      : "h-11 px-6 rounded-xl glass border border-border text-current font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2");
+      ? "h-11 w-11 rounded-full glass border border-border text-foreground hover:bg-muted/50 hover:text-amber transition-all flex items-center justify-center"
+      : "h-11 px-6 rounded-xl glass border border-border text-foreground font-medium text-sm hover:bg-muted/50 transition-all flex items-center gap-2");
 
   return (
     <DropdownMenu>
