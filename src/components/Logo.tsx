@@ -1,4 +1,4 @@
-import transparentLogo from "@/assets/sarevista-logo-transparent-cropped.png.asset.json";
+import transparentLogo from "@/assets/sarevista-logo-transparent-cropped.png";
 
 
 
@@ -54,7 +54,7 @@ export default function Logo({
 
   const icon = (
     <img
-      src={transparentLogo.url}
+      src={transparentLogo}
       alt="Sarevista"
       width={px}
       height={px}
