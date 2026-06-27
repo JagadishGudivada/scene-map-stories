@@ -52,6 +52,8 @@ const trendingTags = [
 
 export default function Index() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
