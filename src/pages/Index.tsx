@@ -13,6 +13,7 @@ import Seo from "@/components/Seo";
 import SpotRadarFab from "@/components/SpotRadarFab";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
+import { supabase } from "@/integrations/supabase/client";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
 import { useRecentTitleDetails } from "@/hooks/useRecentTitleDetails";
 import { mockPosts, type MediaType } from "@/lib/mockData";
