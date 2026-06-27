@@ -727,7 +727,7 @@ export default function TitleDetail() {
 
           <Link
             to="/"
-            className="absolute top-4 left-4 z-10 glass rounded-xl p-2.5 border border-border text-overlay-foreground hover:bg-muted/50 transition-colors lg:left-auto lg:right-4"
+            className="absolute top-4 left-4 z-10 glass rounded-xl p-2.5 border border-border text-foreground hover:bg-muted/50 transition-colors lg:left-auto lg:right-4"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
