@@ -16,6 +16,7 @@ import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { useWeeklyCurrentYearTitles } from "@/hooks/useWeeklyCurrentYearTitles";
 import { useRecentTitleDetails } from "@/hooks/useRecentTitleDetails";
 import { mockPosts, type MediaType } from "@/lib/mockData";
+import { useAuth } from "@/hooks/useAuth";
 import {
   Sparkles,
   TrendingUp,
@@ -28,6 +29,9 @@ import {
   Film,
   ArrowRight,
   Loader2,
+  Compass,
+  Plus,
+  User,
 } from "lucide-react";
 
 const genres = ["All", "Drama", "Romance", "Crime", "Mystery", "Musical", "Fantasy", "Self-help"];
