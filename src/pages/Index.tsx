@@ -78,6 +78,27 @@ export default function Index() {
   const { results: aiResults, isSearching: isAISearching, error: aiError, search: searchTitles, clear: clearResults } = useAITitleSearch();
   const { aiResults: locResults, isSearching: isLocSearching, searchLocations, clearResults: clearLocations } = useAILocationSearch();
 
+  // Resolve the logged-in user's profile slug for quick links
+  useEffect(() => {
+    let active = true;
+    if (!user) { setProfileUsername(null); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (!active) return;
+      const fallback =
+        (user.user_metadata as any)?.user_name ||
+        (user.user_metadata as any)?.preferred_username ||
+        user.email?.split("@")[0] ||
+        "me";
+      setProfileUsername(data?.username || fallback);
+    })();
+    return () => { active = false; };
+  }, [user]);
+
   const homepageTitles = useMemo(() => {
     if (weeklyTitles.length === 0) return [];
 
