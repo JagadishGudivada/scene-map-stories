@@ -766,7 +766,7 @@ export default function TitleDetail() {
                   {view.genres.map((g) => (
                   <span
                     key={g}
-                    className="glass rounded-full px-3 py-1 text-xs text-current border border-border inline-flex items-center gap-1.5"
+                    className="glass rounded-full px-3 py-1 text-xs text-foreground border border-border inline-flex items-center gap-1.5"
                     title={g}
                     aria-label={g}
                   >
@@ -799,7 +799,7 @@ export default function TitleDetail() {
                     className={`h-11 w-11 rounded-full glass border transition-all flex items-center justify-center disabled:opacity-50 ${
                       watched
                         ? "border-teal/40 text-teal bg-teal/10"
-                        : "border-border text-current hover:bg-muted/50 hover:text-amber"
+                        : "border-border text-foreground hover:bg-muted/50 hover:text-amber"
                     }`}
                   >
                     <CheckCircle2 className={`w-4 h-4 ${watched ? "fill-teal/20" : ""}`} />
@@ -819,7 +819,7 @@ export default function TitleDetail() {
                     className={`h-11 px-6 rounded-full glass border font-medium text-sm transition-all flex items-center gap-2 disabled:opacity-50 ${
                       watched
                         ? "border-teal/40 text-teal bg-teal/10 hover:bg-teal/15"
-                        : "border-border text-current hover:bg-muted/50"
+                        : "border-border text-foreground hover:bg-muted/50"
                     }`}
                   >
                     <CheckCircle2 className={`w-4 h-4 ${watched ? "fill-teal/20" : ""}`} />
