@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { MapPin, Footprints, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { MapPin, Footprints, ArrowRight, Plane, BedDouble } from "lucide-react";
 import { useRecentVisitedSpots } from "@/hooks/useRecentVisitedSpots";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
@@ -8,6 +8,7 @@ import { DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 const FALLBACK_IMG = DEFAULT_PEXELS_IMAGE;
 
 export default function RecentlyVisitedSpots() {
+  const navigate = useNavigate();
   const { spots, loading } = useRecentVisitedSpots(6);
 
   if (!loading && spots.length === 0) return null;
@@ -56,9 +57,9 @@ export default function RecentlyVisitedSpots() {
                   transition={{ delay: i * 0.05, duration: 0.4 }}
                   className={span}
                 >
-                  <Link
-                    to={`/spot/${spot.slug}`}
-                    className="group block relative h-full w-full rounded-2xl overflow-hidden border border-border hover:border-amber/40 transition-all"
+                  <div
+                    onClick={() => navigate(`/spot/${spot.slug}`)}
+                    className="group relative h-full w-full rounded-2xl overflow-hidden border border-border hover:border-amber/40 transition-all cursor-pointer"
                   >
                     <img
                       src={spot.image || FALLBACK_IMG}
@@ -75,6 +76,30 @@ export default function RecentlyVisitedSpots() {
                         <span className="glass rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider border border-white/10 backdrop-blur-md">
                           {spot.flag ? `${spot.flag} ` : ""}{spot.country || "Worldwide"}
                         </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <a
+                            href={`https://www.skyscanner.net/transport/flights-to/${encodeURIComponent(spot.city)}/?adultsv2=1&cabinclass=economy`}
+                            target="_blank"
+                            rel="noopener noreferrer sponsored"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Find flights to ${spot.city} on Skyscanner`}
+                            title={`Flights to ${spot.city}`}
+                            className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-white hover:text-amber transition-all"
+                          >
+                            <Plane className="w-3.5 h-3.5" />
+                          </a>
+                          <a
+                            href={`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(`${spot.name}, ${spot.city}`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer sponsored"
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={`Find hotels near ${spot.name} on Booking.com`}
+                            title={`Hotels near ${spot.name}`}
+                            className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-white hover:text-amber transition-all"
+                          >
+                            <BedDouble className="w-3.5 h-3.5" />
+                          </a>
+                        </div>
                       </div>
                       <div>
                         <h3 className={`font-serif leading-tight mb-1 line-clamp-2 ${isLarge ? "text-2xl md:text-3xl" : "text-base md:text-lg"}`}>
@@ -91,7 +116,7 @@ export default function RecentlyVisitedSpots() {
                         )}
                       </div>
                     </div>
-                  </Link>
+                  </div>
                 </motion.div>
               );
             })}
