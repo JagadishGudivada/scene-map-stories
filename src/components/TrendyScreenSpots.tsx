@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, MapPin, Flame, Instagram } from "lucide-react";
+import { ChevronLeft, ChevronRight, MapPin, Flame, Instagram, Plane, BedDouble } from "lucide-react";
 import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
 
 type TrendySpot = {
@@ -314,9 +314,35 @@ export default function TrendyScreenSpots() {
                   As seen in
                 </span>
               </div>
-              <p className="font-serif text-sm text-foreground leading-snug mb-2">
-                {spot.title} <span className="text-muted-foreground">· {spot.titleYear}</span>
-              </p>
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="font-serif text-sm text-foreground leading-snug truncate">
+                  {spot.title} <span className="text-muted-foreground">· {spot.titleYear}</span>
+                </p>
+                <div className="flex items-center gap-1 shrink-0">
+                  <a
+                    href={`https://www.skyscanner.net/transport/flights-to/${encodeURIComponent(spot.city)}/?adultsv2=1&cabinclass=economy`}
+                    target="_blank"
+                    rel="noopener noreferrer sponsored"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Find flights to ${spot.city} on Skyscanner`}
+                    title={`Flights to ${spot.city}`}
+                    className="w-7 h-7 rounded-full glass border border-border flex items-center justify-center text-foreground hover:text-amber hover:border-amber/40 transition-all"
+                  >
+                    <Plane className="w-3.5 h-3.5" />
+                  </a>
+                  <a
+                    href={`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(`${spot.name}, ${spot.city}`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer sponsored"
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label={`Find hotels near ${spot.name} on Booking.com`}
+                    title={`Hotels near ${spot.name}`}
+                    className="w-7 h-7 rounded-full glass border border-border flex items-center justify-center text-foreground hover:text-amber hover:border-amber/40 transition-all"
+                  >
+                    <BedDouble className="w-3.5 h-3.5" />
+                  </a>
+                </div>
+              </div>
               <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
                 {spot.blurb}
               </p>
