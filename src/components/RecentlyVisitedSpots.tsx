@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
-import { MapPin, Footprints, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { MapPin, Footprints, ArrowRight, Plane, BedDouble } from "lucide-react";
 import { useRecentVisitedSpots } from "@/hooks/useRecentVisitedSpots";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
@@ -8,6 +8,7 @@ import { DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 const FALLBACK_IMG = DEFAULT_PEXELS_IMAGE;
 
 export default function RecentlyVisitedSpots() {
+  const navigate = useNavigate();
   const { spots, loading } = useRecentVisitedSpots(6);
 
   if (!loading && spots.length === 0) return null;
