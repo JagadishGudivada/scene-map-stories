@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MapPin, Footprints, ArrowRight, Plane, BedDouble } from "lucide-react";
 import { useRecentVisitedSpots } from "@/hooks/useRecentVisitedSpots";
 import { Skeleton } from "@/components/ui/skeleton";
