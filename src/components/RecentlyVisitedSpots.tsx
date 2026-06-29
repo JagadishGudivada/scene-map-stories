@@ -78,11 +78,11 @@ export default function RecentlyVisitedSpots() {
                         </span>
                         <div className="flex items-center gap-1 shrink-0">
                           <a
-                            href={`https://www.skyscanner.net/transport/flights-to/${encodeURIComponent(spot.city)}/?adultsv2=1&cabinclass=economy`}
+                            href={`https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights to ${spot.city}${spot.country ? ", " + spot.country : ""}`)}`}
                             target="_blank"
-                            rel="noopener noreferrer sponsored"
+                            rel="noopener noreferrer"
                             onClick={(e) => e.stopPropagation()}
-                            aria-label={`Find flights to ${spot.city} on Skyscanner`}
+                            aria-label={`Find flights to ${spot.city} on Google Flights`}
                             title={`Flights to ${spot.city}`}
                             className="w-7 h-7 rounded-full glass border border-white/10 flex items-center justify-center text-white hover:text-amber transition-all"
                           >
