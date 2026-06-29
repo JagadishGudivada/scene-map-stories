@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Share+Tech+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Share+Tech+Mono&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -147,7 +147,7 @@
   }
 
   h1, h2, h3 {
-    font-family: 'Instrument Serif', serif;
+    font-family: 'Lora', serif;
     letter-spacing: -0.02em;
   }
 }
