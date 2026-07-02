@@ -177,11 +177,11 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               <span className="text-xs text-overlay-foreground/70">{slide.year}</span>
             </div>
 
-            <h1 className="font-serif text-4xl sm:text-5xl mb-2 leading-tight">
+            <h1 className="hidden sm:block font-serif text-4xl sm:text-5xl mb-2 leading-tight">
               {slide.title}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-2 mb-5">
+            <div className="hidden sm:flex flex-wrap items-center gap-2 mb-5">
               <MapPin className="w-4 h-4 text-amber" />
               <span className="text-overlay-foreground/70 text-sm">{slide.locationTag}</span>
               <span className="text-overlay-foreground/40">·</span>
