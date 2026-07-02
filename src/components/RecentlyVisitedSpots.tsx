@@ -110,7 +110,7 @@ export default function RecentlyVisitedSpots() {
                           <span className="line-clamp-1">{spot.city || "Filming spot"}</span>
                         </div>
                         {isLarge && spot.titles.length > 0 && (
-                          <p className="text-[11px] text-white/80 line-clamp-1 italic">
+                          <p className="hidden sm:block text-[11px] text-white/80 line-clamp-1 italic">
                             Featured in {spot.titles.slice(0, 2).join(" · ")}
                           </p>
                         )}

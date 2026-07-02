@@ -79,8 +79,8 @@ export default function TrendingRow({ titles }: TrendingRowProps) {
                     {title.type}
                   </span>
                 </div>
-                {/* Location count */}
-                <div className="absolute bottom-2 left-2 right-2">
+                {/* Location count — hidden on mobile */}
+                <div className="hidden sm:block absolute bottom-2 left-2 right-2">
                   <div className="glass rounded-lg px-2 py-1.5 flex items-center gap-1.5">
                     <MapPin className="w-3 h-3 text-amber shrink-0" />
                     <span className="text-xs text-foreground font-medium truncate">{title.locationCount} locations</span>
@@ -89,7 +89,7 @@ export default function TrendingRow({ titles }: TrendingRowProps) {
               </div>
 
               {/* Info */}
-              <div>
+              <div className="hidden sm:block">
                 <h3 className="font-serif text-sm text-foreground leading-snug mb-1 truncate">{title.title}</h3>
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-0.5">

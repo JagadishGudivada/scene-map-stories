@@ -227,7 +227,7 @@ export default function PopularLocations() {
                 <h3 className="font-serif text-xl text-white leading-tight mb-2 drop-shadow-md">
                   {spot.place}
                 </h3>
-                <div className="flex flex-wrap gap-1.5">
+                <div className="hidden sm:flex flex-wrap gap-1.5">
                   {spot.titles.slice(0, 2).map((t) => (
                     <span
                       key={t}

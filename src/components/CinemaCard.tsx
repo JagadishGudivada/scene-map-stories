@@ -118,22 +118,23 @@ export default function CinemaCard({
           <span className="text-xs text-muted-foreground ml-1">{title.year}</span>
         </div>
 
-        {/* Title */}
-        <h3 className="font-serif text-foreground text-lg leading-tight mb-2">
-          {title.title}
-        </h3>
+        {/* Title + Locations — hidden on mobile */}
+        <div className="hidden sm:block">
+          <h3 className="font-serif text-foreground text-lg leading-tight mb-2">
+            {title.title}
+          </h3>
 
-        {/* Locations */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <div className="flex items-center gap-1 glass rounded-full px-2.5 py-1">
-            <MapPin className="w-3 h-3 text-amber" />
-            <span className="text-xs text-foreground font-medium">{title.locationCount} locations</span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <div className="flex items-center gap-1 glass rounded-full px-2.5 py-1">
+              <MapPin className="w-3 h-3 text-amber" />
+              <span className="text-xs text-foreground font-medium">{title.locationCount} locations</span>
+            </div>
+            {showLocationNames && title.locations.slice(0, 2).map((loc) => (
+              <span key={loc} className="glass text-xs text-muted-foreground px-2.5 py-1 rounded-full">
+                {loc}
+              </span>
+            ))}
           </div>
-          {showLocationNames && title.locations.slice(0, 2).map((loc) => (
-            <span key={loc} className="glass text-xs text-muted-foreground px-2.5 py-1 rounded-full">
-              {loc}
-            </span>
-          ))}
         </div>
       </div>
     </motion.div>
