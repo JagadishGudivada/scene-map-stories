@@ -44,18 +44,25 @@ export default function SpotRadarFab() {
         onClick={() => setOpen(true)}
         aria-label="Spot Radar: find filming spots near you"
         aria-hidden={!scrolled}
-        className="group fixed z-40 bottom-20 right-4 sm:bottom-6 sm:right-6 sm:opacity-100 sm:pointer-events-auto h-14 pl-4 pr-5 rounded-full bg-foreground text-background shadow-2xl shadow-foreground/30 flex items-center gap-2.5 overflow-hidden ring-1 ring-foreground/20"
+        className="group fixed z-40 bottom-20 right-4 sm:bottom-6 sm:right-6 sm:opacity-100 sm:pointer-events-auto h-12 sm:h-14 rounded-full bg-foreground text-background shadow-2xl shadow-foreground/30 flex items-center gap-2.5 overflow-hidden ring-1 ring-foreground/20 transition-all duration-300 ease-out w-auto max-w-12 sm:max-w-[240px] hover:max-w-[240px] active:max-w-[240px] pl-3 sm:pl-4 hover:pl-4 active:pl-4 pr-0 sm:pr-5 hover:pr-5 active:pr-5"
       >
         {/* Shimmer sweep */}
         <span className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-teal/30 to-transparent" />
         <motion.span
           animate={{ rotate: [0, -10, 10, -6, 0] }}
           transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.2 }}
-          className="relative"
+          className="relative shrink-0"
         >
           <Radar className="w-5 h-5 text-teal" />
         </motion.span>
-        <div className="relative flex flex-col items-start leading-tight">
+
+        {/* Mobile: icon-only by default, expands to show label on tap/hover */}
+        <span className="sm:hidden text-sm font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300">
+          Scan around
+        </span>
+
+        {/* Desktop: always expanded */}
+        <div className="hidden sm:flex relative flex-col items-start leading-tight">
           <span className="text-[9px] uppercase tracking-widest text-background/60 font-mono">
             spot radar
           </span>
