@@ -309,12 +309,12 @@ export default function TrendyScreenSpots() {
             </div>
 
             <div className="p-4">
-              <div className="hidden sm:flex items-center gap-1.5 mb-2">
+              <div className="flex items-center gap-1.5 mb-2">
                 <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                   As seen in
                 </span>
               </div>
-              <div className="hidden sm:flex items-center justify-between gap-2 mb-2">
+              <div className="flex items-center justify-between gap-2 mb-2">
                 <p className="font-serif text-sm text-foreground leading-snug truncate">
                   {spot.title} <span className="text-muted-foreground">· {spot.titleYear}</span>
                 </p>
@@ -343,37 +343,14 @@ export default function TrendyScreenSpots() {
                   </a>
                 </div>
               </div>
-              <div className="flex sm:hidden items-center justify-end gap-1">
-                <a
-                  href={`https://www.google.com/travel/flights?q=${encodeURIComponent(`Flights to ${spot.city}, ${spot.country}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Find flights to ${spot.city} on Google Flights`}
-                  title={`Flights to ${spot.city}`}
-                  className="w-7 h-7 rounded-full glass border border-border flex items-center justify-center text-foreground hover:text-amber hover:border-amber/40 transition-all"
-                >
-                  <Plane className="w-3.5 h-3.5" />
-                </a>
-                <a
-                  href={`https://www.booking.com/searchresults.html?ss=${encodeURIComponent(`${spot.name}, ${spot.city}`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer sponsored"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={`Find hotels near ${spot.name} on Booking.com`}
-                  title={`Hotels near ${spot.name}`}
-                  className="w-7 h-7 rounded-full glass border border-border flex items-center justify-center text-foreground hover:text-amber hover:border-amber/40 transition-all"
-                >
-                  <BedDouble className="w-3.5 h-3.5" />
-                </a>
-              </div>
-              <p className="hidden sm:block text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
+              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2 mb-3">
                 {spot.blurb}
               </p>
-              <span className="hidden sm:inline-block text-[11px] font-mono text-amber bg-amber/10 px-2 py-0.5 rounded-full border border-amber/20">
+              <span className="inline-block text-[11px] font-mono text-amber bg-amber/10 px-2 py-0.5 rounded-full border border-amber/20">
                 {spot.hashtag}
               </span>
             </div>
+
           </motion.article>
         ))}
       </div>

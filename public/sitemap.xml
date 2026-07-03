@@ -438,6 +438,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/silo-2023</loc>
+    <lastmod>2026-07-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/source-code-2011</loc>
     <lastmod>2026-06-15</lastmod>
     <changefreq>weekly</changefreq>
