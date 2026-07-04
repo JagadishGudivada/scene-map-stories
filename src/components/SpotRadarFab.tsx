@@ -44,7 +44,7 @@ export default function SpotRadarFab() {
         onClick={() => setOpen(true)}
         aria-label="Spot Radar: find filming spots near you"
         aria-hidden={!scrolled}
-        className="group fixed z-40 bottom-20 right-4 sm:bottom-6 sm:right-6 sm:opacity-100 sm:pointer-events-auto h-12 sm:h-14 rounded-full bg-foreground text-background shadow-2xl shadow-foreground/30 flex items-center gap-2.5 overflow-hidden ring-1 ring-foreground/20 transition-all duration-300 ease-out w-auto max-w-12 sm:max-w-[240px] hover:max-w-[240px] active:max-w-[240px] pl-3 sm:pl-4 hover:pl-4 active:pl-4 pr-0 sm:pr-5 hover:pr-5 active:pr-5"
+        className="group fixed z-40 bottom-20 right-4 sm:bottom-6 sm:right-6 sm:opacity-100 sm:pointer-events-auto h-12 sm:h-14 rounded-full bg-foreground/10 backdrop-blur-2xl sm:bg-foreground text-background shadow-2xl shadow-foreground/20 flex items-center gap-2.5 overflow-hidden ring-1 ring-foreground/30 transition-all duration-300 ease-out w-auto max-w-12 sm:max-w-[240px] hover:max-w-[240px] active:max-w-[240px] pl-3 sm:pl-4 hover:pl-4 active:pl-4 pr-0 sm:pr-5 hover:pr-5 active:pr-5"
       >
         {/* Shimmer sweep */}
         <span className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-teal/30 to-transparent" />
