@@ -246,7 +246,7 @@ export default function FilmingSpotDetail() {
 
   if (!staticSpot && loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center pt-20">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center pt-20 md:pt-24">
         <div className="text-center px-6 max-w-md">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-amber/30 text-amber text-xs mb-4">
             <Sparkles className="w-3.5 h-3.5" /> AI is loading this location
@@ -263,7 +263,7 @@ export default function FilmingSpotDetail() {
 
   if (!spot) {
     return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center pt-20">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center pt-20 md:pt-24">
         <div className="text-center">
           <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h1 className="text-2xl font-serif font-bold mb-2">Location details unavailable</h1>
@@ -295,7 +295,7 @@ export default function FilmingSpotDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-20">
+    <div className="min-h-screen bg-background text-foreground pt-20 md:pt-24">
       <Seo title={spotSeoTitle} description={spotSeoDesc} type="article" image={(spot as any).image} jsonLd={spotSchema} />
       <RevealButton
         context={{

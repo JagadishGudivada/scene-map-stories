@@ -71,7 +71,7 @@ export default function FilmingSpots() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-20">
+    <div className="min-h-screen bg-background text-foreground pt-20 md:pt-24">
       <Seo
         title={`${city.name} Filming Spots — On-Screen Locations`}
         description={`Explore ${city.spots.length}+ real filming spots in ${city.name} from movies, series, and books. Map, scenes, and visit tips.`}

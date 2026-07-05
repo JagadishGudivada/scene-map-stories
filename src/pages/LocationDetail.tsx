@@ -719,7 +719,7 @@ export default function LocationDetail() {
       <motion.div
         initial={false}
         animate={{ y: showStickyBar ? 0 : -80 }}
-        className="fixed top-16 left-0 right-0 z-40 h-16 border-b border-border/20"
+        className="fixed top-16 md:top-20 left-0 right-0 z-40 h-16 border-b border-border/20"
         style={{
           background: "rgba(13,13,13,0.85)",
           backdropFilter: "blur(20px)",
