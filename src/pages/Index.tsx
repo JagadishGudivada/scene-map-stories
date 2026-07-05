@@ -177,7 +177,7 @@ export default function Index() {
       <h1 className="sr-only">Sarevista — Your Map to Filming Locations from Movies, Series & Books</h1>
       {/* === HERO SECTION === */}
       <div className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 md:pt-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

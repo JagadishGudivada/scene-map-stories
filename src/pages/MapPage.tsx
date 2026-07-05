@@ -242,7 +242,7 @@ export default function MapPage() {
         title="Discovery Map — Filming Locations Worldwide"
         description="Explore an interactive world map of filming locations from movies, series, and books. Plan your next cinematic trip."
       />
-      <div className="fixed inset-0 pt-16">
+      <div className="fixed inset-0 pt-16 md:pt-20">
         <LeafletMap
           pins={displayPins}
           center={center}
