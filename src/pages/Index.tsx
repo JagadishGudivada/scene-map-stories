@@ -183,14 +183,6 @@ export default function Index() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="mb-5 sm:mb-6">
-              <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-amber mb-2">
-                Not a list. Your memory map.
-              </p>
-              <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl text-foreground leading-tight">
-                Turn the stories you love into places you visit.
-              </h2>
-            </div>
             <HeroBanner titles={homepageTitles} />
           </motion.div>
         </div>
