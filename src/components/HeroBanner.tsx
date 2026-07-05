@@ -202,11 +202,11 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                 }}
                 className="px-5 py-2.5 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:opacity-90 transition-opacity shadow-amber"
               >
-                Explore Locations
+                Find where this was filmed
               </button>
-              <button className="px-5 py-2.5 rounded-xl glass text-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
+              {/* <button className="px-5 py-2.5 rounded-xl glass text-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
                 Save to Map
-              </button>
+              </button> */}
             </div>
           </motion.div>
         </AnimatePresence>
