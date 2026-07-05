@@ -96,12 +96,15 @@ export default function Navigation() {
   return (
     <>
       {/* Desktop/Tablet Top Nav */}
-      <nav className="fixed top-0 left-0 right-0 z-50 h-16">
+      <nav className="fixed top-0 left-0 right-0 z-50 h-16 md:h-20">
         <div className="glass border-b border-border/50 h-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
             {/* Logo */}
-            <Link to="/" className="flex items-center shrink-0 text-foreground">
+            <Link to="/" className="flex flex-col shrink-0 text-foreground leading-none">
               <Logo size="md" variant="full" showBeta={true} responsive />
+              <span className="hidden md:inline text-[10px] lg:text-xs text-muted-foreground mt-0.5 tracking-wide">
+                Turn the stories you love into places you visit.
+              </span>
             </Link>
 
             {/* Nav Links */}

@@ -177,20 +177,12 @@ export default function Index() {
       <h1 className="sr-only">Sarevista — Your Map to Filming Locations from Movies, Series & Books</h1>
       {/* === HERO SECTION === */}
       <div className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 md:pt-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="mb-5 sm:mb-6">
-              <p className="text-xs sm:text-sm font-semibold tracking-[0.2em] uppercase text-amber mb-2">
-                Not a list. Your memory map.
-              </p>
-              <h2 className="font-serif text-2xl sm:text-4xl lg:text-5xl text-foreground leading-tight">
-                Turn the stories you love into places you visit.
-              </h2>
-            </div>
             <HeroBanner titles={homepageTitles} />
           </motion.div>
         </div>

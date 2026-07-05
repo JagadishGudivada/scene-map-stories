@@ -87,7 +87,7 @@ export default function SceneMode() {
   return (
     <div className="min-h-screen bg-background">
       {/* ═══ SECTION 1: HERO SPLIT SCREEN ═══ */}
-      <section className="relative h-screen flex flex-col md:flex-row pt-16">
+      <section className="relative h-screen flex flex-col md:flex-row pt-16 md:pt-20">
         {/* Left — Scene Reference */}
         <motion.div
           initial={{ x: -60, opacity: 0 }}

@@ -131,7 +131,7 @@ export default function MapSidePanel({ pin, onClose }: MapSidePanelProps) {
       animate={{ x: 0 }}
       exit={{ x: "100%" }}
       transition={{ type: "spring", damping: 28, stiffness: 300 }}
-      className="absolute top-0 right-0 bottom-0 w-full sm:w-[420px] z-[1100] pt-16 flex flex-col"
+      className="absolute top-0 right-0 bottom-0 w-full sm:w-[420px] z-[1100] pt-16 md:pt-20 flex flex-col"
     >
       {/* Inner panel with glass background below nav */}
       <div className="flex-1 flex flex-col glass border-l border-border shadow-float overflow-hidden relative">
