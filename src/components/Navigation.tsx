@@ -102,7 +102,7 @@ export default function Navigation() {
             {/* Logo */}
             <Link to="/" className="flex flex-col shrink-0 text-foreground leading-none">
               <Logo size="md" variant="full" showBeta={true} responsive />
-              <span className="hidden md:inline text-[10px] lg:text-xs text-muted-foreground mt-0.5 tracking-wide">
+              <span className="hidden md:inline text-[10px] lg:text-[11px] font-serif italic text-amber-gradient mt-1 tracking-[0.18em] leading-none">
                 Turn the stories you love into places you visit.
               </span>
             </Link>
