@@ -2,6 +2,7 @@ import transparentLogo from "@/assets/sarevista-logo-transparent-cropped.png";
 
 
 
+
 export interface LogoProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
   variant?: "full" | "icon" | "wordmark";
@@ -73,24 +74,33 @@ export default function Logo({
           : { fontSize: `${fontSize}px`, lineHeight: 1, color: "currentColor" }
       }
     >
-      SAREVISTA
+      Sarevista
     </span>
   );
 
   return (
-    <span className={`sarevista-logo inline-flex items-center gap-1 ${className}`}>
-      {variant !== "wordmark" && icon}
-      {variant !== "icon" && (
-        <span className="inline-flex items-center gap-1 text-foreground">
-          {wordmark}
-          {showBeta && (
-            <span className="bg-amber/15 border border-amber/40 text-amber rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest">
-              BETA
-            </span>
-          )}
-        </span>
-      )}
-    </span>
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..9001,400..900&display=swap');
+
+        .sarevista-logo-wordmark {
+          font-family: 'Playfair Display', serif;
+        }
+      `}</style>
+      <span className={`sarevista-logo inline-flex items-center gap-1 ${className}`}>
+        {variant !== "wordmark" && icon}
+        {variant !== "icon" && (
+          <span className="inline-flex items-center gap-1 text-foreground">
+            {wordmark}
+            {/* {showBeta && (
+              <span className="bg-amber/15 border border-amber/40 text-amber rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest">
+                BETA
+              </span>
+            )} */}
+          </span>
+        )}
+      </span>
+    </>
   );
 }
 
