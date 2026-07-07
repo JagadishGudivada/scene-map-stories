@@ -26,6 +26,22 @@ const RESPONSIVE_HEIGHT: Record<NonNullable<LogoProps["size"]>, string> = {
   xl: "h-12 sm:h-14 md:h-16",
 };
 
+const WORDMARK_SIZE: Record<NonNullable<LogoProps["size"]>, string> = {
+  xs: "text-base",
+  sm: "text-lg",
+  md: "text-xl",
+  lg: "text-3xl",
+  xl: "text-4xl",
+};
+
+const RESPONSIVE_WORDMARK: Record<NonNullable<LogoProps["size"]>, string> = {
+  xs: "text-sm sm:text-base md:text-base",
+  sm: "text-base sm:text-lg md:text-lg",
+  md: "text-lg sm:text-xl md:text-2xl",
+  lg: "text-2xl sm:text-3xl md:text-4xl",
+  xl: "text-3xl sm:text-4xl md:text-5xl",
+};
+
 export default function Logo({
   size = "md",
   variant = "full",
@@ -34,7 +50,8 @@ export default function Logo({
   className = "",
 }: LogoProps) {
   const height = HEIGHT[size];
-  const isIconOnly = variant === "icon";
+  const showMark = variant !== "wordmark";
+  const showWord = variant !== "icon";
 
   return (
     <>
@@ -48,6 +65,26 @@ export default function Logo({
           width: auto;
           height: 100%;
           object-fit: contain;
+        }
+        .sarevista-wordmark {
+          font-family: 'Lora', 'Instrument Serif', serif;
+          font-style: italic;
+          font-weight: 500;
+          letter-spacing: 0.02em;
+          line-height: 1;
+          color: #F5F0E8;
+          text-transform: none;
+          white-space: nowrap;
+        }
+        .sarevista-wordmark .vista {
+          background: linear-gradient(135deg, #F4C77B 0%, #D3771F 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          color: transparent;
+        }
+        :root.light .sarevista-wordmark {
+          color: #14100D;
         }
         .sarevista-beta {
           display: inline-flex;
@@ -68,11 +105,8 @@ export default function Logo({
           flex-shrink: 0;
         }
       `}</style>
-      <span
-        className={`sarevista-logo ${className}`}
-        aria-label={isIconOnly ? "Sarevista" : undefined}
-      >
-        {variant !== "wordmark" && (
+      <span className={`sarevista-logo ${className}`} aria-label="Sarevista">
+        {showMark && (
           <span
             className={`inline-flex items-center ${responsive ? RESPONSIVE_HEIGHT[size] : ""}`}
             style={responsive ? undefined : { height }}
@@ -86,6 +120,11 @@ export default function Logo({
               width={height}
               height={height}
             />
+          </span>
+        )}
+        {showWord && (
+          <span className={`sarevista-wordmark ${responsive ? RESPONSIVE_WORDMARK[size] : WORDMARK_SIZE[size]}`}>
+            Sare<span className="vista">vista</span>
           </span>
         )}
         {showBeta && <span className="sarevista-beta">BETA</span>}
