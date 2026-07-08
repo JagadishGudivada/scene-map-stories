@@ -1051,6 +1051,8 @@ export default function Profile() {
         onSaved={(p) => setProfile(p)}
       />
       <CreatePostDialog open={postOpen} onOpenChange={setPostOpen} onPosted={loadPosts} />
+      <RevealAchievementCard payload={reveal} onClose={() => setReveal(null)} />
+      <MilestoneCelebration milestone={milestone} onClose={() => setMilestone(null)} />
     </div>
   );
 }
