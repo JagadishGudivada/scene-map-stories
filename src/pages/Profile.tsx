@@ -314,6 +314,91 @@ export default function Profile() {
     [visitedSpots]
   );
 
+  // Reveal + milestones + focus for fog map
+  const [reveal, setReveal] = useState<RevealPayload | null>(null);
+  const [milestone, setMilestone] = useState<number | null>(null);
+  const [focusPin, setFocusPin] = useState<{ lat: number; lng: number } | null>(null);
+  const shownMilestonesRef = useRef<Set<number>>(new Set());
+
+  // Load already-shown milestones once
+  useEffect(() => {
+    if (!authUser || !isOwnProfile) return;
+    supabase
+      .from("user_milestones")
+      .select("milestone")
+      .eq("user_id", authUser.id)
+      .then(({ data }) => {
+        shownMilestonesRef.current = new Set((data ?? []).map((r: any) => r.milestone));
+      });
+  }, [authUser, isOwnProfile]);
+
+  // Listen for reveal events, refresh visited list, check milestone
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const handler = async (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        spotSlug: string; spotName: string; lat?: number; lng?: number;
+        city?: string; country?: string; type?: "Movie" | "Series" | "Book";
+      };
+      // Try to enrich with a related title poster
+      let title: string | undefined;
+      let poster: string | null | undefined;
+      try {
+        const { data: rels } = await supabase
+          .from("title_spots")
+          .select("title_slug")
+          .eq("spot_slug", detail.spotSlug)
+          .limit(1);
+        const tSlug = rels?.[0]?.title_slug;
+        if (tSlug) {
+          const { data: t } = await supabase
+            .from("titles")
+            .select("title, poster_url")
+            .eq("slug", tSlug)
+            .maybeSingle();
+          title = t?.title ?? undefined;
+          poster = t?.poster_url ?? null;
+        }
+      } catch { /* ignore */ }
+
+      setReveal({
+        spotName: detail.spotName,
+        city: detail.city,
+        country: detail.country,
+        lat: detail.lat,
+        lng: detail.lng,
+        type: detail.type,
+        title,
+        poster: poster ?? null,
+      });
+      if (detail.lat != null && detail.lng != null) {
+        setFocusPin({ lat: detail.lat, lng: detail.lng });
+      }
+      setActiveTab("map");
+
+      await refreshVisitedSpots();
+
+      // Determine new count and check milestones
+      if (authUser) {
+        const { count } = await supabase
+          .from("visited_spots")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", authUser.id);
+        if (count != null) {
+          const hit = MILESTONES.find((m) => m === count && !shownMilestonesRef.current.has(m));
+          if (hit) {
+            shownMilestonesRef.current.add(hit);
+            await supabase.from("user_milestones").insert({ user_id: authUser.id, milestone: hit });
+            setMilestone(hit);
+          }
+        }
+      }
+    };
+    window.addEventListener("spot:revealed", handler as EventListener);
+    return () => window.removeEventListener("spot:revealed", handler as EventListener);
+  }, [isOwnProfile, authUser, refreshVisitedSpots]);
+
+
   const visitedMapPins = useMemo(
     () =>
       visitedSpotsData.map((spot) => ({
