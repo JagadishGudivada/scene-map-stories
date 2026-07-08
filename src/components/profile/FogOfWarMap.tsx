@@ -159,18 +159,18 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
     const map = mapRef.current;
     if (!map || !ready) return;
     const src = map.getSource("countries") as maplibregl.GeoJSONSource | undefined;
-    if (!src) return;
-    // @ts-ignore private, but the source keeps last data via _data
-    const data = (src as any)._data;
-    if (!data) return;
+    if (!src || !cachedGeoJson?.features) return;
     const updated = {
-      ...data,
-      features: data.features.map((f: any) => ({
-        ...f,
-        properties: { ...f.properties, _visited: visitedSet.has(f.properties?._key) ? 1 : 0 },
-      })),
+      type: "FeatureCollection" as const,
+      features: cachedGeoJson.features.map((f: any) => {
+        const name = normalize(f.properties?.ADMIN || f.properties?.NAME || f.properties?.NAME_LONG);
+        return {
+          ...f,
+          properties: { ...f.properties, _visited: visitedSet.has(name) ? 1 : 0, _key: name },
+        };
+      }),
     };
-    src.setData(updated);
+    src.setData(updated as any);
   }, [visitedSet, ready]);
 
   // Render pins
