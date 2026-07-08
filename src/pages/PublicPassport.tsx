@@ -10,6 +10,7 @@ import PassportStampBadge from "@/components/PassportStampBadge";
 import Seo from "@/components/Seo";
 import { Button } from "@/components/ui/button";
 import type { VisitedSpotRow } from "@/hooks/useSaved";
+import TierBadge from "@/components/profile/TierBadge";
 
 type PublicProfile = {
   user_id: string;
