@@ -65,7 +65,7 @@ export interface FogOfWarMapProps {
   focusPin?: { lat: number; lng: number } | null;
 }
 
-export default function FogOfWarMap({ pins, visitedCountries, className, focusPin }: FogOfWarMapProps) {
+export default function FogOfWarMap({ pins = [], visitedCountries = [], className, focusPin }: FogOfWarMapProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -74,7 +74,10 @@ export default function FogOfWarMap({ pins, visitedCountries, className, focusPi
   const [ready, setReady] = useState(false);
   const [drop, setDrop] = useState<{ lat: number; lng: number } | null>(null);
 
-  const visitedSet = useMemo(() => new Set(visitedCountries.map(normalize).filter(Boolean)), [visitedCountries]);
+  const visitedSet = useMemo(
+    () => new Set((visitedCountries ?? []).map(normalize).filter(Boolean)),
+    [visitedCountries]
+  );
 
   // Init map
   useEffect(() => {
