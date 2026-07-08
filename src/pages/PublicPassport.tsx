@@ -168,7 +168,10 @@ export default function PublicPassport() {
 
           <div className="mt-5 space-y-1.5">
             <h1 className="font-serif text-4xl sm:text-5xl text-foreground tracking-tight leading-none">{displayName}</h1>
-            <p className="font-mono text-xs text-muted-foreground tracking-wider">@{profile.username}</p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <p className="font-mono text-xs text-muted-foreground tracking-wider">@{profile.username}</p>
+              <TierBadge count={visited.length} />
+            </div>
           </div>
 
           {profile.bio && (
