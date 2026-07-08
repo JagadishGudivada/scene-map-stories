@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X, Pencil, Plus, Globe, Trash2, Sparkles, Film } from "lucide-react";
@@ -14,6 +14,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { fetchPexelsImage, DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 import Seo from "@/components/Seo";
+import FogOfWarMap from "@/components/profile/FogOfWarMap";
+import TierBadge from "@/components/profile/TierBadge";
+import MilestoneCelebration from "@/components/profile/MilestoneCelebration";
+import RevealAchievementCard, { type RevealPayload } from "@/components/profile/RevealAchievementCard";
+import NearbySpotBanner from "@/components/profile/NearbySpotBanner";
+import { MILESTONES } from "@/lib/tiers";
 
 type PostRow = {
   id: string;
