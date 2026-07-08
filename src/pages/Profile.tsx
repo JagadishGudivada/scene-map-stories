@@ -344,20 +344,28 @@ export default function Profile() {
       let title: string | undefined;
       let poster: string | null | undefined;
       try {
-        const { data: rels } = await supabase
-          .from("title_spots")
-          .select("title_slug")
-          .eq("spot_slug", detail.spotSlug)
-          .limit(1);
-        const tSlug = rels?.[0]?.title_slug;
-        if (tSlug) {
-          const { data: t } = await supabase
-            .from("titles")
-            .select("title, poster_url")
-            .eq("slug", tSlug)
-            .maybeSingle();
-          title = t?.title ?? undefined;
-          poster = t?.poster_url ?? null;
+        const { data: spotRow } = await supabase
+          .from("spots")
+          .select("id")
+          .eq("slug", detail.spotSlug)
+          .maybeSingle();
+        const spotId = (spotRow as any)?.id;
+        if (spotId) {
+          const { data: rels } = await supabase
+            .from("title_spots")
+            .select("title_id")
+            .eq("spot_id", spotId)
+            .limit(1);
+          const titleId = (rels?.[0] as any)?.title_id;
+          if (titleId) {
+            const { data: t } = await supabase
+              .from("titles")
+              .select("title, poster_url")
+              .eq("id", titleId)
+              .maybeSingle();
+            title = (t as any)?.title ?? undefined;
+            poster = (t as any)?.poster_url ?? null;
+          }
         }
       } catch { /* ignore */ }
 
