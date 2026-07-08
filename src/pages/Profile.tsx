@@ -533,9 +533,12 @@ export default function Profile() {
             <h1 className="font-serif text-4xl sm:text-5xl text-foreground tracking-tight leading-none">
               {displayName}
             </h1>
-            <p className="font-mono text-xs sm:text-sm text-muted-foreground tracking-wider">
-              @{username}
-            </p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <p className="font-mono text-xs sm:text-sm text-muted-foreground tracking-wider">
+                @{username}
+              </p>
+              <TierBadge count={visitedSpotSlugs.length} />
+            </div>
           </div>
 
           {bio && (
