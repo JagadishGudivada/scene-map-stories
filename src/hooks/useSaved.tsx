@@ -235,6 +235,21 @@ export function useBeenHereSpot(spotSlug: string, meta?: BeenHereSpotMeta) {
       });
       setVisited(true);
       toast({ title: "Added", description: "Spot added to your profile as visited." });
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("spot:revealed", {
+            detail: {
+              spotSlug,
+              spotName: meta?.spotName ?? spotSlug.replace(/-/g, " "),
+              lat: meta?.lat,
+              lng: meta?.lng,
+              city: meta?.city,
+              country: meta?.country,
+              type: meta?.type ?? "Movie",
+            },
+          })
+        );
+      }
     }
     setLoading(false);
   }, [user, visited, spotSlug, meta, toast]);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X, Pencil, Plus, Globe, Trash2, Sparkles, Film } from "lucide-react";
@@ -14,6 +14,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { fetchPexelsImage, DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 import Seo from "@/components/Seo";
+import FogOfWarMap from "@/components/profile/FogOfWarMap";
+import TierBadge from "@/components/profile/TierBadge";
+import MilestoneCelebration from "@/components/profile/MilestoneCelebration";
+import RevealAchievementCard, { type RevealPayload } from "@/components/profile/RevealAchievementCard";
+import NearbySpotBanner from "@/components/profile/NearbySpotBanner";
+import { MILESTONES } from "@/lib/tiers";
 
 type PostRow = {
   id: string;
@@ -308,6 +314,99 @@ export default function Profile() {
     [visitedSpots]
   );
 
+  // Reveal + milestones + focus for fog map
+  const [reveal, setReveal] = useState<RevealPayload | null>(null);
+  const [milestone, setMilestone] = useState<number | null>(null);
+  const [focusPin, setFocusPin] = useState<{ lat: number; lng: number } | null>(null);
+  const shownMilestonesRef = useRef<Set<number>>(new Set());
+
+  // Load already-shown milestones once
+  useEffect(() => {
+    if (!authUser || !isOwnProfile) return;
+    supabase
+      .from("user_milestones")
+      .select("milestone")
+      .eq("user_id", authUser.id)
+      .then(({ data }) => {
+        shownMilestonesRef.current = new Set((data ?? []).map((r: any) => r.milestone));
+      });
+  }, [authUser, isOwnProfile]);
+
+  // Listen for reveal events, refresh visited list, check milestone
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    const handler = async (e: Event) => {
+      const detail = (e as CustomEvent).detail as {
+        spotSlug: string; spotName: string; lat?: number; lng?: number;
+        city?: string; country?: string; type?: "Movie" | "Series" | "Book";
+      };
+      // Try to enrich with a related title poster
+      let title: string | undefined;
+      let poster: string | null | undefined;
+      try {
+        const { data: spotRow } = await supabase
+          .from("spots")
+          .select("id")
+          .eq("slug", detail.spotSlug)
+          .maybeSingle();
+        const spotId = (spotRow as any)?.id;
+        if (spotId) {
+          const { data: rels } = await supabase
+            .from("title_spots")
+            .select("title_id")
+            .eq("spot_id", spotId)
+            .limit(1);
+          const titleId = (rels?.[0] as any)?.title_id;
+          if (titleId) {
+            const { data: t } = await supabase
+              .from("titles")
+              .select("title, poster_url")
+              .eq("id", titleId)
+              .maybeSingle();
+            title = (t as any)?.title ?? undefined;
+            poster = (t as any)?.poster_url ?? null;
+          }
+        }
+      } catch { /* ignore */ }
+
+      setReveal({
+        spotName: detail.spotName,
+        city: detail.city,
+        country: detail.country,
+        lat: detail.lat,
+        lng: detail.lng,
+        type: detail.type,
+        title,
+        poster: poster ?? null,
+      });
+      if (detail.lat != null && detail.lng != null) {
+        setFocusPin({ lat: detail.lat, lng: detail.lng });
+      }
+      setActiveTab("map");
+
+      await refreshVisitedSpots();
+
+      // Determine new count and check milestones
+      if (authUser) {
+        const { count } = await supabase
+          .from("visited_spots")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", authUser.id);
+        if (count != null) {
+          const hit = MILESTONES.find((m) => m === count && !shownMilestonesRef.current.has(m));
+          if (hit) {
+            shownMilestonesRef.current.add(hit);
+            await supabase.from("user_milestones").insert({ user_id: authUser.id, milestone: hit });
+            setMilestone(hit);
+          }
+        }
+      }
+    };
+    window.addEventListener("spot:revealed", handler as EventListener);
+    return () => window.removeEventListener("spot:revealed", handler as EventListener);
+  }, [isOwnProfile, authUser, refreshVisitedSpots]);
+
+
   const visitedMapPins = useMemo(
     () =>
       visitedSpotsData.map((spot) => ({
@@ -434,9 +533,12 @@ export default function Profile() {
             <h1 className="font-serif text-4xl sm:text-5xl text-foreground tracking-tight leading-none">
               {displayName}
             </h1>
-            <p className="font-mono text-xs sm:text-sm text-muted-foreground tracking-wider">
-              @{username}
-            </p>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <p className="font-mono text-xs sm:text-sm text-muted-foreground tracking-wider">
+                @{username}
+              </p>
+              <TierBadge count={visitedSpotSlugs.length} />
+            </div>
           </div>
 
           {bio && (
@@ -614,12 +716,18 @@ export default function Profile() {
           >
             {activeTab === "map" && (
               <div className="space-y-6">
+                {isOwnProfile && <NearbySpotBanner />}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span className="font-mono uppercase tracking-[0.18em]">
                     {visitedMapPins.length} locations · {visitedCountriesCount} countries
                   </span>
                 </div>
-                <LeafletMap pins={visitedMapPins} visitedCities={visitedCities} className="h-80 sm:h-96 rounded-2xl overflow-hidden border border-border" />
+                <FogOfWarMap
+                  pins={visitedMapPins}
+                  visitedCountries={visitedSpotsData.map((s) => s.country).filter(Boolean) as string[]}
+                  focusPin={focusPin}
+                  className="h-[420px] sm:h-[520px] rounded-2xl overflow-hidden border border-border"
+                />
                 {visitedSpotsLoading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
@@ -943,6 +1051,8 @@ export default function Profile() {
         onSaved={(p) => setProfile(p)}
       />
       <CreatePostDialog open={postOpen} onOpenChange={setPostOpen} onPosted={loadPosts} />
+      <RevealAchievementCard payload={reveal} onClose={() => setReveal(null)} />
+      <MilestoneCelebration milestone={milestone} onClose={() => setMilestone(null)} />
     </div>
   );
 }

@@ -1,106 +1,68 @@
-# The Reveal — one button, infinite curiosity
+# Profile Map Engagement Upgrade
 
-Forget XP, leaderboards, votes. Add **one mysterious button** on every title, location and spot page that pulls users in with a single tap and rewards them with a tiny dopamine hit: a fact, a secret, a stranger's note. No forms, no thinking, no friction.
+Transform the Profile map/list view into a gamified travel journal that rewards logging locations.
 
-This is the only thing we ship. It does one job: **make users tap, then tap again.**
+## 1. Fog-of-war world map
+- Replace/augment the current profile map view with a world choropleth layer.
+- Countries with 0 visited spots render dimmed (muted grey overlay, low opacity).
+- Countries with ≥1 visited spot "light up" gold (`amber` token) with a soft glow + one-time fade-in animation on first reveal.
+- Top stat bar above the map: `X / 195 countries unlocked` with a thin gold progress bar.
+- Derive country from existing `visited_spots.country` field (already stored). Map country name → ISO code via a small lookup table; unmatched names count but don't color a polygon.
 
-## The button
+Tech: Leaflet + a lightweight world GeoJSON (bundled in `src/lib/worldCountries.ts`, ~country-level low-res). No new map library.
 
-A single floating chip, gen-z voice, rotates its label so it never feels stale:
+## 2. Reveal animation on add
+- Hook into the existing "add visited spot" flow (`useBeenHereSpot.toggle` / add dialog).
+- On successful insert, dispatch a `spot:revealed` event carrying `{ lat, lng, name, title, category, poster }`.
+- Profile map listens: `flyTo` the coords, drop an animated pin (Framer Motion bounce), then show a centered "achievement card" that flips in — poster, title, category badge, "Unlocked" label. Dismiss on click / auto after 4s.
 
-- *"tap me 👀"*
-- *"unlock a secret"*
-- *"wait til you see this"*
-- *"POV: you didn't know this"*
-- *"don't tap this"*  ← reverse psychology
-- *"one more thing…"*
-- *"the internet's lowkey obsessed with this"*
+## 3. Milestone celebrations
+- Thresholds: 1, 5, 10, 25, 50 visited spots.
+- New table `user_milestones (user_id, milestone int, shown_at)` so each milestone fires exactly once per user.
+- After a successful add, count visited spots; if the new count matches an unseen threshold, show a confetti overlay (`canvas-confetti`) + toast-style message (e.g. "5 locations added! You're a Location Scout 🎬") and insert the milestone row.
 
-Sits sticky-bottom on mobile, inline hero chip on desktop. Subtle pulse + slight tilt animation so the eye catches it.
+## 4. Explorer tier badge
+- Tiers by total visited spots:
+  - Explorer (0–4)
+  - Wanderer (5–14)
+  - Location Scout (15–39)
+  - Trailblazer (40+)
+- Small pill badge next to the username in the Profile header (and PublicPassport header). Gold gradient background, tier icon.
 
-## What's behind the tap (the "Reveal Deck")
+## 5. Shareable journey card
+- After the reveal animation, a "Share this stop" button appears in the card.
+- Client-side generator using `html-to-image` (already lightweight) rendering a 1080x1920 hidden node: location name, title, category color stripe, Sarevista logo, coords.
+- Download as PNG + Web Share API when available.
 
-Each tap pulls **one card** from a shuffled deck for that title / location / spot. Card flips in, swipeable. Five card types, all short, all scannable in 5 seconds:
+## 6. Nearby prompt (optional, permission-gated)
+- On Profile mount, if `navigator.geolocation` permission is already granted (no forced prompt), fetch current position.
+- Query `spots` table for rows within ~5km (haversine in JS on a bounded lat/lng box first, then precise filter).
+- If a match and not dismissed this session, show a slim top banner: "You're near {spot.name} — mark visited?" with Mark / Dismiss.
 
-```text
-┌─────────────────────────────┐
-│ 🎬 BTS                       │
-│ Nolan shot this scene with   │
-│ a real IMAX camera bolted    │
-│ to a P-51 Mustang.           │
-│                              │
-│           [tap for next →]   │
-└─────────────────────────────┘
-```
+## Files
 
-1. **🎬 BTS** — one behind-the-scenes fact (AI-generated, cached)
-2. **📍 Did you know** — a fact about the filming location ("this farmhouse is still owned by the same family")
-3. **💬 Last visitor** — most recent visited_spots / posts entry: *"Ana stood here 3 days ago"* with avatar
-4. **🎞️ Frame match** — film still vs satellite/street-view of the real spot, side-by-side
-5. **🌙 Mood** — a one-line evocative quote about the place ("the cornfield where time bent")
+New:
+- `src/components/profile/FogOfWarMap.tsx` — Leaflet map + GeoJSON country layer + stat bar.
+- `src/components/profile/RevealAchievementCard.tsx` — flip card + share button.
+- `src/components/profile/MilestoneCelebration.tsx` — confetti overlay.
+- `src/components/profile/TierBadge.tsx` — pill badge + tier util.
+- `src/components/profile/NearbySpotBanner.tsx`.
+- `src/lib/tiers.ts` — tier + milestone constants and helpers.
+- `src/lib/worldCountries.ts` — GeoJSON + country-name→ISO map.
+- `src/lib/shareCard.ts` — html-to-image render + share.
 
-Deck is **endless** — keeps shuffling, never ends with "you've seen everything." User can swipe through 1, 5 or 50 cards. No counters, no progress bar, no XP shown.
+Edited:
+- `src/pages/Profile.tsx` — mount FogOfWarMap, TierBadge, NearbySpotBanner, listen for reveal events, drive milestone celebrations.
+- `src/pages/PublicPassport.tsx` — TierBadge in header.
+- `src/hooks/useSaved.tsx` — `useBeenHereSpot` dispatches `spot:revealed` after insert.
+- `src/components/AddLocationDialog.tsx` (or the add-visited flow) — same dispatch.
 
-## Why this works for gen-z / millennial travellers
+DB migration:
+- `user_milestones` table with RLS (user can read/insert their own), grants for `authenticated` + `service_role`.
 
-- **Zero hassle**: one tap, no signup gate, no form.
-- **Suspense > obligation**: copy is curiosity-driven, not duty-driven ("verify this" ❌ → "wait til you see this" ✅).
-- **TikTok-paced**: each card is one swipe, one beat. Same loop as scrolling Reels.
-- **Quiet social proof**: "Ana stood here 3 days ago" is the only "community" signal — feels alive without asking the user to do anything.
-- **Shareable**: every card has a tiny share button → opens a pre-rendered story-shaped image of just that card. That's the viral loop, not a leaderboard.
+Dependencies to add: `canvas-confetti`, `html-to-image`. (Leaflet already installed.)
 
-## What we DON'T build
-
-- No XP, points, ranks, badges, leaderboards, streaks
-- No "verify" / "confirm" / "vote" anywhere
-- No required photo uploads, no required text, no forms
-- No profile gamification
-
-The whole concept is: **the app tells the user something cool, not the other way around.**
-
-## Phase 1 build (small, ships fast)
-
-```text
-src/components/RevealDeck/
- ├── RevealButton.tsx       — sticky chip, rotating copy, pulse
- ├── RevealDeck.tsx         — full-screen modal, swipeable cards (framer-motion)
- ├── cards/
- │    ├── BtsCard.tsx
- │    ├── DidYouKnowCard.tsx
- │    ├── LastVisitorCard.tsx
- │    ├── FrameMatchCard.tsx
- │    └── MoodCard.tsx
- └── useRevealDeck.ts       — shuffles + fetches next card lazily
-```
-
-**Data sources (all already exist or are trivial):**
-- BTS / Did you know / Mood → new edge function `reveal-cards` calling Lovable AI (`google/gemini-2.5-flash`), cached in `ai_cache` for 7 days per slug+type
-- Last visitor → query existing `visited_spots` / `posts` tables, order by `created_at desc limit 1`
-- Frame match → use existing `image_url` on `spots` + Google Static Maps / Mapbox satellite tile at lat/lng
-
-**Wiring:**
-- Add `<RevealButton context={{ kind: 'title' | 'location' | 'spot', slug, name }} />` to:
-  - `src/pages/TitleDetail.tsx`
-  - `src/pages/LocationDetail.tsx`
-  - `src/pages/FilmingSpotDetail.tsx`
-- No DB migration needed — `ai_cache` table already supports this pattern (same approach as `spot-details`).
-
-**Share card:**
-- Open the same card in a 9:16 framed container, html-to-image → blob → Web Share API. Card includes faint Sarevista logo. Zero backend.
-
-## Tone & copy bank (genz voice, locked-in)
-
-Button rotations: `tap me 👀`, `unlock a secret`, `POV: you didn't know`, `don't tap this`, `the lore is wild`, `one more thing…`, `wait til you see this`.
-
-Card footers: `[next →]`, `[one more]`, `[ok one more]`, `[this is unhinged]`, `[okay i'm done]`.
-
-Empty/cold state (rare): never show "no facts yet." Always synthesize via AI on first tap and cache.
-
-## Phase 2 (only after Phase 1 lands)
-- Personalised card mix based on what the user lingered on
-- "Drop a card" — let the user add a one-line mood/fact, becomes a future card for the next visitor (still optional, still one-tap field)
-- Geofenced cards: a card only unlocks if you're physically at the spot
-- Daily card: one card per day across the whole site, on the homepage
-
-## Approve the direction and I'll ship Phase 1
-Tap-to-reveal button + 5 card types + AI edge function + share-as-story. Slot it into the three detail pages. No new tables, no auth gates, no gamification.
+## Notes / trade-offs
+- Country matching depends on `visited_spots.country` text quality; unmapped names still count in the numerator via a fallback but won't color a polygon — acceptable for v1.
+- Reveal event bus is a simple `window.dispatchEvent(new CustomEvent(...))` — no global store needed.
+- Nearby prompt never triggers a permission dialog on its own; it only reads an already-granted permission (checked via `navigator.permissions.query`).
