@@ -716,12 +716,18 @@ export default function Profile() {
           >
             {activeTab === "map" && (
               <div className="space-y-6">
+                {isOwnProfile && <NearbySpotBanner />}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
                   <span className="font-mono uppercase tracking-[0.18em]">
                     {visitedMapPins.length} locations · {visitedCountriesCount} countries
                   </span>
                 </div>
-                <LeafletMap pins={visitedMapPins} visitedCities={visitedCities} className="h-80 sm:h-96 rounded-2xl overflow-hidden border border-border" />
+                <FogOfWarMap
+                  pins={visitedMapPins}
+                  visitedCountries={visitedSpotsData.map((s) => s.country).filter(Boolean) as string[]}
+                  focusPin={focusPin}
+                  className="h-[420px] sm:h-[520px] rounded-2xl overflow-hidden border border-border"
+                />
                 {visitedSpotsLoading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
