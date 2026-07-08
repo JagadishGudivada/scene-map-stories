@@ -69,8 +69,8 @@ export default function FogOfWarMap({ pins, visitedCountries, className, focusPi
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const [ready, setReady] = useState(false);
   const [drop, setDrop] = useState<{ lat: number; lng: number } | null>(null);
 
