@@ -584,6 +584,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_milestones: {
+        Row: {
+          id: string
+          milestone: number
+          shown_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          milestone: number
+          shown_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          milestone?: number
+          shown_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
