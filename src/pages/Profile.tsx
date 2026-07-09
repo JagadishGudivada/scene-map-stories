@@ -19,6 +19,7 @@ import TierBadge from "@/components/profile/TierBadge";
 import MilestoneCelebration from "@/components/profile/MilestoneCelebration";
 import RevealAchievementCard, { type RevealPayload } from "@/components/profile/RevealAchievementCard";
 import NearbySpotBanner from "@/components/profile/NearbySpotBanner";
+import MemoryLane from "@/components/profile/MemoryLane";
 import { MILESTONES } from "@/lib/tiers";
 
 type PostRow = {
