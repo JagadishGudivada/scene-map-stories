@@ -20,6 +20,7 @@ export type VisitedSpotRow = {
   city: string;
   country: string;
   type: "Movie" | "Series" | "Book";
+  created_at?: string;
 };
 
 export function useSavedTitle(titleSlug: string) {
