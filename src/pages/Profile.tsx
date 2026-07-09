@@ -719,10 +719,19 @@ export default function Profile() {
             {activeTab === "map" && (
               <div className="space-y-6">
                 {isOwnProfile && <NearbySpotBanner />}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-muted-foreground">
                   <span className="font-mono uppercase tracking-[0.18em]">
                     {visitedMapPins.length} locations · {visitedCountriesCount} countries
                   </span>
+                  {visitedSpotsData.length > 0 && (
+                    <button
+                      onClick={() => setMemoryLaneOpen(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber text-black text-xs font-medium hover:brightness-105 transition shadow-[0_0_20px_rgba(244,199,123,0.25)]"
+                    >
+                      <Film className="w-3.5 h-3.5" />
+                      Replay My Journey
+                    </button>
+                  )}
                 </div>
                 <FogOfWarMap
                   pins={visitedMapPins}
