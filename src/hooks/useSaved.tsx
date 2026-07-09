@@ -20,6 +20,7 @@ export type VisitedSpotRow = {
   city: string;
   country: string;
   type: "Movie" | "Series" | "Book";
+  created_at?: string;
 };
 
 export function useSavedTitle(titleSlug: string) {
@@ -331,7 +332,7 @@ export function useAllVisitedSpots() {
     setLoading(true);
     const { data } = await supabase
       .from("visited_spots")
-      .select("spot_slug, spot_name, lat, lng, city, country, type")
+      .select("spot_slug, spot_name, lat, lng, city, country, type, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     const normalized: VisitedSpotRow[] =
@@ -343,6 +344,7 @@ export function useAllVisitedSpots() {
         city: d.city ?? "Unknown City",
         country: d.country ?? "Unknown Country",
         type: d.type === "Series" || d.type === "Book" ? d.type : "Movie",
+        created_at: d.created_at ?? undefined,
       })) ?? [];
     setSpots(normalized);
     setSlugs(normalized.map((d) => d.spot_slug));

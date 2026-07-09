@@ -19,6 +19,7 @@ import TierBadge from "@/components/profile/TierBadge";
 import MilestoneCelebration from "@/components/profile/MilestoneCelebration";
 import RevealAchievementCard, { type RevealPayload } from "@/components/profile/RevealAchievementCard";
 import NearbySpotBanner from "@/components/profile/NearbySpotBanner";
+import MemoryLane from "@/components/profile/MemoryLane";
 import { MILESTONES } from "@/lib/tiers";
 
 type PostRow = {
@@ -318,6 +319,7 @@ export default function Profile() {
   const [reveal, setReveal] = useState<RevealPayload | null>(null);
   const [milestone, setMilestone] = useState<number | null>(null);
   const [focusPin, setFocusPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [memoryLaneOpen, setMemoryLaneOpen] = useState(false);
   const shownMilestonesRef = useRef<Set<number>>(new Set());
 
   // Load already-shown milestones once
@@ -717,10 +719,19 @@ export default function Profile() {
             {activeTab === "map" && (
               <div className="space-y-6">
                 {isOwnProfile && <NearbySpotBanner />}
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex items-center justify-between gap-3 flex-wrap text-xs text-muted-foreground">
                   <span className="font-mono uppercase tracking-[0.18em]">
                     {visitedMapPins.length} locations · {visitedCountriesCount} countries
                   </span>
+                  {visitedSpotsData.length > 0 && (
+                    <button
+                      onClick={() => setMemoryLaneOpen(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber text-black text-xs font-medium hover:brightness-105 transition shadow-[0_0_20px_rgba(244,199,123,0.25)]"
+                    >
+                      <Film className="w-3.5 h-3.5" />
+                      Replay My Journey
+                    </button>
+                  )}
                 </div>
                 <FogOfWarMap
                   pins={visitedMapPins}
@@ -1053,6 +1064,14 @@ export default function Profile() {
       <CreatePostDialog open={postOpen} onOpenChange={setPostOpen} onPosted={loadPosts} />
       <RevealAchievementCard payload={reveal} onClose={() => setReveal(null)} />
       <MilestoneCelebration milestone={milestone} onClose={() => setMilestone(null)} />
+      <MemoryLane
+        open={memoryLaneOpen}
+        onClose={() => setMemoryLaneOpen(false)}
+        spots={visitedSpots}
+        displayName={displayName}
+        tierCount={visitedMapPins.length}
+      />
+
     </div>
   );
 }
