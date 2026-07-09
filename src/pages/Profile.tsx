@@ -319,6 +319,7 @@ export default function Profile() {
   const [reveal, setReveal] = useState<RevealPayload | null>(null);
   const [milestone, setMilestone] = useState<number | null>(null);
   const [focusPin, setFocusPin] = useState<{ lat: number; lng: number } | null>(null);
+  const [memoryLaneOpen, setMemoryLaneOpen] = useState(false);
   const shownMilestonesRef = useRef<Set<number>>(new Set());
 
   // Load already-shown milestones once
