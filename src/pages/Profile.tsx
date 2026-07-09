@@ -1064,6 +1064,14 @@ export default function Profile() {
       <CreatePostDialog open={postOpen} onOpenChange={setPostOpen} onPosted={loadPosts} />
       <RevealAchievementCard payload={reveal} onClose={() => setReveal(null)} />
       <MilestoneCelebration milestone={milestone} onClose={() => setMilestone(null)} />
+      <MemoryLane
+        open={memoryLaneOpen}
+        onClose={() => setMemoryLaneOpen(false)}
+        spots={visitedSpots}
+        displayName={displayName}
+        tierCount={visitedMapPins.length}
+      />
+
     </div>
   );
 }
