@@ -505,7 +505,7 @@ export default function Profile() {
         description={`Filming locations, saved spots, and cinema journeys from ${displayName} on Sarevista.`}
       />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-14 space-y-5 sm:space-y-14">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-20 sm:pt-14 space-y-5 sm:space-y-14">
         {/* Editorial header */}
         <header className="relative flex flex-col items-center text-center">
           {/* Cover wash */}
