@@ -520,23 +520,23 @@ export default function Profile() {
           {/* Avatar with amber halo */}
           <div className="relative group">
             <div className="absolute inset-0 bg-amber/25 rounded-full blur-2xl group-hover:bg-amber/40 transition-all" aria-hidden />
-            <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 border-amber/40 p-1 bg-background shadow-float">
+            <div className="relative w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 border-amber/40 p-1 bg-background shadow-float">
               <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-muted to-card flex items-center justify-center">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-serif italic text-4xl text-amber">{initials || "?"}</span>
+                  <span className="font-serif italic text-3xl sm:text-4xl text-amber">{initials || "?"}</span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="mt-5 sm:mt-6 space-y-1.5">
-            <h1 className="font-serif text-4xl sm:text-5xl text-foreground tracking-tight leading-none">
+          <div className="mt-3 sm:mt-6 space-y-1">
+            <h1 className="font-serif text-3xl sm:text-5xl text-foreground tracking-tight leading-none">
               {displayName}
             </h1>
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <p className="font-mono text-xs sm:text-sm text-muted-foreground tracking-wider">
+              <p className="font-mono text-[11px] sm:text-sm text-muted-foreground tracking-wider">
                 @{username}
               </p>
               <TierBadge count={visitedSpotSlugs.length} />
@@ -544,7 +544,7 @@ export default function Profile() {
           </div>
 
           {bio && (
-            <p className="mt-5 max-w-xl text-sm sm:text-[15px] text-foreground/85 leading-relaxed whitespace-pre-wrap">
+            <p className="mt-3 sm:mt-5 max-w-xl text-[13px] sm:text-[15px] text-foreground/85 leading-relaxed whitespace-pre-wrap line-clamp-2 sm:line-clamp-none">
               {bio}
             </p>
           )}
