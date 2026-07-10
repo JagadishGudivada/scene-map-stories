@@ -622,14 +622,13 @@ export default function Profile() {
                   setActiveTab(stat.jump.tab);
                   if (stat.jump.filter) setSavedFilter(stat.jump.filter);
                 }}
-                className="bg-card/40 border border-border/60 px-2 sm:px-4 py-3 sm:py-5 rounded-2xl flex flex-col items-center justify-center gap-1 sm:gap-1.5 hover:border-amber/30 transition-all active:scale-[0.97] group"
+                className="bg-card/40 border border-border/60 px-2 sm:px-4 py-2.5 sm:py-5 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 hover:border-amber/30 transition-all active:scale-[0.97] group"
               >
-                <stat.icon className={`w-4 h-4 sm:hidden ${stat.color}`} />
-                <span className="hidden sm:block font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
-                  {stat.label}
-                </span>
-                <span className={`font-serif text-2xl sm:text-4xl leading-none ${stat.color}`}>
+                <span className={`font-serif text-xl sm:text-4xl leading-none ${stat.color}`}>
                   {stat.value}
+                </span>
+                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.14em] sm:tracking-[0.18em] text-muted-foreground">
+                  {stat.label}
                 </span>
               </button>
             ))}
