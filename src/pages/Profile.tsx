@@ -505,7 +505,7 @@ export default function Profile() {
         description={`Filming locations, saved spots, and cinema journeys from ${displayName} on Sarevista.`}
       />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-10 sm:pt-14 space-y-10 sm:space-y-14">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 sm:pt-14 space-y-5 sm:space-y-14">
         {/* Editorial header */}
         <header className="relative flex flex-col items-center text-center">
           {/* Cover wash */}
@@ -520,23 +520,23 @@ export default function Profile() {
           {/* Avatar with amber halo */}
           <div className="relative group">
             <div className="absolute inset-0 bg-amber/25 rounded-full blur-2xl group-hover:bg-amber/40 transition-all" aria-hidden />
-            <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full border-2 border-amber/40 p-1 bg-background shadow-float">
+            <div className="relative w-20 h-20 sm:w-32 sm:h-32 rounded-full border-2 border-amber/40 p-1 bg-background shadow-float">
               <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-muted to-card flex items-center justify-center">
                 {avatarUrl ? (
                   <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
                 ) : (
-                  <span className="font-serif italic text-4xl text-amber">{initials || "?"}</span>
+                  <span className="font-serif italic text-3xl sm:text-4xl text-amber">{initials || "?"}</span>
                 )}
               </div>
             </div>
           </div>
 
-          <div className="mt-5 sm:mt-6 space-y-1.5">
-            <h1 className="font-serif text-4xl sm:text-5xl text-foreground tracking-tight leading-none">
+          <div className="mt-3 sm:mt-6 space-y-1">
+            <h1 className="font-serif text-3xl sm:text-5xl text-foreground tracking-tight leading-none">
               {displayName}
             </h1>
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <p className="font-mono text-xs sm:text-sm text-muted-foreground tracking-wider">
+              <p className="font-mono text-[11px] sm:text-sm text-muted-foreground tracking-wider">
                 @{username}
               </p>
               <TierBadge count={visitedSpotSlugs.length} />
@@ -544,13 +544,13 @@ export default function Profile() {
           </div>
 
           {bio && (
-            <p className="mt-5 max-w-xl text-sm sm:text-[15px] text-foreground/85 leading-relaxed whitespace-pre-wrap">
+            <p className="mt-3 sm:mt-5 max-w-xl text-[13px] sm:text-[15px] text-foreground/85 leading-relaxed whitespace-pre-wrap line-clamp-2 sm:line-clamp-none">
               {bio}
             </p>
           )}
 
           {(userLocation || website || (isOwnProfile && authUser?.email)) && (
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-muted-foreground text-xs sm:text-sm">
+            <div className="mt-2 sm:mt-4 flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-5 gap-y-1 text-muted-foreground text-[11px] sm:text-sm">
               {userLocation && (
                 <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-amber" />{userLocation}</span>
               )}
@@ -560,13 +560,13 @@ export default function Profile() {
                 </a>
               )}
               {isOwnProfile && authUser?.email && (
-                <span className="flex items-center gap-1.5 opacity-70 font-mono text-[11px]">{authUser.email}</span>
+                <span className="hidden sm:flex items-center gap-1.5 opacity-70 font-mono text-[11px]">{authUser.email}</span>
               )}
             </div>
           )}
 
           {/* Action pills */}
-          <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+          <div className="mt-3 sm:mt-6 flex items-center justify-center gap-2 flex-wrap">
             {isOwnProfile && (
               <>
                 <Button size="sm" onClick={() => setPostOpen(true)} aria-label="Post" title="Post" className="rounded-full h-9 w-9 sm:w-auto sm:px-5 p-0 sm:p-2">
@@ -636,7 +636,7 @@ export default function Profile() {
           </div>
 
           {/* Passport */}
-          <section className="md:col-span-4 relative bg-card/40 border border-border/60 rounded-2xl p-5 overflow-hidden group">
+          <section className="hidden md:block md:col-span-4 relative bg-card/40 border border-border/60 rounded-2xl p-5 overflow-hidden group">
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber/10 blur-3xl rounded-full group-hover:bg-amber/15 transition-colors" aria-hidden />
             <div className="relative flex items-start justify-between gap-3 mb-4">
               <div className="space-y-0.5">
