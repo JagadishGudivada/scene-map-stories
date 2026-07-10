@@ -636,7 +636,7 @@ export default function Profile() {
           </div>
 
           {/* Passport */}
-          <section className="md:col-span-4 relative bg-card/40 border border-border/60 rounded-2xl p-5 overflow-hidden group">
+          <section className="hidden md:block md:col-span-4 relative bg-card/40 border border-border/60 rounded-2xl p-5 overflow-hidden group">
             <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber/10 blur-3xl rounded-full group-hover:bg-amber/15 transition-colors" aria-hidden />
             <div className="relative flex items-start justify-between gap-3 mb-4">
               <div className="space-y-0.5">
