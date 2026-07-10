@@ -550,7 +550,7 @@ export default function Profile() {
           )}
 
           {(userLocation || website || (isOwnProfile && authUser?.email)) && (
-            <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-muted-foreground text-xs sm:text-sm">
+            <div className="mt-2 sm:mt-4 flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-5 gap-y-1 text-muted-foreground text-[11px] sm:text-sm">
               {userLocation && (
                 <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-amber" />{userLocation}</span>
               )}
@@ -560,13 +560,13 @@ export default function Profile() {
                 </a>
               )}
               {isOwnProfile && authUser?.email && (
-                <span className="flex items-center gap-1.5 opacity-70 font-mono text-[11px]">{authUser.email}</span>
+                <span className="hidden sm:flex items-center gap-1.5 opacity-70 font-mono text-[11px]">{authUser.email}</span>
               )}
             </div>
           )}
 
           {/* Action pills */}
-          <div className="mt-6 flex items-center justify-center gap-2 flex-wrap">
+          <div className="mt-3 sm:mt-6 flex items-center justify-center gap-2 flex-wrap">
             {isOwnProfile && (
               <>
                 <Button size="sm" onClick={() => setPostOpen(true)} aria-label="Post" title="Post" className="rounded-full h-9 w-9 sm:w-auto sm:px-5 p-0 sm:p-2">
