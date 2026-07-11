@@ -371,6 +371,14 @@ export default function Index() {
           </AnimatePresence>
         </motion.div>
 
+        {/* Trust line under search */}
+        <p className="text-xs text-muted-foreground/80 mb-8 -mt-1">
+          4,200+ real locations from 380+ films & shows
+        </p>
+
+        {/* Quick-filter chips */}
+        <QuickFilterChips />
+
         {/* === SEARCH RESULTS MODE === */}
         {isSearching ? (
           <motion.section
