@@ -211,12 +211,17 @@ export default function Index() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* === SEARCH BAR (Floating, overlaps hero bottom) === */}
+        {/* === HOW IT WORKS === */}
+        <div className="mt-10 sm:mt-14">
+          <HowItWorks />
+        </div>
+
+        {/* === SEARCH BAR === */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative mt-6 z-20 mb-10"
+          className="relative z-20 mb-3"
         >
           <div
             ref={searchContainerRef}
