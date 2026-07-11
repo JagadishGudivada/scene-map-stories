@@ -66,7 +66,25 @@ export default function Index() {
   const [selectedEra, setSelectedEra] = useState("All");
   const [activeSection, setActiveSection] = useState<"discover" | "community">("discover");
   const [showAIDropdown, setShowAIDropdown] = useState(false);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchPlaceholders = useMemo(
+    () => [
+      "Try: Bridgerton",
+      "Try: Peaky Blinders",
+      "Try: The White Lotus",
+      "Try: Harry Potter",
+    ],
+    []
+  );
+  useEffect(() => {
+    if (searchQuery) return;
+    const i = setInterval(
+      () => setPlaceholderIdx((n) => (n + 1) % searchPlaceholders.length),
+      2500
+    );
+    return () => clearInterval(i);
+  }, [searchQuery, searchPlaceholders.length]);
   const {
     titles: weeklyTitles,
     loading: weeklyTitlesLoading,
