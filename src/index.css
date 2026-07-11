@@ -190,6 +190,47 @@
     background-clip: text;
   }
 
+  /* Sarevista two-tone gold system.
+     gold-soft: structural / neutral gold.
+     gold-deep: reserved for "the place you can go" — pins, primary CTAs, "vista". */
+  .bg-gold-soft {
+    background-image: linear-gradient(135deg, #F6D9A8, #E8A24A);
+  }
+  .bg-gold-deep {
+    background-image: linear-gradient(135deg, #F4C77B 0%, #D9903A 55%, #B5651D 100%);
+  }
+  .text-gold-soft {
+    background: linear-gradient(135deg, #F6D9A8, #E8A24A);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gold-deep {
+    background: linear-gradient(135deg, #F4C77B, #B5651D);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .ring-gold-hairline {
+    box-shadow: inset 0 0 0 1px rgba(232, 162, 74, 0.55);
+  }
+  /* Guaranteed bottom scrim for any image card — never rely on the poster being dark. */
+  .scrim-bottom::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      hsl(var(--background)) 0%,
+      hsl(var(--background) / 0.85) 18%,
+      hsl(var(--background) / 0.35) 42%,
+      transparent 62%
+    );
+    border-radius: inherit;
+  }
+  .font-serif-italic { font-family: 'Lora', serif; font-style: italic; }
+
   /* Scrollbar hide */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
