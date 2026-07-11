@@ -508,10 +508,8 @@ export default function Index() {
                     <TrendingRow titles={homepageTitles} />
                   </div> */}
 
-                  {/* Trendy On-Screen Spots (cafés, hotels from this year's hits) */}
-                  <div className="mb-14">
-                    <TrendyScreenSpots />
-                  </div>
+                  {/* (Trending on-screen now rendered above, outside discover tab) */}
+
 
                   {/* Bento Grid */}
                   <section className="mb-14">
