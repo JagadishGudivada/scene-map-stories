@@ -1,14 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Bookmark } from "lucide-react";
 import { heroSlides, type Title } from "@/lib/mockData";
-
-const typeBadgeClass: Record<string, string> = {
-  Movie: "badge-movie",
-  Series: "badge-series",
-  Book: "badge-book",
-};
 
 type HeroBannerProps = {
   titles?: Title[];
@@ -28,11 +22,28 @@ type HeroSlide = {
   imageSizes?: string;
   imagePosition?: string;
   locationTag: string;
-  tagline: string;
+  hookLine: string;
 };
 
 function slugifyTitle(title: string, year: number) {
   return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "").replace(/^-+/, "")}-${year}`;
+}
+
+// Curated hook lines by title. Falls back to the location-based template.
+const HOOK_LINES: Record<string, string> = {
+  "peaky-blinders": "That backstreet is real — cobbles and all — in Digbeth, Birmingham.",
+  "bridgerton": "The Bridgerton family home? A working stately manor in Wiltshire, open to visitors.",
+  "the-white-lotus": "The infinity pool everyone screenshotted — same edge, same view, in Sicily.",
+  "harry-potter": "Diagon Alley's real cobbles are in York — and yes, you can walk them.",
+};
+
+function buildHookLine(slide: { title: string; locationTag?: string }): string {
+  const key = slide.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+  if (HOOK_LINES[key]) return HOOK_LINES[key];
+  if (slide.locationTag) {
+    return `Shot in ${slide.locationTag} — and you can stand there.`;
+  }
+  return "A real place from this story — and you can go.";
 }
 
 export default function HeroBanner({ titles = [] }: HeroBannerProps) {
@@ -56,16 +67,18 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
         imageSizes: title.heroImageSizes,
         imagePosition: (title as { heroImagePosition?: string }).heroImagePosition,
         locationTag: title.locations?.[0] || "Filming locations",
-        tagline: `${title.locationCount} filming locations discovered`,
+        hookLine: buildHookLine({ title: title.title, locationTag: title.locations?.[0] }),
       }));
     }
-
-    return heroSlides.map((s) => ({ ...s, locationCount: 0 })) as HeroSlide[];
+    return heroSlides.map((s) => ({
+      ...s,
+      locationCount: 0,
+      hookLine: buildHookLine({ title: s.title, locationTag: s.locationTag }),
+    })) as HeroSlide[];
   }, [titles]);
 
   useEffect(() => {
     if (slides.length === 0) return;
-
     const timer = setInterval(() => {
       setDirection(1);
       setCurrent((c) => (c + 1) % slides.length);
@@ -74,36 +87,32 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
   }, [slides]);
 
   useEffect(() => {
-    if (current >= slides.length) {
-      setCurrent(0);
-    }
+    if (current >= slides.length) setCurrent(0);
   }, [current, slides.length]);
 
   const go = (idx: number) => {
     setDirection(idx > current ? 1 : -1);
     setCurrent(idx);
   };
-
   const prev = () => {
     setDirection(-1);
     setCurrent((c) => (c - 1 + slides.length) % slides.length);
   };
-
   const next = () => {
     setDirection(1);
     setCurrent((c) => (c + 1) % slides.length);
   };
 
   const slide = slides[current];
-  const foregroundImagePositionClass = slide.type === "Movie"
-    ? "object-[center_20%] sm:object-[center_28%] lg:object-center"
-    : "object-center";
-
   if (!slide) return null;
 
+  const foregroundImagePositionClass =
+    slide.type === "Movie"
+      ? "object-[center_20%] sm:object-[center_28%] lg:object-center"
+      : "object-center";
+
   return (
-    <div className="relative h-[48vh] sm:h-[55vh] min-h-[300px] sm:min-h-[380px] max-h-[640px] rounded-2xl overflow-hidden shadow-float">
-      {/* Background Slides */}
+    <div className="relative h-[62vh] sm:h-[60vh] min-h-[440px] sm:min-h-[420px] max-h-[720px] rounded-3xl overflow-hidden shadow-float">
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
           key={slide.id}
@@ -119,7 +128,11 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               <source media="(max-width: 640px)" srcSet={slide.imageMobileSrcSet} sizes="100vw" />
             )}
             {slide.imageDesktopSrcSet && (
-              <source media="(min-width: 641px)" srcSet={slide.imageDesktopSrcSet} sizes={slide.imageSizes || "100vw"} />
+              <source
+                media="(min-width: 641px)"
+                srcSet={slide.imageDesktopSrcSet}
+                sizes={slide.imageSizes || "100vw"}
+              />
             )}
             <img
               src={slide.image}
@@ -135,7 +148,11 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               <source media="(max-width: 640px)" srcSet={slide.imageMobileSrcSet} sizes="100vw" />
             )}
             {slide.imageDesktopSrcSet && (
-              <source media="(min-width: 641px)" srcSet={slide.imageDesktopSrcSet} sizes={slide.imageSizes || "100vw"} />
+              <source
+                media="(min-width: 641px)"
+                srcSet={slide.imageDesktopSrcSet}
+                sizes={slide.imageSizes || "100vw"}
+              />
             )}
             <img
               src={slide.imageMobileSrcSet ? slide.coverImage : slide.image}
@@ -146,48 +163,43 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               style={slide.imagePosition ? { objectPosition: slide.imagePosition } : undefined}
             />
           </picture>
-          {/* Gradient layers */}
-          <div className="absolute inset-0 bg-gradient-to-t from-overlay/80 via-overlay/30 to-transparent" />
-          <div className="absolute inset-0 bg-gradient-to-r from-overlay/90 via-overlay/50 to-transparent" />
-          {/* Grain */}
-          <div
-            className="absolute inset-0 opacity-25 mix-blend-overlay"
-            style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.15'/%3E%3C/svg%3E")`,
-            }}
-          />
+          {/* Guaranteed contrast scrim — always applied, regardless of poster art. */}
+          <div className="absolute inset-x-0 bottom-0 h-[55%] z-10 bg-gradient-to-t from-[#14100D] via-[#14100D]/75 to-transparent" />
+          <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#14100D]/60 via-transparent to-transparent" />
         </motion.div>
       </AnimatePresence>
 
       {/* Content */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end p-6 sm:p-10 text-overlay-foreground">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end p-5 sm:p-10 text-overlay-foreground">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id + "-content"}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="max-w-prose"
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="max-w-2xl"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${typeBadgeClass[slide.type]}`}>
+            {/* metadata row */}
+            <div className="inline-flex items-center gap-2 mb-5 rounded-full bg-black/55 backdrop-blur px-3 py-1.5">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-white">
                 {slide.type}
               </span>
-              <span className="text-xs text-overlay-foreground/70">{slide.year}</span>
+              <span className="w-1 h-1 rounded-full bg-white/40" />
+              <span className="text-[11px] font-mono text-white/85">{slide.year}</span>
             </div>
 
-            <h1 className="hidden sm:block font-serif text-4xl sm:text-5xl mb-2 leading-tight">
+            {/* title */}
+            <h1 className="font-serif italic text-4xl sm:text-6xl leading-[1.05] text-[#F6EFE2] mb-5 max-w-[18ch]">
               {slide.title}
             </h1>
 
-            <div className="hidden sm:flex flex-wrap items-center gap-2 mb-5">
-              <MapPin className="w-4 h-4 text-amber" />
-              <span className="text-overlay-foreground/70 text-sm">{slide.locationTag}</span>
-              <span className="text-overlay-foreground/40">·</span>
-              <span className="text-amber text-sm font-medium">{slide.tagline}</span>
-            </div>
+            {/* hook line */}
+            <p className="text-sm sm:text-base text-[#F6EFE2]/85 leading-relaxed mb-7 max-w-[42ch]">
+              {slide.hookLine}
+            </p>
 
+            {/* CTAs */}
             <div className="flex flex-wrap items-center gap-3">
               <button
                 onClick={() => {
@@ -200,40 +212,59 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                     },
                   });
                 }}
-                className="px-5 py-2.5 rounded-xl bg-gradient-amber text-charcoal font-semibold text-sm hover:opacity-90 transition-opacity shadow-amber"
+                className="inline-flex items-center h-11 px-5 rounded-full bg-gold-deep text-charcoal font-semibold text-sm hover:brightness-105 transition shadow-lg shadow-black/40"
               >
                 Find where this was filmed
               </button>
-              {/* <button className="px-5 py-2.5 rounded-xl glass text-foreground font-medium text-sm hover:glass-hover transition-all border border-border">
+              <button
+                onClick={() => {
+                  navigate(`/title/${slugifyTitle(slide.title, slide.year)}`, {
+                    state: {
+                      title: slide.title,
+                      year: slide.year,
+                      type: slide.type,
+                      locationCount: slide.locationCount,
+                      autoSave: true,
+                    },
+                  });
+                }}
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-full border border-[#E8A24A]/60 text-[#F6D9A8] font-medium text-sm hover:bg-[#E8A24A]/10 transition"
+              >
+                <Bookmark className="w-4 h-4" />
                 Save to Map
-              </button> */}
+              </button>
             </div>
           </motion.div>
         </AnimatePresence>
       </div>
 
-      {/* Navigation Arrows */}
+      {/* Nav arrows */}
       <button
         onClick={prev}
-        className="absolute z-30 left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
+        aria-label="Previous slide"
+        className="absolute z-30 left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white/90 hover:bg-black/60 transition"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button
         onClick={next}
-        className="absolute z-30 right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass flex items-center justify-center text-foreground hover:glass-hover transition-all"
+        aria-label="Next slide"
+        className="absolute z-30 right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white/90 hover:bg-black/60 transition"
       >
         <ChevronRight className="w-5 h-5" />
       </button>
 
       {/* Dots */}
-      <div className="absolute z-30 bottom-5 right-6 flex items-center gap-1.5">
+      <div className="absolute z-30 bottom-4 right-5 flex items-center gap-1.5">
         {slides.map((_, i) => (
           <button
             key={i}
             onClick={() => go(i)}
+            aria-label={`Go to slide ${i + 1}`}
             className={`rounded-full transition-all duration-300 ${
-              i === current ? "w-6 h-2 bg-amber" : "w-2 h-2 bg-overlay-foreground/30 hover:bg-overlay-foreground/50"
+              i === current
+                ? "w-6 h-1.5 bg-[#F4C77B]"
+                : "w-1.5 h-1.5 bg-white/30 hover:bg-white/60"
             }`}
           />
         ))}
