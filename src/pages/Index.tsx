@@ -241,8 +241,10 @@ export default function Index() {
                 if (aiResults.length > 0 && searchQuery.trim().length >= 3) setShowAIDropdown(true);
               }}
               onBlur={() => setSearchFocused(false)}
-              placeholder="Search titles, locations, genres..."
-              className="w-full h-14 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm border border-border outline-none placeholder:text-muted-foreground transition-all"
+              placeholder={searchPlaceholders[placeholderIdx]}
+              className={`w-full h-14 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm border outline-none placeholder:text-muted-foreground transition-all ${
+                searchFocused ? "border-transparent ring-gold-hairline" : "border-border"
+              }`}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               {searchQuery && (
