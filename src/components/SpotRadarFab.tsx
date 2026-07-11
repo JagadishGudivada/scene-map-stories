@@ -1,28 +1,20 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Radar } from "lucide-react";
 import SpotRadarDialog from "./SpotRadarDialog";
 
-const TEASERS = [
-  "Near me",
-  "Find spots",
-  "Scan around",
-  "Local gems",
-  "Radar on",
-];
-
+/**
+ * Icon-only circular FAB, docked above the mobile tab bar.
+ * Expands to show a label only on hover (desktop) or on second-tap (mobile).
+ * Never permanently sits on top of body text.
+ */
 export default function SpotRadarFab() {
   const [open, setOpen] = useState(false);
-  const [teaserIdx, setTeaserIdx] = useState(0);
   const [scrolled, setScrolled] = useState(false);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    const i = setInterval(() => setTeaserIdx((n) => (n + 1) % TEASERS.length), 3500);
-    return () => clearInterval(i);
-  }, []);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.6);
+    const onScroll = () => setScrolled(window.scrollY > window.innerHeight * 0.5);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -39,46 +31,38 @@ export default function SpotRadarFab() {
           pointerEvents: scrolled ? "auto" : "none",
         }}
         transition={{ type: "spring", stiffness: 240, damping: 18 }}
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.94 }}
-        onClick={() => setOpen(true)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => {
+          if (expanded) {
+            setOpen(true);
+          } else {
+            setExpanded(true);
+            setTimeout(() => setExpanded(false), 2500);
+          }
+        }}
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
         aria-label="Spot Radar: find filming spots near you"
-        aria-hidden={!scrolled}
-        className="group fixed z-40 bottom-20 right-4 sm:bottom-6 sm:right-6 sm:opacity-100 sm:pointer-events-auto h-12 sm:h-14 rounded-full bg-foreground/10 backdrop-blur-2xl sm:bg-foreground text-background shadow-2xl shadow-foreground/20 flex items-center gap-2.5 overflow-hidden ring-1 ring-foreground/30 transition-all duration-300 ease-out w-auto max-w-12 sm:max-w-[240px] hover:max-w-[240px] active:max-w-[240px] pl-3 sm:pl-4 hover:pl-4 active:pl-4 pr-0 sm:pr-5 hover:pr-5 active:pr-5"
+        className="group fixed z-40 bottom-24 right-4 sm:bottom-6 sm:right-6 h-14 rounded-full bg-gold-deep text-charcoal shadow-2xl shadow-black/40 flex items-center gap-2 overflow-hidden ring-1 ring-black/20 pl-4 pr-4 whitespace-nowrap"
+        style={{
+          maxWidth: expanded ? 220 : 56,
+          transition: "max-width 0.35s cubic-bezier(0.2, 0.8, 0.2, 1)",
+        }}
       >
-        {/* Shimmer sweep */}
-        <span className="pointer-events-none absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-teal/30 to-transparent" />
         <motion.span
           animate={{ rotate: [0, -10, 10, -6, 0] }}
           transition={{ duration: 2.4, repeat: Infinity, repeatDelay: 1.2 }}
-          className="relative shrink-0"
+          className="shrink-0 flex items-center justify-center"
         >
-          <Radar className="w-5 h-5 text-teal" />
+          <Radar className="w-6 h-6" strokeWidth={2.2} />
         </motion.span>
-
-        {/* Mobile: icon-only by default, expands to show label on tap/hover */}
-        <span className="sm:hidden text-sm font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity duration-300">
+        <span
+          className="text-sm font-semibold transition-opacity duration-200"
+          style={{ opacity: expanded ? 1 : 0 }}
+        >
           Scan around
         </span>
-
-        {/* Desktop: always expanded */}
-        <div className="hidden sm:flex relative flex-col items-start leading-tight">
-          <span className="text-[9px] uppercase tracking-widest text-background/60 font-mono">
-            spot radar
-          </span>
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={teaserIdx}
-              initial={{ y: 8, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -8, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="text-sm font-semibold"
-            >
-              {TEASERS[teaserIdx]}
-            </motion.span>
-          </AnimatePresence>
-        </div>
       </motion.button>
 
       <SpotRadarDialog open={open} onOpenChange={setOpen} />
