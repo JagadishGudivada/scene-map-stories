@@ -8,6 +8,10 @@ import PostCard from "@/components/PostCard";
 import PopularLocations from "@/components/PopularLocations";
 import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import TrendyScreenSpots from "@/components/TrendyScreenSpots";
+import HowItWorks from "@/components/HowItWorks";
+import QuickFilterChips from "@/components/QuickFilterChips";
+import IconicLocations from "@/components/IconicLocations";
+import TrendingOnScreen from "@/components/TrendingOnScreen";
 import Footer from "@/components/Footer";
 import Seo from "@/components/Seo";
 import SpotRadarFab from "@/components/SpotRadarFab";
@@ -62,7 +66,25 @@ export default function Index() {
   const [selectedEra, setSelectedEra] = useState("All");
   const [activeSection, setActiveSection] = useState<"discover" | "community">("discover");
   const [showAIDropdown, setShowAIDropdown] = useState(false);
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchPlaceholders = useMemo(
+    () => [
+      "Try: Bridgerton",
+      "Try: Peaky Blinders",
+      "Try: The White Lotus",
+      "Try: Harry Potter",
+    ],
+    []
+  );
+  useEffect(() => {
+    if (searchQuery) return;
+    const i = setInterval(
+      () => setPlaceholderIdx((n) => (n + 1) % searchPlaceholders.length),
+      2500
+    );
+    return () => clearInterval(i);
+  }, [searchQuery, searchPlaceholders.length]);
   const {
     titles: weeklyTitles,
     loading: weeklyTitlesLoading,
@@ -189,12 +211,17 @@ export default function Index() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* === SEARCH BAR (Floating, overlaps hero bottom) === */}
+        {/* === HOW IT WORKS === */}
+        <div className="mt-10 sm:mt-14">
+          <HowItWorks />
+        </div>
+
+        {/* === SEARCH BAR === */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative mt-6 z-20 mb-10"
+          className="relative z-20 mb-3"
         >
           <div
             ref={searchContainerRef}
@@ -214,8 +241,10 @@ export default function Index() {
                 if (aiResults.length > 0 && searchQuery.trim().length >= 3) setShowAIDropdown(true);
               }}
               onBlur={() => setSearchFocused(false)}
-              placeholder="Search titles, locations, genres..."
-              className="w-full h-14 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm border border-border outline-none placeholder:text-muted-foreground transition-all"
+              placeholder={searchPlaceholders[placeholderIdx]}
+              className={`w-full h-14 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm border outline-none placeholder:text-muted-foreground transition-all ${
+                searchFocused ? "border-transparent ring-gold-hairline" : "border-border"
+              }`}
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               {searchQuery && (
@@ -342,6 +371,14 @@ export default function Index() {
           </AnimatePresence>
         </motion.div>
 
+        {/* Trust line under search */}
+        <p className="text-xs text-muted-foreground/80 mb-8 -mt-1">
+          4,200+ real locations from 380+ films & shows
+        </p>
+
+        {/* Quick-filter chips */}
+        <QuickFilterChips />
+
         {/* === SEARCH RESULTS MODE === */}
         {isSearching ? (
           <motion.section
@@ -382,10 +419,17 @@ export default function Index() {
           </motion.section>
         ) : (
           <>
-          {/* Popular Locations */}
-                  <div className="mb-14">
-                    <PopularLocations />
-                  </div>
+            {/* Iconic filming locations — instant recognition */}
+            <IconicLocations />
+
+            {/* Trending on-screen — cafés, hotels, everyday spots */}
+            <TrendingOnScreen />
+
+            {/* Popular Locations (existing) */}
+            <div className="mb-14">
+              <PopularLocations />
+            </div>
+                  
                   
             {/* === TRENDING HASHTAGS === */}
            {/*  <motion.section
@@ -464,10 +508,8 @@ export default function Index() {
                     <TrendingRow titles={homepageTitles} />
                   </div> */}
 
-                  {/* Trendy On-Screen Spots (cafés, hotels from this year's hits) */}
-                  <div className="mb-14">
-                    <TrendyScreenSpots />
-                  </div>
+                  {/* (Trending on-screen now rendered above, outside discover tab) */}
+
 
                   {/* Bento Grid */}
                   <section className="mb-14">
