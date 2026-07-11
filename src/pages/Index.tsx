@@ -419,10 +419,17 @@ export default function Index() {
           </motion.section>
         ) : (
           <>
-          {/* Popular Locations */}
-                  <div className="mb-14">
-                    <PopularLocations />
-                  </div>
+            {/* Iconic filming locations — instant recognition */}
+            <IconicLocations />
+
+            {/* Trending on-screen — cafés, hotels, everyday spots */}
+            <TrendingOnScreen />
+
+            {/* Popular Locations (existing) */}
+            <div className="mb-14">
+              <PopularLocations />
+            </div>
+                  
                   
             {/* === TRENDING HASHTAGS === */}
            {/*  <motion.section
