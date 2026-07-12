@@ -210,11 +210,8 @@ export default function Index() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* === HOW IT WORKS === */}
-        <div className="mt-10 sm:mt-14">
-          <HowItWorks />
-        </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 md:mt-10">
+
 
         {/* === SEARCH BAR === */}
         <motion.div
