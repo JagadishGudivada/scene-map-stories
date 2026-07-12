@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight, MapPin, Eye } from "lucide-react";
-import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
+import { DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
+import { supabase } from "@/integrations/supabase/client";
 
 type RecognisableSpot = {
   id: string;
