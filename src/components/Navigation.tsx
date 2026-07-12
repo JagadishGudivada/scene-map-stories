@@ -102,9 +102,9 @@ export default function Navigation() {
             {/* Logo */}
             <Link to="/" className="flex flex-col shrink-0 text-foreground leading-none">
               <Logo size="md" variant="full" showBeta={true} responsive />
-              <span className="text-[9px] sm:text-[10px] lg:text-[11px] font-serif italic text-amber-gradient mt-1 tracking-[0.15em] sm:tracking-[0.18em] leading-none whitespace-nowrap">
+            {/*  <span className="text-[9px] sm:text-[10px] lg:text-[11px] font-serif italic text-amber-gradient mt-1 tracking-[0.15em] sm:tracking-[0.18em] leading-none whitespace-nowrap">
                 Turn the stories you love into places you visit.
-              </span>
+              </span> */}
             </Link>
 
             {/* Nav Links */}

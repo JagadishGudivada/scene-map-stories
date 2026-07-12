@@ -1,4 +1,4 @@
-import logoAsset from "@/assets/sarevista-logo-transparent-cropped.png.asset.json";
+import logoAsset from "@/assets/sarevista-logo-transparent-cropped.png";
 
 export interface LogoProps {
   size?: "xs" | "sm" | "md" | "lg" | "xl";
@@ -112,7 +112,7 @@ export default function Logo({
             style={responsive ? undefined : { height }}
           >
             <img
-              src={logoAsset.url}
+              src={logoAsset}
               alt="Sarevista"
               className="sarevista-logo-img"
               loading="eager"
@@ -124,10 +124,9 @@ export default function Logo({
         )}
         {showWord && (
           <span className={`sarevista-wordmark ${responsive ? RESPONSIVE_WORDMARK[size] : WORDMARK_SIZE[size]}`}>
-            Sare<span className="vista">vista</span>
+            Sare<span className="vista">VISTA</span>
           </span>
         )}
-        {showBeta && <span className="sarevista-beta">BETA</span>}
       </span>
     </>
   );
