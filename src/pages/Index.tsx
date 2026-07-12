@@ -197,31 +197,13 @@ export default function Index() {
         description="Discover, save, and share real filming locations from your favourite movies, series, and books. Cinema meets travel — your memory map."
       />
       <h1 className="sr-only">Sarevista — Your Map to Filming Locations from Movies, Series & Books</h1>
-      {/* === HERO SECTION === */}
-      <div className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 md:pt-24">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <HeroBanner titles={homepageTitles} />
-          </motion.div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {/* === HOW IT WORKS === */}
-        <div className="mt-10 sm:mt-14">
-          <HowItWorks />
-        </div>
-
-        {/* === SEARCH BAR === */}
+      {/* === TOP SEARCH (desktop-prominent) === */}
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 md:pt-24">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          className="relative z-20 mb-3"
+          transition={{ duration: 0.5 }}
+          className="relative z-20"
         >
           <div
             ref={searchContainerRef}
@@ -242,7 +224,7 @@ export default function Index() {
               }}
               onBlur={() => setSearchFocused(false)}
               placeholder={searchPlaceholders[placeholderIdx]}
-              className={`w-full h-14 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm border outline-none placeholder:text-muted-foreground transition-all ${
+              className={`w-full h-14 md:h-16 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm md:text-base border outline-none placeholder:text-muted-foreground transition-all ${
                 searchFocused ? "border-transparent ring-gold-hairline" : "border-border"
               }`}
             />
@@ -370,11 +352,30 @@ export default function Index() {
             )}
           </AnimatePresence>
         </motion.div>
-
-        {/* Trust line under search */}
-        <p className="text-xs text-muted-foreground/80 mb-8 -mt-1">
-          4,200+ real locations from 380+ films & shows
+        <p className="text-xs text-muted-foreground/80 mt-2 text-center">
+          4,200+ real locations from 380+ films &amp; shows
         </p>
+      </div>
+
+      {/* === HERO SECTION === */}
+      <div className="relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 md:pt-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <HeroBanner titles={homepageTitles} />
+          </motion.div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 md:mt-10">
+
+
+
+
+
 
         {/* Quick-filter chips */}
         <QuickFilterChips />
@@ -596,7 +597,13 @@ export default function Index() {
                       <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-amber group-hover:translate-x-1 transition-all" />
                     </Link>
                   </motion.div>
+
+                  {/* === HOW IT WORKS === */}
+                  <div className="mb-14">
+                    <HowItWorks />
+                  </div>
                 </motion.div>
+
               ) : (
                 <motion.div
                   key="community"

@@ -15,7 +15,7 @@ export const ICONIC_LOCATIONS: IconicLocation[] = [
     name: "Trevi Fountain",
     country: "Italy",
     countryIso2: "it",
-    image: "https://images.unsplash.com/photo-1525874684015-58379d421a52?auto=format&fit=crop&w=1200&q=70",
+    image: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
     seenIn: "La Dolce Vita · The Lizzie McGuire Movie",
   },
   {
@@ -23,7 +23,7 @@ export const ICONIC_LOCATIONS: IconicLocation[] = [
     name: "Fushimi Inari Shrine",
     country: "Japan",
     countryIso2: "jp",
-    image: "https://images.unsplash.com/photo-1478436127897-769e1538f1a2?auto=format&fit=crop&w=1200&q=70",
+    image: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
     seenIn: "Memoirs of a Geisha",
   },
   {
@@ -31,7 +31,7 @@ export const ICONIC_LOCATIONS: IconicLocation[] = [
     name: "Highclere Castle",
     country: "United Kingdom",
     countryIso2: "gb",
-    image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?auto=format&fit=crop&w=1200&q=70",
+    image: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
     seenIn: "Downton Abbey",
   },
   {
@@ -39,7 +39,7 @@ export const ICONIC_LOCATIONS: IconicLocation[] = [
     name: "Dubrovnik Old Town",
     country: "Croatia",
     countryIso2: "hr",
-    image: "https://images.unsplash.com/photo-1555990538-32200142ea41?auto=format&fit=crop&w=1200&q=70",
+    image: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
     seenIn: "Game of Thrones — King's Landing",
   },
   {
@@ -47,7 +47,7 @@ export const ICONIC_LOCATIONS: IconicLocation[] = [
     name: "Petra",
     country: "Jordan",
     countryIso2: "jo",
-    image: "https://images.unsplash.com/photo-1563177978-4c5cf13f65a4?auto=format&fit=crop&w=1200&q=70",
+    image: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
     seenIn: "Indiana Jones and the Last Crusade",
   },
   {
@@ -55,7 +55,7 @@ export const ICONIC_LOCATIONS: IconicLocation[] = [
     name: "Hobbiton Movie Set",
     country: "New Zealand",
     countryIso2: "nz",
-    image: "https://images.unsplash.com/photo-1578912996078-305d92249aa6?auto=format&fit=crop&w=1200&q=70",
+    image: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
     seenIn: "The Lord of the Rings",
   },
   {
@@ -63,7 +63,7 @@ export const ICONIC_LOCATIONS: IconicLocation[] = [
     name: "Central Park",
     country: "United States",
     countryIso2: "us",
-    image: "https://images.unsplash.com/photo-1543716091-a840c05249ec?auto=format&fit=crop&w=1200&q=70",
+    image: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
     seenIn: "When Harry Met Sally · Home Alone 2",
   },
   {
@@ -71,7 +71,7 @@ export const ICONIC_LOCATIONS: IconicLocation[] = [
     name: "Monument Valley",
     country: "United States",
     countryIso2: "us",
-    image: "https://images.unsplash.com/photo-1516715094483-75da7dee9758?auto=format&fit=crop&w=1200&q=70",
+    image: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
     seenIn: "Forrest Gump · Once Upon a Time in the West",
   },
 ];
