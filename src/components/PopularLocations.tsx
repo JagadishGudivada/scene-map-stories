@@ -28,7 +28,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["Harry Potter", "Pride & Prejudice", "Downton Abbey"],
     slug: "london",
     query: "Lacock Abbey cloisters England",
-    fallback: "https://images.unsplash.com/photo-1558981403-c5f9899a28bc?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     id: "rl2",
@@ -39,7 +39,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["Game of Thrones", "Star Wars: The Last Jedi"],
     slug: "dubrovnik",
     query: "Dubrovnik old town walls Adriatic",
-    fallback: "https://images.unsplash.com/photo-1555990538-32792141b7bd?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     id: "rl3",
@@ -50,7 +50,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["Harry Potter", "Outlander"],
     slug: "edinburgh",
     query: "Glenfinnan Viaduct Scotland train",
-    fallback: "https://images.unsplash.com/photo-1568632234157-ce7aecd03d0d?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     id: "rl4",
@@ -61,7 +61,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["Friends", "When Harry Met Sally", "Home Alone 2"],
     slug: "new-york-city",
     query: "Central Park Bow Bridge autumn",
-    fallback: "https://images.unsplash.com/photo-1518391846015-55a9cc003b25?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     id: "rl5",
@@ -72,7 +72,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["Lost in Translation", "Fast & Furious: Tokyo Drift"],
     slug: "tokyo",
     query: "Shibuya crossing Tokyo night neon",
-    fallback: "https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     id: "rl6",
@@ -83,7 +83,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["Amélie", "Emily in Paris", "Midnight in Paris"],
     slug: "paris",
     query: "Pont Neuf Paris Seine bridge",
-    fallback: "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     id: "rl7",
@@ -94,7 +94,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["La Dolce Vita", "The Lizzie McGuire Movie"],
     slug: "rome",
     query: "Trevi Fountain Rome baroque",
-    fallback: "https://images.unsplash.com/photo-1525874684015-58379d421a52?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     id: "rl8",
@@ -105,7 +105,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["Memoirs of a Geisha"],
     slug: "kyoto",
     query: "Fushimi Inari torii gates Kyoto",
-    fallback: "https://images.unsplash.com/photo-1478436127897-769e1538f1a2?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
   {
     id: "rl9",
@@ -116,7 +116,7 @@ const recognisableSpots: RecognisableSpot[] = [
     titles: ["Sisterhood of the Traveling Pants", "Mamma Mia! 2"],
     slug: "santorini",
     query: "Santorini Oia white houses blue domes",
-    fallback: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=900&q=80",
+    fallback: "https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=1200",
   },
 ];
 
