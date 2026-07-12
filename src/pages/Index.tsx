@@ -593,7 +593,13 @@ export default function Index() {
                       <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-amber group-hover:translate-x-1 transition-all" />
                     </Link>
                   </motion.div>
+
+                  {/* === HOW IT WORKS === */}
+                  <div className="mb-14">
+                    <HowItWorks />
+                  </div>
                 </motion.div>
+
               ) : (
                 <motion.div
                   key="community"
