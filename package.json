@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check:edge": "node scripts/check-edge-functions.mjs",
-    "check:edge:all": "node scripts/check-edge-functions.mjs --include-mutating"
+    "check:edge:all": "node scripts/check-edge-functions.mjs --include-mutating",
+    "data-quality-scan": "node scripts/data-quality-scan.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
