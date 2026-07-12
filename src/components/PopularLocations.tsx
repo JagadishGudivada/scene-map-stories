@@ -129,8 +129,15 @@ export default function PopularLocations() {
     (async () => {
       const results = await Promise.all(
         recognisableSpots.map(async (s) => {
-          const img = await fetchPexelsImage(s.query);
-          return [s.id, img || s.fallback || DEFAULT_PEXELS_IMAGE] as const;
+          try {
+            const { data } = await supabase.functions.invoke("location-photo", {
+              body: { label: s.place, city: s.city, country: s.country },
+            });
+            const img = (data as { imageUrl?: string | null })?.imageUrl;
+            return [s.id, img || s.fallback || DEFAULT_PEXELS_IMAGE] as const;
+          } catch {
+            return [s.id, s.fallback || DEFAULT_PEXELS_IMAGE] as const;
+          }
         })
       );
       if (!cancelled) setImages(Object.fromEntries(results));
