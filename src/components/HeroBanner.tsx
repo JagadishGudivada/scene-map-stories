@@ -238,18 +238,18 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
         </AnimatePresence>
       </div>
 
-      {/* Nav arrows */}
+      {/* Nav arrows (desktop/tablet only — dots + autoplay handle mobile navigation) */}
       <button
         onClick={prev}
         aria-label="Previous slide"
-        className="absolute z-30 left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white/90 hover:bg-black/60 transition"
+        className="hidden sm:flex absolute z-30 left-3 sm:left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur items-center justify-center text-white/90 hover:bg-black/60 transition"
       >
         <ChevronLeft className="w-5 h-5" />
       </button>
       <button
         onClick={next}
         aria-label="Next slide"
-        className="absolute z-30 right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur flex items-center justify-center text-white/90 hover:bg-black/60 transition"
+        className="hidden sm:flex absolute z-30 right-3 sm:right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 backdrop-blur items-center justify-center text-white/90 hover:bg-black/60 transition"
       >
         <ChevronRight className="w-5 h-5" />
       </button>
