@@ -5,7 +5,6 @@ import HeroBanner from "@/components/HeroBanner";
 import CinemaCard from "@/components/CinemaCard";
 import TrendingRow from "@/components/TrendingRow";
 import PostCard from "@/components/PostCard";
-import PopularLocations from "@/components/PopularLocations";
 import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import TrendyScreenSpots from "@/components/TrendyScreenSpots";
 import HowItWorks from "@/components/HowItWorks";
@@ -197,8 +196,21 @@ export default function Index() {
         description="Discover, save, and share real filming locations from your favourite movies, series, and books. Cinema meets travel — your memory map."
       />
       <h1 className="sr-only">Sarevista — Your Map to Filming Locations from Movies, Series & Books</h1>
+      {/* === HERO SECTION === */}
+      <div className="relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 md:pt-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+          >
+            <HeroBanner titles={homepageTitles} />
+          </motion.div>
+        </div>
+      </div>
+
       {/* === TOP SEARCH (desktop-prominent) === */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-20 md:pt-24">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8 md:pt-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -357,19 +369,6 @@ export default function Index() {
         </p>
       </div>
 
-      {/* === HERO SECTION === */}
-      <div className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 md:pt-10">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <HeroBanner titles={homepageTitles} />
-          </motion.div>
-        </div>
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 mt-8 md:mt-10">
 
 
@@ -426,12 +425,7 @@ export default function Index() {
             {/* Trending on-screen — cafés, hotels, everyday spots */}
             <TrendingOnScreen />
 
-            {/* Popular Locations (existing) */}
-            <div className="mb-14">
-              <PopularLocations />
-            </div>
-                  
-                  
+
             {/* === TRENDING HASHTAGS === */}
            {/*  <motion.section
               initial={{ opacity: 0, y: 10 }}

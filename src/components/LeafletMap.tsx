@@ -1,6 +1,7 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl, { type Map as MapLibreMap, type StyleSpecification } from "maplibre-gl";
 import type { Feature, LineString, Point } from "geojson";
+import { ChevronDown, Info } from "lucide-react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { MediaType } from "@/lib/mockData";
 import { useTheme } from "@/hooks/use-theme";
@@ -38,6 +39,20 @@ const typeColors: Record<MediaType, string> = {
   Book: "hsl(270, 60%, 70%)",
 };
 
+// Cluster fill scales lightness/saturation within the gold family so cluster
+// "size" never gets confused with the type-color legend (Movie/Series/Book),
+// while every step stays a solid, filled circle — never outline-only — so it
+// reads clearly against the dark basemap.
+const CLUSTER_COLORS = {
+  small: "hsl(38, 30%, 26%)",
+  medium: "hsl(38, 75%, 50%)",
+  large: "hsl(38, 92%, 58%)",
+} as const;
+const CLUSTER_STROKE_SMALL = "hsl(38, 45%, 55%)";
+const CLUSTER_STROKE_LARGE = "hsl(38, 95%, 30%)";
+const CLUSTER_TEXT_LIGHT = "hsl(40, 33%, 94%)";
+const CLUSTER_TEXT_DARK = "hsl(20, 30%, 10%)";
+
 interface LeafletMapProps {
   pins: MapPin[];
   className?: string;
@@ -65,20 +80,6 @@ const LIGHT_TILES = [
   "https://b.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
   "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
 ];
-
-function hashString(value: string) {
-  let hash = 0;
-  for (let i = 0; i < value.length; i++) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0;
-  }
-  return hash;
-}
-
-function getCountryColor(country?: string) {
-  if (!country) return VISITED_COLOR;
-  const hue = hashString(country.toLowerCase()) % 360;
-  return `hsl(${hue}, 72%, 56%)`;
-}
 
 function getMapStyle(isDark: boolean): StyleSpecification {
   const tiles = isDark ? DARK_TILES : LIGHT_TILES;
@@ -135,6 +136,7 @@ export default function LeafletMap({
   const mapPopupRef = useRef<maplibregl.Popup | null>(null);
   const { theme } = useTheme();
   const isDark = theme === "dark";
+  const [legendOpen, setLegendOpen] = useState(false);
 
   useEffect(() => {
     if (!mapRef.current) return;
@@ -296,7 +298,6 @@ export default function LeafletMap({
               pinIndex,
               type: pin.type,
               visited: pin.visited ? 1 : 0,
-              countryColor: getCountryColor(pin.country),
             },
           })),
         },
@@ -311,14 +312,17 @@ export default function LeafletMap({
         source: SOURCE_ID,
         filter: ["has", "point_count"],
         paint: {
+          // Cluster size (point_count) drives fill: darker/muted -> gold -> bright gold.
+          // Every step is a fully opaque solid fill so no cluster ever reads as an
+          // outline-only ring against the dark basemap.
           "circle-color": [
             "step",
             ["get", "point_count"],
-            isDark ? "rgba(10, 10, 10, 0.92)" : "rgba(255, 255, 255, 0.95)",
+            CLUSTER_COLORS.small,
             8,
-            "rgba(245, 158, 11, 0.92)",
+            CLUSTER_COLORS.medium,
             20,
-            "rgba(20, 184, 166, 0.92)",
+            CLUSTER_COLORS.large,
           ],
           "circle-radius": [
             "step",
@@ -330,8 +334,14 @@ export default function LeafletMap({
             28,
           ],
           "circle-stroke-width": 2,
-          "circle-stroke-color": isDark ? "rgba(255,255,255,0.22)" : "rgba(15, 23, 42, 0.16)",
-          "circle-stroke-opacity": 1,
+          "circle-stroke-color": [
+            "step",
+            ["get", "point_count"],
+            CLUSTER_STROKE_SMALL,
+            8,
+            CLUSTER_STROKE_LARGE,
+          ],
+          "circle-stroke-opacity": 0.9,
         },
       });
 
@@ -347,9 +357,23 @@ export default function LeafletMap({
           "text-letter-spacing": 0.02,
         },
         paint: {
-          "text-color": "hsl(38, 80%, 56%)",
-          "text-halo-color": isDark ? "rgba(13, 13, 13, 0.92)" : "rgba(248, 245, 240, 0.95)",
-          "text-halo-width": 1.2,
+          // Text color pairs with the fill step above to guarantee >= 4.5:1 contrast:
+          // light ivory on the small/muted fill, dark charcoal on the gold fills.
+          "text-color": [
+            "step",
+            ["get", "point_count"],
+            CLUSTER_TEXT_LIGHT,
+            8,
+            CLUSTER_TEXT_DARK,
+          ],
+          "text-halo-color": [
+            "step",
+            ["get", "point_count"],
+            CLUSTER_COLORS.small,
+            8,
+            CLUSTER_COLORS.medium,
+          ],
+          "text-halo-width": 1,
         },
       });
 
@@ -363,7 +387,7 @@ export default function LeafletMap({
           "circle-color": [
             "case",
             ["==", ["get", "visited"], 1],
-            ["get", "countryColor"],
+            VISITED_COLOR,
             ["match", ["get", "type"], "Movie", typeColors.Movie, "Series", typeColors.Series, "Book", typeColors.Book, typeColors.Movie],
           ],
           "circle-stroke-width": 2,
@@ -745,25 +769,65 @@ export default function LeafletMap({
     <div className={`relative z-0 rounded-2xl overflow-hidden border border-border ${className}`}>
       <div ref={mapRef} className="w-full h-full" />
 
-      <div className="absolute top-4 right-4 z-[1000] glass rounded-xl px-3 py-2 border border-border">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-amber" />
-            <span className="text-xs text-muted-foreground">Movie</span>
+      <div className="absolute top-4 right-4 z-[1000] flex flex-col items-end gap-2">
+        <button
+          type="button"
+          onClick={() => setLegendOpen((v) => !v)}
+          aria-expanded={legendOpen}
+          aria-label="Toggle map legend"
+          className="flex items-center gap-1.5 rounded-xl bg-card/95 backdrop-blur-sm px-3 py-2 border border-border text-xs font-medium text-foreground shadow-card hover:bg-muted/40 transition-colors"
+        >
+          <Info className="w-3.5 h-3.5 text-amber shrink-0" />
+          Legend
+          <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform ${legendOpen ? "rotate-180" : ""}`} />
+        </button>
+
+        {legendOpen && (
+          <div className="w-52 rounded-xl bg-card/95 backdrop-blur-sm px-3 py-3 border border-border shadow-card">
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
+              Pin type
+            </p>
+            <div className="flex flex-col gap-1.5 mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-amber shrink-0" />
+                <span className="text-xs text-foreground">Movie</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-teal shrink-0" />
+                <span className="text-xs text-foreground">Series</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: "hsl(270, 60%, 70%)" }} />
+                <span className="text-xs text-foreground">Book</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: VISITED_COLOR }} />
+                <span className="text-xs text-foreground">Been here</span>
+              </div>
+            </div>
+
+            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
+              Cluster size
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CLUSTER_COLORS.small }} />
+                <span className="text-xs text-foreground">Under 8 spots</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: CLUSTER_COLORS.medium }} />
+                <span className="text-xs text-foreground">8–19 spots</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3.5 h-3.5 rounded-full shrink-0" style={{ backgroundColor: CLUSTER_COLORS.large }} />
+                <span className="text-xs text-foreground">20+ spots</span>
+              </div>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-2 leading-snug">
+              The number on a cluster is how many pins it groups. Tap to zoom in.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-teal" />
-            <span className="text-xs text-muted-foreground">Series</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: "hsl(270, 60%, 70%)" }} />
-            <span className="text-xs text-muted-foreground">Book</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: VISITED_COLOR }} />
-            <span className="text-xs text-muted-foreground">Been here</span>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

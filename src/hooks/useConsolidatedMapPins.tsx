@@ -82,12 +82,19 @@ function mergePin(existing: MapPin, incoming: MapPin): MapPin {
     ? incoming
     : existing;
 
+  const titleList = Array.from(titles);
+  // spot/location rows deliberately carry no title (they can span multiple
+  // productions). Only backfill a single "featured in" title when exactly one
+  // production is attached — otherwise an unrelated nearby production's title
+  // would silently overwrite that intentional absence.
+  const unambiguousTitle = titleList.length === 1 ? titleList[0] : undefined;
+
   return {
     ...prefer,
     lat: existing.lat,
     lng: existing.lng,
-    titles: Array.from(titles),
-    title: prefer.title ?? existing.title ?? incoming.title,
+    titles: titleList,
+    title: prefer.title ?? unambiguousTitle,
     image: prefer.image ?? existing.image ?? incoming.image,
     city: prefer.city ?? existing.city ?? incoming.city,
     country: prefer.country ?? existing.country ?? incoming.country,

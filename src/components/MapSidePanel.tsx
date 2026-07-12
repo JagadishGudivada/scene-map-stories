@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
+import { isDisplayableTitle } from "@/lib/utils";
 
 const typeColorMap: Record<MediaType, string> = {
   Movie: "bg-amber/15 text-amber",
@@ -119,11 +120,12 @@ export default function MapSidePanel({ pin, onClose }: MapSidePanelProps) {
       return;
     }
     toast.success(`${pin.label} saved to your Memory Map`, {
-      description: `From "${pin.title}"`,
+      description: displayTitle ? `From "${displayTitle}"` : undefined,
     });
   };
 
   const TypeIcon = pin.type === "Movie" ? Film : pin.type === "Series" ? Tv : BookOpen;
+  const displayTitle = isDisplayableTitle(pin.title) ? pin.title : undefined;
 
   return (
     <motion.div
@@ -164,9 +166,9 @@ export default function MapSidePanel({ pin, onClose }: MapSidePanelProps) {
         {/* Title & subtitle */}
         <div>
           <h2 className="font-serif text-2xl text-foreground">{pin.label}</h2>
-          {pin.title && (
+          {displayTitle && (
             <p className="text-sm text-muted-foreground mt-1">
-              Featured in <span className="text-amber font-medium">{pin.title}</span>
+              Featured in <span className="text-amber font-medium">{displayTitle}</span>
             </p>
           )}
         </div>
@@ -181,9 +183,15 @@ export default function MapSidePanel({ pin, onClose }: MapSidePanelProps) {
 
         {/* Description */}
         <p className="text-sm text-muted-foreground leading-relaxed">
-          Discover this iconic filming location from{" "}
-          <span className="text-foreground font-medium">{pin.title}</span>. Visit the real-world
-          spot and capture your own cinematic moment.
+          {displayTitle ? (
+            <>
+              Discover this iconic filming location from{" "}
+              <span className="text-foreground font-medium">{displayTitle}</span>. Visit the
+              real-world spot and capture your own cinematic moment.
+            </>
+          ) : (
+            "Discover this real-world filming location and capture your own cinematic moment."
+          )}
         </p>
 
         {/* Save to Memory Map */}
