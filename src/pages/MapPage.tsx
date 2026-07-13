@@ -3,7 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2, Navigation, LocateFixed } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import LeafletMap, { type AppMap, type MapPin as MapPinType } from "@/components/LeafletMap";
-import MapSidePanel from "@/components/MapSidePanel";
+import LocationDetailPanel from "@/components/map/LocationDetailPanel";
+import MapVignette from "@/components/map/MapVignette";
+import MapPinHalo from "@/components/map/MapPinHalo";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -40,6 +42,7 @@ export default function MapPage() {
   const [nearMeRadius, setNearMeRadius] = useState(25);
   const [highlightedPin, setHighlightedPin] = useState<MapPinType | null>(null);
   const mapInstanceRef = useRef<AppMap | null>(null);
+  const [mapInstance, setMapInstance] = useState<AppMap | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
   const { pins: titlePins } = useConsolidatedMapPins();
@@ -189,6 +192,7 @@ export default function MapPage() {
 
   const handleMapReady = useCallback((map: AppMap) => {
     mapInstanceRef.current = map;
+    setMapInstance(map);
   }, []);
 
   const handleClearSearch = useCallback(() => {
@@ -582,17 +586,22 @@ export default function MapPage() {
                 {sidebarFilteredPins.map((pin, i) => (
                   <motion.div
                     key={`${pin.lat}-${pin.lng}-${i}`}
-                    initial={{ opacity: 0, x: 10 }}
+                    layout
+                    initial={{ opacity: 0, x: 14 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: Math.min(i, 20) * 0.03 }}
+                    exit={{ opacity: 0, x: 14 }}
+                    transition={{ delay: Math.min(i, 20) * 0.025, type: "spring", stiffness: 320, damping: 26 }}
+                    whileHover={{ x: 4 }}
                     onClick={() => handleSearchResultClick(pin)}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors group"
+                    onMouseEnter={() => setHighlightedPin(pin)}
+                    onMouseLeave={() => setHighlightedPin(null)}
+                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors group border-l-2 border-transparent hover:border-gold-deep hover:bg-gold-deep/[0.06]"
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${typeBadgeClasses[pin.type]}`}>
                       <MapPin className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{pin.label}</p>
+                      <p className="text-sm font-medium text-foreground truncate group-hover:text-gold-soft transition-colors">{pin.label}</p>
                       {isDisplayableTitle(pin.title) && (
                         <p className="text-xs text-muted-foreground truncate">{pin.title}</p>
                       )}
@@ -604,10 +613,15 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Sliding side panel */}
+        {/* Cinematic overlays (vignette, grain, compass, pin halos) */}
+        <MapVignette map={mapInstance} />
+        <MapPinHalo map={mapInstance} pin={selectedPin} variant="selected" />
+        {!selectedPin && <MapPinHalo map={mapInstance} pin={highlightedPin} variant="highlighted" />}
+
+        {/* Sliding cinematic side panel */}
         <AnimatePresence>
           {selectedPin && (
-            <MapSidePanel
+            <LocationDetailPanel
               pin={selectedPin}
               onClose={handleClosePanel}
             />
