@@ -42,6 +42,7 @@ export default function MapPage() {
   const [nearMeRadius, setNearMeRadius] = useState(25);
   const [highlightedPin, setHighlightedPin] = useState<MapPinType | null>(null);
   const mapInstanceRef = useRef<AppMap | null>(null);
+  const [mapInstance, setMapInstance] = useState<AppMap | null>(null);
   const initializedRef = useRef(false);
   const { aiResults, isSearching, aiError, searchLocations, clearResults } = useAILocationSearch();
   const { pins: titlePins } = useConsolidatedMapPins();
