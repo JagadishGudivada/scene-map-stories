@@ -176,12 +176,14 @@ export type Database = {
       locations: {
         Row: {
           city: string | null
+          confidence: number | null
           country: string | null
           created_at: string
           data: Json
           description: string | null
           enriched_at: string | null
           flag: string | null
+          geo_verified: boolean
           hero_image_url: string | null
           id: string
           last_fetched_at: string
@@ -195,12 +197,14 @@ export type Database = {
         }
         Insert: {
           city?: string | null
+          confidence?: number | null
           country?: string | null
           created_at?: string
           data?: Json
           description?: string | null
           enriched_at?: string | null
           flag?: string | null
+          geo_verified?: boolean
           hero_image_url?: string | null
           id?: string
           last_fetched_at?: string
@@ -214,12 +218,14 @@ export type Database = {
         }
         Update: {
           city?: string | null
+          confidence?: number | null
           country?: string | null
           created_at?: string
           data?: Json
           description?: string | null
           enriched_at?: string | null
           flag?: string | null
+          geo_verified?: boolean
           hero_image_url?: string | null
           id?: string
           last_fetched_at?: string
@@ -414,6 +420,7 @@ export type Database = {
         Row: {
           address: string | null
           city: string | null
+          confidence: number | null
           country: string | null
           created_at: string
           data: Json
@@ -421,6 +428,7 @@ export type Database = {
           enriched_at: string | null
           flag: string | null
           fun_facts: string[] | null
+          geo_verified: boolean
           id: string
           image_url: string | null
           last_fetched_at: string
@@ -436,6 +444,7 @@ export type Database = {
         Insert: {
           address?: string | null
           city?: string | null
+          confidence?: number | null
           country?: string | null
           created_at?: string
           data?: Json
@@ -443,6 +452,7 @@ export type Database = {
           enriched_at?: string | null
           flag?: string | null
           fun_facts?: string[] | null
+          geo_verified?: boolean
           id?: string
           image_url?: string | null
           last_fetched_at?: string
@@ -458,6 +468,7 @@ export type Database = {
         Update: {
           address?: string | null
           city?: string | null
+          confidence?: number | null
           country?: string | null
           created_at?: string
           data?: Json
@@ -465,6 +476,7 @@ export type Database = {
           enriched_at?: string | null
           flag?: string | null
           fun_facts?: string[] | null
+          geo_verified?: boolean
           id?: string
           image_url?: string | null
           last_fetched_at?: string
@@ -521,10 +533,12 @@ export type Database = {
       titles: {
         Row: {
           backdrop_url: string | null
+          confidence: number | null
           created_at: string
           data: Json
           enriched_at: string | null
           genres: string[] | null
+          geo_verified: boolean
           id: string
           imdb_id: string | null
           last_fetched_at: string
@@ -542,10 +556,12 @@ export type Database = {
         }
         Insert: {
           backdrop_url?: string | null
+          confidence?: number | null
           created_at?: string
           data?: Json
           enriched_at?: string | null
           genres?: string[] | null
+          geo_verified?: boolean
           id?: string
           imdb_id?: string | null
           last_fetched_at?: string
@@ -563,10 +579,12 @@ export type Database = {
         }
         Update: {
           backdrop_url?: string | null
+          confidence?: number | null
           created_at?: string
           data?: Json
           enriched_at?: string | null
           genres?: string[] | null
+          geo_verified?: boolean
           id?: string
           imdb_id?: string | null
           last_fetched_at?: string
