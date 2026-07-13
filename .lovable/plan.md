@@ -1,126 +1,98 @@
+# Map Page — High-Fidelity Cinematic Redesign
 
-# Sarevista Landing Page Rebuild
+Goal: turn `/map` from a functional search + Leaflet canvas into a striking, motion-forward discovery surface that feels premium on both desktop and mobile, without changing backend behavior or data sources.
 
-Rebuild the homepage into a cinematic, narrative landing page that leads with the Sa → Re → Vista promise, concentrates gold on "places you can go," and fixes long-standing layout/collision issues.
+## Design direction
 
-## Design tokens (index.css / tailwind)
+- Editorial-cinematic, dark-first (matches Sarevista system): warm ink `#14100D` chrome over the map, gold-deep `#B5651D`/gold-soft `#F4C77B` accents for pins and CTAs, Lora italic for location names, Outfit for UI.
+- Vignette + subtle grain overlay on the map for depth (`pointer-events-none` layer over Leaflet).
+- Every surface animates in with framer-motion; ambient motion continues on idle (pin pulses, path shimmer).
 
-Add/adjust HSL tokens so gold works as two families, not one:
+## Layout
 
-- `--background` → `#14100D` (warm ink)
-- `--card` / surface → `#1D1712`
-- `--foreground` → `#F6EFE2` (cream)
-- `--muted-foreground` → `#9C8F7E` (taupe)
-- `--gold-soft-from` → `#F6D9A8`, `--gold-soft-to` → `#E8A24A` (structural/neutral gold)
-- `--gold-deep-from` → `#F4C77B`, `--gold-deep-to` → `#B5651D` (destination/CTA gold)
-- Utility classes: `.text-gold-soft`, `.bg-gold-deep` (gradient), `.ring-gold-hairline`, `.scrim-bottom` (built-in bottom scrim gradient for image cards).
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Floating command bar (top, centered, expanding search)     │
+│  ├─ AI search input · filter pill · path/near toggles      │
+│  └─ Animated results dropdown (staggered rows)             │
+│                                                             │
+│  MAP CANVAS (full-bleed, vignetted)                         │
+│    · Animated custom pins (gold, pulse + drop-in)          │
+│    · Selected pin: expanding gold ring + orbiting dots      │
+│    · Path mode: animated dashed polyline "drawing in"       │
+│                                                             │
+│  Left rail (desktop ≥ md): collapsible Locations list       │
+│    · Motion list with reorder on filter                     │
+│    · Hover row → map fly-to + pin highlight                 │
+│                                                             │
+│  Right/bottom: Location Detail Panel (framer sheet)         │
+│    · Hero image (Pexels) with Ken-Burns pan                │
+│    · Title (Lora italic), type chip, "As seen in", CTAs    │
+│                                                             │
+│  Bottom-left: Map Controls cluster (Path / Near Me / count) │
+│  Bottom-right: Zoom + Recenter + Legend                     │
+└─────────────────────────────────────────────────────────────┘
+```
 
-Rule enforced in components: gold-deep only on the pin icon, primary buttons, "vista" in wordmark, and the destination marker on cards. Everything else uses cream/taupe/gold-soft.
+Mobile: command bar stays top; locations rail becomes a bottom sheet with a snap-drag (peek / half / full). Detail panel takes over as a full sheet when a pin is tapped.
 
-## Header (`src/components/Navigation.tsx`)
+## Motion system (framer-motion)
 
-- Solid `#14100D`, 1px bottom border in `hsl(var(--border) / 0.4)`.
-- Left: logo mark + `SAREVISTA` wordmark (Lora italic; "vista" in gold-deep gradient) + BETA pill.
-- Right, always visible at every breakpoint (no hamburger): Search, theme toggle, notification bell, avatar, "Sign In" pill (or hidden if logged-in).
-- Icons use small tap targets (≥40px) so they fit at 375px width.
+- Entry: command bar slides down + fades; controls fade up from bottom with 60ms stagger.
+- Pins:
+  - Mount with `initial={{ scale: 0, y: -14 }} animate={{ scale: 1, y: 0 }}` spring per marker, staggered by index (cap at 20 for perf).
+  - Idle: soft pulse ring (`animate={{ scale: [1, 1.35, 1], opacity: [0.5, 0, 0.5] }}` 2.4s loop) on featured/highlighted pins only.
+  - Hover/selected: expanding gold ring + inner dot scale; label pill fades in above.
+- Path mode: SVG polyline overlaid on Leaflet with `pathLength` animated 0→1 over 1.2s, then dashed "shimmer" via animated `strokeDashoffset`.
+- Location list rows: `layout` prop for smooth reorder on filter/search; hover row lifts (`whileHover={{ x: 4 }}`) with gold left-border reveal.
+- Detail panel: enters as `AnimatePresence` sheet with spring; hero image runs a slow Ken-Burns via `animate={{ scale: [1, 1.08], x: [0, -12] }}` 12s loop.
+- Search results dropdown: staggered row reveal, AI rows get a soft sparkle sweep.
+- Near Me: radius circle grows with a spring on toggle; center pulses.
 
-## Hero carousel (`src/components/HeroBanner.tsx` rewrite)
+## Visual polish
 
-- Full-bleed poster per slide, `rounded-3xl`, edge-to-edge on mobile.
-- Built-in bottom scrim: `bg-gradient-to-t from-[#14100D] via-[#14100D]/70 to-transparent` covering ~40% height, always applied.
-- Bottom-left stack, generous vertical spacing (`space-y-3` minimum, `mb-3` on title):
-  1. Metadata chip: `Movie` / `Series` pill + year, on `bg-black/50 backdrop-blur`.
-  2. Title in Lora italic, `text-4xl sm:text-6xl`, cream.
-  3. One curated "surprising fact" line per title (new data field `hookLine`; fallback template only if missing).
-  4. Two buttons: primary solid gold-deep "Find where this was filmed" → `/title/:slug`; secondary outline gold "Save to Map" (calls save-to-map hook).
-- Semi-transparent circular arrow controls on left/right; dots below.
+- Vignette overlay on top of `LeafletMap` (`inset-0 bg-[radial-gradient(...)] pointer-events-none`).
+- Grain PNG at 4% opacity, mix-blend-overlay.
+- Compass rose (SVG) bottom-right, gently rotating on map bearing changes.
+- Custom marker SVG (gold pin with soft glow) replacing default Leaflet icon; selected variant larger with halo.
+- Command bar and panels use existing `glass` utility + `border-border/60`, `shadow-card`.
 
-## How it works (new section)
+## Component/file changes
 
-New component `src/components/HowItWorks.tsx`, mounted directly under hero.
-Three steps, horizontal on ≥sm, stacked on mobile, kept to ~1 screen height:
-
-- 01 Watch or read — icon: `Film`
-- 02 We tell you where it's real — icon: `MapPin` (gold-deep, this is the arrival step)
-- 03 You go there — icon: `Compass`
-
-Each: number in gold-soft mono, Lora italic title, Outfit-light one-liner.
-
-## Search bar + trust line
-
-- Existing search stays but restyled: dark pill, gold-hairline border on focus, rotating placeholder cycling every 2.5s through `Bridgerton`, `Peaky Blinders`, `The White Lotus`, `Harry Potter`.
-- Filter icon on the right unchanged in behavior.
-- Directly beneath: one muted line, `text-xs text-muted-foreground`: "4,200+ real locations from 380+ films & shows".
-
-## Quick-filter chip row
-
-New `src/components/QuickFilterChips.tsx`, horizontally scrollable single line (`overflow-x-auto whitespace-nowrap`), outlined pills:
-
-Recently Filmed · UK Locations · Period Dramas · Most Visited · Book-to-Screen. Each navigates to `/explore?filter=<slug>`.
-
-## Iconic filming locations section
-
-New `src/components/IconicLocations.tsx`:
-
-- Eyebrow `YOU MIGHT RECOGNISE THIS PLACE` in gold-soft small-caps mono.
-- Header: "Iconic filming locations" (Lora italic).
-- Subhead in taupe.
-- Horizontally scrollable cards: full-bleed landmark photo with built-in scrim, flag + country name top-left, landmark name bottom.
-- Seeded curated list (Trevi Fountain / Fushimi Inari / Highclere Castle / Dubrovnik Old Town / etc.) — 6–8 entries in `src/lib/iconicLocations.ts` using Pexels or existing image helpers, flags via `flag-icons`.
-
-## Trending on-screen section
-
-New `src/components/TrendingOnScreen.tsx` (replaces `TrendyScreenSpots` on the homepage, keep the old file for other consumers):
-
-Each card must render **all** of:
-- Photo + type badge (Café/Hotel/Restaurant) + optional "Viral" badge
-- Flag + city name
-- Venue name (Lora italic, cream)
-- `AS SEEN IN` label + title + year in gold-soft mono
-- One scene-specific sentence (mock data field `sceneLine`)
-- Hashtag pill
-- Solid gold-deep "Plan a visit" button
-
-Seeded in `src/lib/trendingOnScreen.ts` with 4–6 items.
-
-## Recently added
-
-Keep existing `RecentlyVisitedSpots` carousel, but wrap in a section with clear title and remove any element that overlaps card text. Bookmark icon top-right, outline → solid gold on save.
-
-## Spot Radar fix (`src/components/SpotRadarFab.tsx`)
-
-Replace the expanding pill with an icon-only circular FAB (56px) at `bottom-24 right-4` (above the mobile tab bar), that expands only on tap/hover. Never permanently expanded on mobile. Preserves the existing dialog.
-
-## Global rules enforced
-
-- Every image card gets `.scrim-bottom` utility (built into card components, not per-page).
-- Buttons: `variant="primary"` (solid gold-deep) vs `variant="ghost-gold"` (outline). Never two solid CTAs adjacent.
-- All action buttons except bookmark/search carry a text label.
-- Verified against 375px viewport with Playwright screenshot before shipping.
-
-## Files
-
-New:
-- `src/components/HowItWorks.tsx`
-- `src/components/QuickFilterChips.tsx`
-- `src/components/IconicLocations.tsx`
-- `src/components/TrendingOnScreen.tsx`
-- `src/lib/iconicLocations.ts`
-- `src/lib/trendingOnScreen.ts`
+New files:
+- `src/components/map/MapCommandBar.tsx` — search + filter + AI dropdown (extracts existing JSX, adds motion).
+- `src/components/map/MapControls.tsx` — Path / Near Me / count cluster with animated switches and radius slider.
+- `src/components/map/LocationsRail.tsx` — desktop side list; mobile bottom sheet variant.
+- `src/components/map/LocationDetailPanel.tsx` — replaces inline `MapSidePanel` usage on this page with cinematic version (keeps `MapSidePanel` intact for other pages).
+- `src/components/map/AnimatedPinLayer.tsx` — DOM overlay that projects `displayPins` to screen coords and renders framer-motion pins on top of Leaflet (via `map.project` + `move` listener), enabling real motion (Leaflet's DivIcon can't run framer springs).
+- `src/components/map/MapVignette.tsx` — vignette + grain + compass overlay.
 
 Edited:
-- `src/index.css` — new gold tokens + `.scrim-bottom` utility
-- `tailwind.config.ts` — gold-soft / gold-deep gradients, safelist
-- `src/components/HeroBanner.tsx` — rebuild per spec
-- `src/components/Navigation.tsx` — always-visible icons on mobile, wordmark treatment
-- `src/components/SpotRadarFab.tsx` — icon-only FAB
-- `src/pages/Index.tsx` — new section order: Hero → HowItWorks → Search + trust line → QuickFilterChips → IconicLocations → TrendingOnScreen → RecentlyVisited → PopularLocations
-- Extend homepage titles with an optional `hookLine` (falls back if missing)
+- `src/pages/MapPage.tsx` — compose the new components; state and data hooks unchanged (`useAILocationSearch`, `useConsolidatedMapPins`, `useNearbySpots`).
+- `src/components/LeafletMap.tsx` — expose `map` events needed by the pin layer (`move`, `zoom`) via existing `onMapReady`; add optional `hidePins` prop so the base library pins can be turned off when the animated layer is active. No behavior change when the prop is omitted.
+
+Untouched:
+- Data flow, edge functions, routes, URL params, Seo, and all business logic in `MapPage.tsx`.
+
+## Technical notes
+
+- Animated pin layer subscribes to Leaflet `move`/`zoom` and updates a `transform: translate3d(x,y,0)` per pin in a `requestAnimationFrame` loop; framer-motion drives only enter/hover/pulse, not pan tracking, to keep 60fps.
+- Cap concurrent pulsing pins to the selected + top-8 featured to protect mobile perf.
+- Respect `prefers-reduced-motion`: disable pulses, Ken-Burns, and path shimmer; keep only fades.
+- Reuse gold tokens (`bg-gold-deep`, `text-gold-soft`) from `index.css`; no new hardcoded colors.
+- All new components typed; no changes to `src/integrations/supabase/*`.
 
 ## Out of scope
 
-- Real "4,200+ / 380+" counts (placeholder until real query added).
-- Backend changes; iconic/trending data is seeded, no DB migration.
-- Full theme overhaul beyond the tokens listed; existing components not on the homepage keep their current look.
+- Backend/schema changes, new AI endpoints, new data sources.
+- 3D/WebGL globe.
+- Redesign of `MapSidePanel` used by other pages (we add a new panel component instead).
 
-Once approved I'll implement in one pass and verify at 375px.
+## Acceptance
+
+- `/map` loads with staggered chrome-in animation; pins drop in with spring stagger; selected pin has halo and orbit.
+- Path mode draws the polyline progressively; toggling off reverses cleanly.
+- Location list reorders smoothly when filtering; row hover flies map to pin.
+- Detail panel opens as a cinematic sheet with Ken-Burns hero.
+- 60fps on a mid-range phone (Chrome DevTools 4× CPU throttle) with ≤ 50 pins visible.
+- Reduced-motion users get a clean static version.
