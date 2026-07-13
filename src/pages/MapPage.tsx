@@ -586,17 +586,22 @@ export default function MapPage() {
                 {sidebarFilteredPins.map((pin, i) => (
                   <motion.div
                     key={`${pin.lat}-${pin.lng}-${i}`}
-                    initial={{ opacity: 0, x: 10 }}
+                    layout
+                    initial={{ opacity: 0, x: 14 }}
                     animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: Math.min(i, 20) * 0.03 }}
+                    exit={{ opacity: 0, x: 14 }}
+                    transition={{ delay: Math.min(i, 20) * 0.025, type: "spring", stiffness: 320, damping: 26 }}
+                    whileHover={{ x: 4 }}
                     onClick={() => handleSearchResultClick(pin)}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 cursor-pointer transition-colors group"
+                    onMouseEnter={() => setHighlightedPin(pin)}
+                    onMouseLeave={() => setHighlightedPin(null)}
+                    className="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors group border-l-2 border-transparent hover:border-gold-deep hover:bg-gold-deep/[0.06]"
                   >
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${typeBadgeClasses[pin.type]}`}>
                       <MapPin className="w-3.5 h-3.5" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{pin.label}</p>
+                      <p className="text-sm font-medium text-foreground truncate group-hover:text-gold-soft transition-colors">{pin.label}</p>
                       {isDisplayableTitle(pin.title) && (
                         <p className="text-xs text-muted-foreground truncate">{pin.title}</p>
                       )}
