@@ -608,10 +608,15 @@ export default function MapPage() {
           </div>
         )}
 
-        {/* Sliding side panel */}
+        {/* Cinematic overlays (vignette, grain, compass, pin halos) */}
+        <MapVignette map={mapInstance} />
+        <MapPinHalo map={mapInstance} pin={selectedPin} variant="selected" />
+        {!selectedPin && <MapPinHalo map={mapInstance} pin={highlightedPin} variant="highlighted" />}
+
+        {/* Sliding cinematic side panel */}
         <AnimatePresence>
           {selectedPin && (
-            <MapSidePanel
+            <LocationDetailPanel
               pin={selectedPin}
               onClose={handleClosePanel}
             />
