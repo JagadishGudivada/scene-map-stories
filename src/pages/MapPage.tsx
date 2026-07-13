@@ -192,6 +192,7 @@ export default function MapPage() {
 
   const handleMapReady = useCallback((map: AppMap) => {
     mapInstanceRef.current = map;
+    setMapInstance(map);
   }, []);
 
   const handleClearSearch = useCallback(() => {
