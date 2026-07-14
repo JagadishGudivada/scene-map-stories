@@ -112,7 +112,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
       : "object-center";
 
   return (
-    <div className="relative h-[62vh] sm:h-[60vh] min-h-[440px] sm:min-h-[420px] max-h-[720px] rounded-3xl overflow-hidden shadow-float">
+    <div className="relative h-[44vh] sm:h-[60vh] min-h-[280px] sm:min-h-[420px] max-h-[720px] rounded-2xl sm:rounded-3xl overflow-hidden shadow-float">
       <AnimatePresence mode="wait" custom={direction}>
         <motion.div
           key={slide.id}
@@ -170,7 +170,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
       </AnimatePresence>
 
       {/* Content */}
-      <div className="absolute inset-0 z-20 flex flex-col justify-end p-5 sm:p-10 text-overlay-foreground">
+      <div className="absolute inset-0 z-20 flex flex-col justify-end p-4 sm:p-10 text-overlay-foreground">
         <AnimatePresence mode="wait">
           <motion.div
             key={slide.id + "-content"}
@@ -181,26 +181,26 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             className="max-w-2xl"
           >
             {/* metadata row */}
-            <div className="inline-flex items-center gap-2 mb-5 rounded-full bg-black/55 backdrop-blur px-3 py-1.5">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-white">
+            <div className="inline-flex items-center gap-2 mb-3 sm:mb-5 rounded-full bg-black/55 backdrop-blur px-2.5 py-1 sm:px-3 sm:py-1.5">
+              <span className="text-[10px] sm:text-[11px] font-semibold uppercase tracking-wider text-white">
                 {slide.type}
               </span>
               <span className="w-1 h-1 rounded-full bg-white/40" />
-              <span className="text-[11px] font-mono text-white/85">{slide.year}</span>
+              <span className="text-[10px] sm:text-[11px] font-mono text-white/85">{slide.year}</span>
             </div>
 
             {/* title */}
-            <h1 className="font-serif italic text-4xl sm:text-6xl leading-[1.05] text-[#F6EFE2] mb-5 max-w-[18ch]">
+            <h1 className="font-serif italic text-2xl sm:text-6xl leading-[1.05] text-[#F6EFE2] mb-2 sm:mb-5 max-w-[18ch]">
               {slide.title}
             </h1>
 
             {/* hook line */}
-            <p className="text-sm sm:text-base text-[#F6EFE2]/85 leading-relaxed mb-7 max-w-[42ch]">
+            <p className="text-xs sm:text-base text-[#F6EFE2]/85 leading-snug sm:leading-relaxed mb-4 sm:mb-7 max-w-[42ch] line-clamp-2 sm:line-clamp-none">
               {slide.hookLine}
             </p>
 
             {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
                 onClick={() => {
                   navigate(`/title/${slugifyTitle(slide.title, slide.year)}`, {
@@ -212,7 +212,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                     },
                   });
                 }}
-                className="inline-flex items-center h-11 px-5 rounded-full bg-gold-deep text-charcoal font-semibold text-sm hover:brightness-105 transition shadow-lg shadow-black/40"
+                className="inline-flex items-center h-9 sm:h-11 px-3.5 sm:px-5 rounded-full bg-gold-deep text-charcoal font-semibold text-xs sm:text-sm hover:brightness-105 transition shadow-lg shadow-black/40"
               >
                 Find where this was filmed
               </button>
@@ -228,10 +228,10 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                     },
                   });
                 }}
-                className="inline-flex items-center gap-2 h-11 px-5 rounded-full border border-[#E8A24A]/60 text-[#F6D9A8] font-medium text-sm hover:bg-[#E8A24A]/10 transition"
+                className="inline-flex items-center gap-1.5 sm:gap-2 h-9 sm:h-11 px-3.5 sm:px-5 rounded-full border border-[#E8A24A]/60 text-[#F6D9A8] font-medium text-xs sm:text-sm hover:bg-[#E8A24A]/10 transition"
               >
-                <Bookmark className="w-4 h-4" />
-                Save to Map
+                <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                Save
               </button>
             </div>
           </motion.div>

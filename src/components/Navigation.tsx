@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, Plus, MapPin, User, X, Film, Tv, BookOpen, Sun, Moon, LogOut, Sparkles, Loader2 } from "lucide-react";
+import { Search, Compass, Plus, MapPin, User, X, Film, Tv, BookOpen, Sun, Moon, LogOut, Sparkles, Loader2, Menu, Home, ChevronRight } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import Logo from "@/components/Logo";
 import { useTheme } from "@/hooks/use-theme";
@@ -18,6 +18,7 @@ const navLinks = [
 
 export default function Navigation() {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const location = useLocation();
@@ -99,12 +100,18 @@ export default function Navigation() {
       <nav className="fixed top-0 left-0 right-0 z-50 h-16 md:h-20">
         <div className="glass border-b border-border/50 h-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-foreground hover:bg-muted/50 transition-all"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
             {/* Logo */}
             <Link to="/" className="flex flex-col shrink-0 text-foreground leading-none">
               <Logo size="md" variant="full" showBeta={true} responsive />
-            {/*  <span className="text-[9px] sm:text-[10px] lg:text-[11px] font-serif italic text-amber-gradient mt-1 tracking-[0.15em] sm:tracking-[0.18em] leading-none whitespace-nowrap">
-                Turn the stories you love into places you visit.
-              </span> */}
             </Link>
 
             {/* Nav Links */}
@@ -282,35 +289,105 @@ export default function Navigation() {
         </div>
       </nav>
 
-      {/* Mobile Bottom Bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 glass border-t border-border/50 pb-safe">
-        <div className="h-16 flex items-center justify-around px-2">
-          {mobileLinks.map((link) => {
-            const isActive = location.pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                to={link.href}
-                className={`flex flex-col items-center gap-1 px-4 py-1 rounded-xl transition-all ${
-                  isActive ? "text-amber" : "text-muted-foreground"
-                }`}
-              >
-                <link.icon className={`w-5 h-5 transition-all ${isActive ? "scale-110" : ""}`} />
-                <span className="text-[10px] font-medium">{link.label}</span>
-              </Link>
-            );
-          })}
-          {/* Center Add Button */}
-          <Link
-            to="/add"
-            className="flex flex-col items-center gap-1 -mt-4"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-gradient-amber flex items-center justify-center shadow-amber animate-pulse-amber">
-              <Plus className="w-6 h-6 text-charcoal" strokeWidth={2.5} />
-            </div>
-          </Link>
-        </div>
-      </nav>
+      {/* Mobile Side Drawer */}
+      <AnimatePresence>
+        {drawerOpen && (
+          <>
+            <motion.div
+              key="drawer-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setDrawerOpen(false)}
+              className="md:hidden fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm"
+            />
+            <motion.aside
+              key="drawer-panel"
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+              className="md:hidden fixed inset-y-0 left-0 z-[70] w-[82%] max-w-[340px] glass border-r border-border/60 flex flex-col"
+            >
+              <div className="flex items-center justify-between px-5 h-16 border-b border-border/50">
+                <Logo size="sm" variant="full" showBeta />
+                <button
+                  onClick={() => setDrawerOpen(false)}
+                  aria-label="Close menu"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center text-foreground hover:bg-muted/50"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <nav className="flex-1 overflow-y-auto py-2">
+                {mobileLinks.map((link) => {
+                  const isActive = location.pathname === link.href;
+                  return (
+                    <Link
+                      key={link.href}
+                      to={link.href}
+                      onClick={() => setDrawerOpen(false)}
+                      className={`w-full flex items-center justify-between px-5 py-3.5 border-b border-border/40 transition-colors ${
+                        isActive ? "text-amber bg-muted/30" : "text-foreground hover:bg-muted/40"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <link.icon className="w-5 h-5" />
+                        <span className="text-base font-medium">{link.label}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </Link>
+                  );
+                })}
+                {user && (
+                  <Link
+                    to="/add"
+                    onClick={() => setDrawerOpen(false)}
+                    className="w-full flex items-center justify-between px-5 py-3.5 border-b border-border/40 text-foreground hover:bg-muted/40 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Plus className="w-5 h-5" />
+                      <span className="text-base font-medium">Add Title</span>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </Link>
+                )}
+
+                <button
+                  onClick={() => { toggleTheme(); }}
+                  className="w-full flex items-center justify-between px-5 py-3.5 border-b border-border/40 text-foreground hover:bg-muted/40 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                    <span className="text-base font-medium">{theme === "dark" ? "Light mode" : "Dark mode"}</span>
+                  </div>
+                </button>
+              </nav>
+
+              <div className="p-4 border-t border-border/50">
+                {user ? (
+                  <button
+                    onClick={async () => { setDrawerOpen(false); await signOut(); navigate("/"); }}
+                    className="w-full h-11 rounded-xl flex items-center justify-center gap-2 border border-border text-foreground hover:bg-muted/40 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span className="text-sm font-medium">Sign out</span>
+                  </button>
+                ) : (
+                  <Link
+                    to="/auth"
+                    onClick={() => setDrawerOpen(false)}
+                    className="w-full h-11 rounded-xl flex items-center justify-center bg-gradient-amber text-charcoal text-sm font-semibold shadow-amber"
+                  >
+                    Sign In
+                  </Link>
+                )}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }

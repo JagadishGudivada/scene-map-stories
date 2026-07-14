@@ -190,7 +190,7 @@ export default function Index() {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8">
+    <div className="min-h-screen bg-background pb-10 md:pb-8">
       <Seo
         title="Sarevista — Filming Locations Map for Movies, Series & Books"
         description="Discover, save, and share real filming locations from your favourite movies, series, and books. Cinema meets travel — your memory map."
@@ -198,7 +198,7 @@ export default function Index() {
       <h1 className="sr-only">Sarevista — Your Map to Filming Locations from Movies, Series & Books</h1>
       {/* === HERO SECTION === */}
       <div className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-20 md:pt-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-[72px] md:pt-24">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -210,7 +210,7 @@ export default function Index() {
       </div>
 
       {/* === TOP SEARCH (desktop-prominent) === */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-8 md:pt-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-5 md:pt-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -236,7 +236,7 @@ export default function Index() {
               }}
               onBlur={() => setSearchFocused(false)}
               placeholder={searchPlaceholders[placeholderIdx]}
-              className={`w-full h-14 md:h-16 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm md:text-base border outline-none placeholder:text-muted-foreground transition-all ${
+              className={`w-full h-12 md:h-16 pl-14 pr-28 rounded-2xl bg-card text-foreground text-sm md:text-base border outline-none placeholder:text-muted-foreground transition-all ${
                 searchFocused ? "border-transparent ring-gold-hairline" : "border-border"
               }`}
             />
