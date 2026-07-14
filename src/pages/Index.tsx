@@ -507,11 +507,11 @@ export default function Index() {
 
 
                   {/* Bento Grid */}
-                  <section className="mb-14">
-                    <div className="flex items-center justify-between mb-5">
-                      <div className="flex items-center gap-3">
-                        <TrendingUp className="w-5 h-5 text-amber" />
-                        <h2 className="font-serif text-2xl text-foreground">Recently Added</h2>
+                  <section className="mb-10 sm:mb-14">
+                    <div className="flex items-center justify-between mb-3 sm:mb-5">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-amber" />
+                        <h2 className="font-serif text-lg sm:text-2xl text-foreground">Recently Added</h2>
                       </div>
                     </div>
 
@@ -571,29 +571,29 @@ export default function Index() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="mb-14"
+                    className="mb-10 sm:mb-14"
                   >
                     <Link
                       to="/map"
-                      className="flex items-center justify-between p-6 rounded-2xl glass border border-border hover:border-amber/30 transition-all group"
+                      className="flex items-center justify-between p-4 sm:p-6 rounded-2xl glass border border-border hover:border-amber/30 transition-all group gap-3"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-amber flex items-center justify-center shrink-0">
-                          <MapPin className="w-6 h-6 text-charcoal" />
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-amber flex items-center justify-center shrink-0">
+                          <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-charcoal" />
                         </div>
-                        <div>
-                          <h3 className="font-serif text-xl text-foreground mb-0.5">Explore the World Map</h3>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0">
+                          <h3 className="font-serif text-base sm:text-xl text-foreground mb-0.5 leading-tight">Explore the World Map</h3>
+                          <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:line-clamp-none">
                             200+ filming locations plotted across 30 countries
                           </p>
                         </div>
                       </div>
-                      <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-amber group-hover:translate-x-1 transition-all" />
+                      <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground group-hover:text-amber group-hover:translate-x-1 transition-all shrink-0" />
                     </Link>
                   </motion.div>
 
                   {/* === HOW IT WORKS === */}
-                  <div className="mb-14">
+                  <div className="mb-10 sm:mb-14">
                     <HowItWorks />
                   </div>
                 </motion.div>
@@ -628,20 +628,20 @@ export default function Index() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
-              className="mb-10 rounded-2xl overflow-hidden relative"
+              className="mb-8 sm:mb-10 rounded-2xl overflow-hidden relative"
             >
-              <div className="glass border border-amber/20 p-8 sm:p-10 text-center relative z-10">
+              <div className="glass border border-amber/20 p-5 sm:p-10 text-center relative z-10">
                 {user ? (
                   <>
                     <div className="inline-flex items-center gap-2 mb-4 glass rounded-full px-4 py-2 border border-amber/20">
                       <Sparkles className="w-4 h-4 text-amber" />
                       <span className="text-sm font-medium text-amber">Welcome back, explorer</span>
                     </div>
-                    <h2 className="font-serif text-3xl sm:text-4xl text-foreground mb-4">
+                    <h2 className="font-serif text-2xl sm:text-4xl text-foreground mb-3 sm:mb-4 leading-tight">
                       Continue your<br />
                       <span className="text-amber-gradient italic">cinematic journey</span>
                     </h2>
-                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                    <p className="text-xs sm:text-base text-muted-foreground mb-6 sm:mb-8 max-w-md mx-auto">
                       Jump back into your passport, add a new title, or discover the next location to visit.
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto">
@@ -674,11 +674,11 @@ export default function Index() {
                       <Sparkles className="w-4 h-4 text-amber" />
                       <span className="text-sm font-medium text-amber">Join Sarevista film explorers</span>
                     </div>
-                    <h2 className="font-serif text-4xl text-foreground mb-4">
+                    <h2 className="font-serif text-2xl sm:text-4xl text-foreground mb-3 sm:mb-4 leading-tight">
                       Start mapping your<br />
                       <span className="text-amber-gradient italic">cinema memories</span>
                     </h2>
-                    <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+                    <p className="text-xs sm:text-base text-muted-foreground mb-6 sm:mb-8 max-w-md mx-auto">
                       Discover filming locations from your favourite titles and map the places that made those scenes unforgettable.
                     </p>
                     <div className="flex items-center justify-center gap-3 flex-wrap">

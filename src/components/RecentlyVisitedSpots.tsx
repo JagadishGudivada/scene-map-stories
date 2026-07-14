@@ -19,14 +19,14 @@ export default function RecentlyVisitedSpots() {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5 }}
-      className="mb-14"
+      className="mb-10 sm:mb-14"
     >
-      <div className="flex items-end justify-between mb-5 gap-4">
-        <div className="flex items-center gap-3">
-          <Footprints className="w-5 h-5 text-amber" />
+      <div className="flex items-end justify-between mb-3 sm:mb-5 gap-4">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <Footprints className="w-4 h-4 sm:w-5 sm:h-5 text-amber" />
           <div>
-            <h2 className="font-serif text-2xl text-foreground">Recently Explored by the Community</h2>
-            <p className="text-xs text-muted-foreground mt-1">
+            <h2 className="font-serif text-lg sm:text-2xl text-foreground leading-tight">Recently Explored by the Community</h2>
+            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 sm:mt-1">
               Filming spots that fellow explorers just looked up
             </p>
           </div>
