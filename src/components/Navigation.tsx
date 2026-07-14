@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Compass, Plus, MapPin, User, X, Film, Tv, BookOpen, Sun, Moon, LogOut, Sparkles, Loader2 } from "lucide-react";
+import { Search, Compass, Plus, MapPin, User, X, Film, Tv, BookOpen, Sun, Moon, LogOut, Sparkles, Loader2, Menu, Home, ChevronRight } from "lucide-react";
 import NotificationsDropdown from "@/components/NotificationsDropdown";
 import Logo from "@/components/Logo";
 import { useTheme } from "@/hooks/use-theme";
@@ -18,6 +18,7 @@ const navLinks = [
 
 export default function Navigation() {
   const [searchOpen, setSearchOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const location = useLocation();
@@ -99,12 +100,18 @@ export default function Navigation() {
       <nav className="fixed top-0 left-0 right-0 z-50 h-16 md:h-20">
         <div className="glass border-b border-border/50 h-full">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-foreground hover:bg-muted/50 transition-all"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
             {/* Logo */}
             <Link to="/" className="flex flex-col shrink-0 text-foreground leading-none">
               <Logo size="md" variant="full" showBeta={true} responsive />
-            {/*  <span className="text-[9px] sm:text-[10px] lg:text-[11px] font-serif italic text-amber-gradient mt-1 tracking-[0.15em] sm:tracking-[0.18em] leading-none whitespace-nowrap">
-                Turn the stories you love into places you visit.
-              </span> */}
             </Link>
 
             {/* Nav Links */}
