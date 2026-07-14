@@ -41,23 +41,23 @@ function TrendingCard({ s, i }: { s: TrendingSpot; i: number }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 p-5">
-        <h3 className="font-serif italic text-2xl text-foreground leading-tight">
+      <div className="flex flex-col gap-2 sm:gap-3 p-4 sm:p-5">
+        <h3 className="font-serif italic text-lg sm:text-2xl text-foreground leading-tight">
           {s.venueName}
         </h3>
-        <p className="text-[10px] font-mono tracking-[0.2em] uppercase text-gold-soft">
+        <p className="text-[9px] sm:text-[10px] font-mono tracking-[0.2em] uppercase text-gold-soft">
           As seen in · <span className="text-foreground/85 normal-case tracking-normal font-sans not-italic">{s.asSeenIn}</span> <span className="text-muted-foreground">({s.year})</span>
         </p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed line-clamp-2 sm:line-clamp-none">
           {s.sceneLine}
         </p>
-        <div className="flex items-center justify-between gap-2 mt-1">
-          <span className="inline-flex items-center rounded-full border border-border px-3 py-1 text-[11px] font-medium text-foreground/85">
+        <div className="flex items-center justify-between gap-2 mt-0.5 sm:mt-1">
+          <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-medium text-foreground/85">
             {s.hashtag}
           </span>
           <button
             onClick={() => navigate(`/map?search=${encodeURIComponent(s.mapQuery)}`)}
-            className="inline-flex items-center h-9 px-4 rounded-full bg-gold-deep text-charcoal text-sm font-semibold hover:brightness-105 transition"
+            className="inline-flex items-center h-8 sm:h-9 px-3 sm:px-4 rounded-full bg-gold-deep text-charcoal text-xs sm:text-sm font-semibold hover:brightness-105 transition"
           >
             Plan a visit
           </button>
@@ -69,12 +69,12 @@ function TrendingCard({ s, i }: { s: TrendingSpot; i: number }) {
 
 export default function TrendingOnScreen() {
   return (
-    <section className="mb-16" aria-labelledby="trending-heading">
-      <div className="mb-5">
-        <p className="text-[10px] font-mono tracking-[0.24em] uppercase text-gold-soft mb-2">
+    <section className="mb-10 sm:mb-16" aria-labelledby="trending-heading">
+      <div className="mb-3 sm:mb-5">
+        <p className="text-[9px] sm:text-[10px] font-mono tracking-[0.24em] uppercase text-gold-soft mb-1.5 sm:mb-2">
           Trending on-screen · {currentYear - 1}–{currentYear}
         </p>
-        <h2 id="trending-heading" className="font-serif italic text-3xl sm:text-4xl text-foreground leading-tight">
+        <h2 id="trending-heading" className="font-serif italic text-xl sm:text-4xl text-foreground leading-tight">
           Cafés & spots from this year's hits
         </h2>
       </div>
