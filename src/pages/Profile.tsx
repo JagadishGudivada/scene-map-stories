@@ -410,7 +410,7 @@ export default function Profile() {
               {displayName}
             </h1>
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <p className="font-mono text-[11px] sm:text-sm text-muted-foreground tracking-wider">
+              <p className="font-serif italic text-base sm:text-lg text-amber/90 tracking-tight">
                 @{username}
               </p>
               <TierBadge count={visitedSpotSlugs.length} />
