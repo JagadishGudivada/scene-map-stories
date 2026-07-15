@@ -605,21 +605,39 @@ export default function Profile() {
                     {visitedMapPins.length} locations · {visitedCountriesCount} countries
                   </span>
                   {visitedSpotsData.length > 0 && (
-                    <button
+                    <motion.button
                       onClick={() => setMemoryLaneOpen(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber text-black text-xs font-medium hover:brightness-105 transition shadow-[0_0_20px_rgba(244,199,123,0.25)]"
+                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1.03 }}
+                      animate={{
+                        boxShadow: [
+                          "0 0 0 0 rgba(255,184,0,0.55), 0 0 24px 0 rgba(255,184,0,0.35)",
+                          "0 0 0 10px rgba(255,184,0,0), 0 0 40px 4px rgba(255,184,0,0.55)",
+                          "0 0 0 0 rgba(255,184,0,0.55), 0 0 24px 0 rgba(255,184,0,0.35)",
+                        ],
+                      }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber via-[#FFB800] to-amber text-black text-xs font-semibold tracking-wide"
                     >
                       <Film className="w-3.5 h-3.5" />
                       Replay My Journey
-                    </button>
+                    </motion.button>
                   )}
                 </div>
-                <FogOfWarMap
-                  pins={visitedMapPins}
-                  visitedCountries={visitedSpotsData.map((s) => s.country).filter(Boolean) as string[]}
-                  focusPin={focusPin}
-                  className="h-[420px] sm:h-[520px] rounded-2xl overflow-hidden border border-border"
-                />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  whileInView={{ scale: 1, opacity: 1 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ type: "spring", stiffness: 120, damping: 18 }}
+                  className="rounded-2xl overflow-hidden border border-white/[0.06] shadow-[0_20px_60px_-24px_rgba(0,0,0,0.8)]"
+                >
+                  <FogOfWarMap
+                    pins={visitedMapPins}
+                    visitedCountries={visitedSpotsData.map((s) => s.country).filter(Boolean) as string[]}
+                    focusPin={focusPin}
+                    className="h-[420px] sm:h-[520px]"
+                  />
+                </motion.div>
                 {visitedSpotsLoading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
