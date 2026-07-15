@@ -373,7 +373,7 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-12">
+    <div className="min-h-screen bg-background dark:bg-black pb-24 md:pb-12">
       <Seo
         title={`${displayName} (@${username}) — Memory Map`}
         description={`Filming locations, saved spots, and cinema journeys from ${displayName} on Sarevista.`}
