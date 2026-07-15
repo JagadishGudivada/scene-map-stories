@@ -179,14 +179,17 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
     if (!map || !ready) return;
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
-    pins.forEach((p) => {
+    pins.forEach((p, idx) => {
       const el = document.createElement("div");
       el.style.width = "12px";
       el.style.height = "12px";
       el.style.borderRadius = "9999px";
-      el.style.background = "#F4C77B";
-      el.style.boxShadow = "0 0 0 3px rgba(244,199,123,0.25), 0 0 12px rgba(244,199,123,0.6)";
+      el.style.background = "#FFB800";
+      el.style.boxShadow = "0 0 0 3px rgba(255,184,0,0.25), 0 0 12px rgba(255,184,0,0.7)";
       el.style.border = "2px solid #0D0D0D";
+      el.style.transformOrigin = "50% 100%";
+      el.style.animation = `pin-drop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) both`;
+      el.style.animationDelay = `${Math.min(idx * 0.06, 1.2)}s`;
       const marker = new maplibregl.Marker({ element: el }).setLngLat([p.lng, p.lat]).addTo(map);
       markersRef.current.push(marker);
     });
