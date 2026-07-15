@@ -548,8 +548,8 @@ export default function Profile() {
 
         {/* Tabs */}
         <div>
-          <nav className="flex justify-center border-b border-border">
-            <div className="flex gap-2 sm:gap-6 overflow-x-auto no-scrollbar pb-px">
+          <nav className="flex justify-center border-b border-white/[0.06]">
+            <div className="flex gap-1 sm:gap-2 overflow-x-auto no-scrollbar pb-px">
               {tabs.map((tab) => {
                 const active = activeTab === tab.id;
                 return (
@@ -559,13 +559,28 @@ export default function Profile() {
                     onClick={() => setActiveTab(tab.id)}
                     aria-label={tab.label}
                     title={tab.label}
-                    className={`relative px-3 sm:px-4 pb-3.5 pt-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
-                      active ? "text-amber" : "text-muted-foreground hover:text-foreground"
+                    className={`relative px-4 sm:px-5 pb-3.5 pt-2 text-xs sm:text-sm font-medium whitespace-nowrap flex items-center gap-2 transition-colors ${
+                      active ? "text-amber" : "text-white/50 hover:text-white"
                     }`}
                   >
-                    <tab.icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                    {active && <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-amber rounded-full" />}
+                    {active && (
+                      <motion.span
+                        layoutId="activeTabIndicator"
+                        className="absolute inset-x-2 inset-y-1 rounded-full bg-amber/10 border border-amber/30 shadow-[0_0_20px_-4px_rgba(255,184,0,0.5)]"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    {active && (
+                      <motion.span
+                        layoutId="activeTabBar"
+                        className="absolute -bottom-px left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-amber/0 via-amber to-amber/0"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative flex items-center gap-2">
+                      <tab.icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </span>
                   </button>
                 );
               })}
