@@ -340,6 +340,14 @@
   animation: highlight-pulse 1.5s ease-in-out infinite;
 }
 
+/* Elastic marker drop for journey map pins */
+@keyframes pin-drop {
+  0% { transform: translateY(-60px) scale(0.4); opacity: 0; }
+  60% { transform: translateY(4px) scale(1.15); opacity: 1; }
+  80% { transform: translateY(-2px) scale(0.95); }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
 /* Path mode distance labels */
 .path-distance-label {
   background: none !important;

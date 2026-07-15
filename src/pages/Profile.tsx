@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { Link, useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X, Pencil, Plus, Globe, Trash2, Sparkles, Film } from "lucide-react";
-import LeafletMap from "@/components/LeafletMap";
 import EditProfileDialog, { type ProfileRow } from "@/components/EditProfileDialog";
 import CreatePostDialog from "@/components/CreatePostDialog";
 import PassportStampBadge from "@/components/PassportStampBadge";
@@ -12,7 +11,6 @@ import { usePassportBadges } from "@/hooks/usePassportBadges";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { fetchPexelsImage, DEFAULT_PEXELS_IMAGE } from "@/lib/pexels";
 import Seo from "@/components/Seo";
 import FogOfWarMap from "@/components/profile/FogOfWarMap";
 import TierBadge from "@/components/profile/TierBadge";
@@ -20,6 +18,8 @@ import MilestoneCelebration from "@/components/profile/MilestoneCelebration";
 import RevealAchievementCard, { type RevealPayload } from "@/components/profile/RevealAchievementCard";
 import NearbySpotBanner from "@/components/profile/NearbySpotBanner";
 import MemoryLane from "@/components/profile/MemoryLane";
+import StatCard from "@/components/profile/StatCard";
+import SavedCard from "@/components/profile/SavedCard";
 import { MILESTONES } from "@/lib/tiers";
 
 type PostRow = {
@@ -46,132 +46,6 @@ function prettifySlug(slug: string) {
   return slug.replace(/-\d{4}$/, "").replace(/-/g, " ");
 }
 
-type SavedItem = {
-  slug: string;
-  label: string;
-  href: string;
-  accent: "amber" | "teal";
-  icon: React.ComponentType<{ className?: string }>;
-  onUnsave?: (s: string) => void;
-  query?: string;
-  imageUrl?: string;
-  imageFit?: "cover" | "poster";
-};
-
-function SavedCard({ item, index }: { item: SavedItem; index: number }) {
-  const Icon = item.icon;
-  const accentBg = item.accent === "amber" ? "bg-amber/15" : "bg-teal/15";
-  const accentText = item.accent === "amber" ? "text-amber" : "text-teal";
-  const [image, setImage] = useState<string | null>(item.imageUrl || null);
-  const [status, setStatus] = useState<"loading" | "loaded" | "error">("loading");
-
-  useEffect(() => {
-    if (item.imageUrl) {
-      setImage(item.imageUrl);
-      setStatus("loading");
-      return;
-    }
-    let cancelled = false;
-    const q = (item.query || item.label).trim();
-    if (!q) {
-      setStatus("error");
-      return;
-    }
-    fetchPexelsImage(q)
-      .then((url) => {
-        if (cancelled) return;
-        if (url) {
-          setImage(url);
-          setStatus("loading");
-        } else {
-          setStatus("error");
-        }
-      })
-      .catch(() => {
-        if (!cancelled) setStatus("error");
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [item.query, item.label, item.imageUrl]);
-
-  const showImage = image && status !== "error";
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: Math.min(index * 0.02, 0.3) }}
-      className="group relative rounded-2xl border border-border/60 aspect-square overflow-hidden hover:border-amber/40 hover:-translate-y-0.5 transition-all bg-card/30"
-    >
-      {status === "loading" && (
-        <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted/40 via-muted/20 to-muted/40" />
-      )}
-
-      {!showImage && (
-        <div
-          className={`absolute inset-0 flex items-center justify-center ${
-            item.accent === "amber"
-              ? "bg-gradient-to-br from-amber/20 via-background to-background"
-              : "bg-gradient-to-br from-teal/20 via-background to-background"
-          }`}
-          aria-hidden
-        >
-          <Icon className={`w-12 h-12 ${accentText} opacity-30`} />
-        </div>
-      )}
-
-      {showImage && item.imageFit === "poster" && (
-        <img
-          src={image!}
-          alt=""
-          aria-hidden
-          className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-60"
-          onError={() => setStatus("error")}
-        />
-      )}
-      {showImage && (
-        <img
-          src={image!}
-          alt={item.label}
-          loading="lazy"
-          onLoad={() => setStatus("loaded")}
-          onError={() => setStatus("error")}
-          className={`absolute inset-0 w-full h-full ${
-            item.imageFit === "poster" ? "object-contain" : "object-cover"
-          } group-hover:scale-[1.04] transition-transform duration-500 ${
-            status === "loaded" ? "opacity-100" : "opacity-0"
-          }`}
-        />
-      )}
-      <div className="absolute inset-0 bg-gradient-to-t from-background/95 via-background/40 to-transparent" />
-      <Link to={item.href} className="absolute inset-0 z-10" aria-label={item.label} />
-
-      <div className={`absolute top-3 left-3 z-10 w-9 h-9 rounded-xl ${accentBg} ${accentText} backdrop-blur flex items-center justify-center border border-border/40`}>
-        <Icon className="w-4 h-4" />
-      </div>
-
-      <div className="absolute inset-x-0 bottom-0 z-10 p-4 space-y-1">
-        <span className="block text-sm font-medium text-foreground capitalize leading-snug line-clamp-2 group-hover:text-amber transition-colors">
-          {item.label}
-        </span>
-        <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
-          {item.accent === "amber" ? "Saved" : "Visited"}
-        </span>
-      </div>
-
-      {item.onUnsave && (
-        <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); item.onUnsave!(item.slug); }}
-          className="absolute top-2.5 right-2.5 z-20 w-6 h-6 rounded-full bg-background/80 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all"
-          title="Remove"
-        >
-          <X className="w-3 h-3" />
-        </button>
-      )}
-    </motion.div>
-  );
-}
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState<Tab>("map");
@@ -499,7 +373,7 @@ export default function Profile() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-12">
+    <div className="min-h-screen bg-background dark:bg-black pb-24 md:pb-12">
       <Seo
         title={`${displayName} (@${username}) — Memory Map`}
         description={`Filming locations, saved spots, and cinema journeys from ${displayName} on Sarevista.`}
@@ -536,7 +410,7 @@ export default function Profile() {
               {displayName}
             </h1>
             <div className="flex items-center justify-center gap-2 flex-wrap">
-              <p className="font-mono text-[11px] sm:text-sm text-muted-foreground tracking-wider">
+              <p className="font-serif italic text-base sm:text-lg text-amber/90 tracking-tight">
                 @{username}
               </p>
               <TierBadge count={visitedSpotSlugs.length} />
@@ -611,26 +485,19 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
           {/* Stats */}
           <div className="md:col-span-8 grid grid-cols-4 gap-2 sm:gap-4">
-            {stats.map((stat) => (
-              <button
+            {stats.map((stat, i) => (
+              <StatCard
                 key={stat.label}
-                type="button"
-                aria-label={stat.label}
-                title={stat.label}
+                label={stat.label}
+                value={stat.value}
+                color={stat.color}
+                delay={i * 0.08}
                 onClick={() => {
                   if (!stat.jump) return;
                   setActiveTab(stat.jump.tab);
                   if (stat.jump.filter) setSavedFilter(stat.jump.filter);
                 }}
-                className="bg-card/40 border border-border/60 px-2 sm:px-4 py-2.5 sm:py-5 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 hover:border-amber/30 transition-all active:scale-[0.97] group"
-              >
-                <span className={`font-serif text-xl sm:text-4xl leading-none ${stat.color}`}>
-                  {stat.value}
-                </span>
-                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.14em] sm:tracking-[0.18em] text-muted-foreground">
-                  {stat.label}
-                </span>
-              </button>
+              />
             ))}
           </div>
 
@@ -681,8 +548,8 @@ export default function Profile() {
 
         {/* Tabs */}
         <div>
-          <nav className="flex justify-center border-b border-border">
-            <div className="flex gap-2 sm:gap-6 overflow-x-auto no-scrollbar pb-px">
+          <nav className="flex justify-center border-b border-white/[0.06]">
+            <div className="flex gap-1 sm:gap-2 overflow-x-auto no-scrollbar pb-px">
               {tabs.map((tab) => {
                 const active = activeTab === tab.id;
                 return (
@@ -692,13 +559,28 @@ export default function Profile() {
                     onClick={() => setActiveTab(tab.id)}
                     aria-label={tab.label}
                     title={tab.label}
-                    className={`relative px-3 sm:px-4 pb-3.5 pt-1 text-xs sm:text-sm font-medium transition-colors whitespace-nowrap flex items-center gap-2 ${
-                      active ? "text-amber" : "text-muted-foreground hover:text-foreground"
+                    className={`relative px-4 sm:px-5 pb-3.5 pt-2 text-xs sm:text-sm font-medium whitespace-nowrap flex items-center gap-2 transition-colors ${
+                      active ? "text-amber" : "text-white/50 hover:text-white"
                     }`}
                   >
-                    <tab.icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                    {active && <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-amber rounded-full" />}
+                    {active && (
+                      <motion.span
+                        layoutId="activeTabIndicator"
+                        className="absolute inset-x-2 inset-y-1 rounded-full bg-amber/10 border border-amber/30 shadow-[0_0_20px_-4px_rgba(255,184,0,0.5)]"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    {active && (
+                      <motion.span
+                        layoutId="activeTabBar"
+                        className="absolute -bottom-px left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-amber/0 via-amber to-amber/0"
+                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative flex items-center gap-2">
+                      <tab.icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </span>
                   </button>
                 );
               })}
@@ -723,21 +605,39 @@ export default function Profile() {
                     {visitedMapPins.length} locations · {visitedCountriesCount} countries
                   </span>
                   {visitedSpotsData.length > 0 && (
-                    <button
+                    <motion.button
                       onClick={() => setMemoryLaneOpen(true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber text-black text-xs font-medium hover:brightness-105 transition shadow-[0_0_20px_rgba(244,199,123,0.25)]"
+                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1.03 }}
+                      animate={{
+                        boxShadow: [
+                          "0 0 0 0 rgba(255,184,0,0.55), 0 0 24px 0 rgba(255,184,0,0.35)",
+                          "0 0 0 10px rgba(255,184,0,0), 0 0 40px 4px rgba(255,184,0,0.55)",
+                          "0 0 0 0 rgba(255,184,0,0.55), 0 0 24px 0 rgba(255,184,0,0.35)",
+                        ],
+                      }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-gradient-to-r from-amber via-[#FFB800] to-amber text-black text-xs font-semibold tracking-wide"
                     >
                       <Film className="w-3.5 h-3.5" />
                       Replay My Journey
-                    </button>
+                    </motion.button>
                   )}
                 </div>
-                <FogOfWarMap
-                  pins={visitedMapPins}
-                  visitedCountries={visitedSpotsData.map((s) => s.country).filter(Boolean) as string[]}
-                  focusPin={focusPin}
-                  className="h-[420px] sm:h-[520px] rounded-2xl overflow-hidden border border-border"
-                />
+                <motion.div
+                  initial={{ scale: 0.95, opacity: 0 }}
+                  whileInView={{ scale: 1, opacity: 1 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ type: "spring", stiffness: 120, damping: 18 }}
+                  className="rounded-2xl overflow-hidden border border-white/[0.06] shadow-[0_20px_60px_-24px_rgba(0,0,0,0.8)]"
+                >
+                  <FogOfWarMap
+                    pins={visitedMapPins}
+                    visitedCountries={visitedSpotsData.map((s) => s.country).filter(Boolean) as string[]}
+                    focusPin={focusPin}
+                    className="h-[420px] sm:h-[520px]"
+                  />
+                </motion.div>
                 {visitedSpotsLoading ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {Array.from({ length: 6 }).map((_, i) => (
