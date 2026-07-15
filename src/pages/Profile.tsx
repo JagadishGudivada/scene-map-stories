@@ -485,26 +485,19 @@ export default function Profile() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
           {/* Stats */}
           <div className="md:col-span-8 grid grid-cols-4 gap-2 sm:gap-4">
-            {stats.map((stat) => (
-              <button
+            {stats.map((stat, i) => (
+              <StatCard
                 key={stat.label}
-                type="button"
-                aria-label={stat.label}
-                title={stat.label}
+                label={stat.label}
+                value={stat.value}
+                color={stat.color}
+                delay={i * 0.08}
                 onClick={() => {
                   if (!stat.jump) return;
                   setActiveTab(stat.jump.tab);
                   if (stat.jump.filter) setSavedFilter(stat.jump.filter);
                 }}
-                className="bg-card/40 border border-border/60 px-2 sm:px-4 py-2.5 sm:py-5 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 hover:border-amber/30 transition-all active:scale-[0.97] group"
-              >
-                <span className={`font-serif text-xl sm:text-4xl leading-none ${stat.color}`}>
-                  {stat.value}
-                </span>
-                <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.14em] sm:tracking-[0.18em] text-muted-foreground">
-                  {stat.label}
-                </span>
-              </button>
+              />
             ))}
           </div>
 
