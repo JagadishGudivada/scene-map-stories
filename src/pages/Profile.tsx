@@ -629,7 +629,7 @@ export default function Profile() {
                   whileInView={{ scale: 1, opacity: 1 }}
                   viewport={{ once: true, margin: "-80px" }}
                   transition={{ type: "spring", stiffness: 120, damping: 18 }}
-                  className="rounded-2xl overflow-hidden border border-white/[0.06] shadow-[0_20px_60px_-24px_rgba(0,0,0,0.8)]"
+                  className="rounded-2xl overflow-hidden border border-border dark:border-white/[0.06] shadow-[0_20px_60px_-24px_rgba(0,0,0,0.8)]"
                 >
                   <FogOfWarMap
                     pins={visitedMapPins}
