@@ -33,7 +33,7 @@ export default function StatCard({ label, value, color = "text-amber", delay = 0
       transition={{ delay, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       whileHover={{ scale: 1.03, y: -2 }}
       whileTap={{ scale: 0.97 }}
-      className="relative overflow-hidden bg-[#121212]/70 dark:bg-[#121212]/70 border border-white/[0.06] px-2 sm:px-4 py-3 sm:py-6 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 backdrop-blur-xl group shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)]"
+      className="relative overflow-hidden bg-card/80 dark:bg-[#121212]/70 border border-border dark:border-white/[0.06] px-2 sm:px-4 py-3 sm:py-6 rounded-2xl flex flex-col items-center justify-center gap-0.5 sm:gap-1.5 backdrop-blur-xl group shadow-[0_8px_32px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_-12px_rgba(0,0,0,0.6)]"
     >
       {/* Glass reflection */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/[0.06] to-transparent" aria-hidden />
@@ -46,7 +46,7 @@ export default function StatCard({ label, value, color = "text-amber", delay = 0
       >
         <motion.span>{rounded}</motion.span>
       </motion.span>
-      <span className="relative font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-white/50">
+      <span className="relative font-mono text-[9px] sm:text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
         {label}
       </span>
     </motion.button>
