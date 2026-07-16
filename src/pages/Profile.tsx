@@ -548,7 +548,7 @@ export default function Profile() {
 
         {/* Tabs */}
         <div>
-          <nav className="flex justify-center border-b border-white/[0.06]">
+          <nav className="flex justify-center border-b border-border dark:border-white/[0.06]">
             <div className="flex gap-1 sm:gap-2 overflow-x-auto no-scrollbar pb-px">
               {tabs.map((tab) => {
                 const active = activeTab === tab.id;
@@ -560,7 +560,7 @@ export default function Profile() {
                     aria-label={tab.label}
                     title={tab.label}
                     className={`relative px-4 sm:px-5 pb-3.5 pt-2 text-xs sm:text-sm font-medium whitespace-nowrap flex items-center gap-2 transition-colors ${
-                      active ? "text-amber" : "text-white/50 hover:text-white"
+                      active ? "text-amber" : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     {active && (
