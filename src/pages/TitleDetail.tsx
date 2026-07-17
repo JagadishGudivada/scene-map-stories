@@ -169,11 +169,17 @@ export default function TitleDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const navState = useLocation().state as
-    | { title?: string; year?: number; type?: string; creator?: string; locationCount?: number }
+    | { title?: string; year?: number; type?: string; creator?: string; locationCount?: number; tmdb_id?: number }
     | null;
 
   const mockTitle = useMemo(
-    () => mockTitles.find((t) => slugify(t.title, t.year) === slug),
+    () => {
+      const legacy = slug?.replace(/-(movie|series|book)$/, "");
+      return mockTitles.find((t) => {
+        const base = slugify(t.title, t.year);
+        return base === slug || base === legacy;
+      });
+    },
     [slug]
   );
 
