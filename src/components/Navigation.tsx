@@ -67,9 +67,9 @@ export default function Navigation() {
     clearResults();
   };
 
-  const handleTitleClick = (title: string, year: number, type?: string, creator?: string) => {
+  const handleTitleClick = (title: string, year: number, type?: string, creator?: string, tmdb_id?: number) => {
     closeSearch();
-    navigate(`/title/${slugifyTitle(title, year)}`, { state: { title, year, type, creator } });
+    navigate(`/title/${slugifyTitle(title, year, type)}`, { state: { title, year, type, creator, tmdb_id } });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,7 +78,7 @@ export default function Navigation() {
     // If we have results, jump to the top one; else just close.
     if (aiResults.length > 0) {
       const top = aiResults[0];
-      handleTitleClick(top.title, top.year);
+      handleTitleClick(top.title, top.year, top.type, top.creator, top.tmdb_id);
     }
   };
 
