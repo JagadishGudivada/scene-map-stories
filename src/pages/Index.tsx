@@ -124,11 +124,11 @@ export default function Index() {
     if (weeklyTitles.length === 0) return [];
 
     const recentCountBySlug = new Map(
-      recentTitles.map((title) => [slugifyTitle(title.title, title.year), title.locationCount])
+      recentTitles.map((title) => [slugifyTitle(title.title, title.year, title.type), title.locationCount])
     );
 
     return weeklyTitles.map((title) => {
-      const overrideCount = recentCountBySlug.get(slugifyTitle(title.title, title.year));
+      const overrideCount = recentCountBySlug.get(slugifyTitle(title.title, title.year, title.type));
       if (typeof overrideCount !== "number" || overrideCount <= 0) return title;
       return { ...title, locationCount: overrideCount };
     });
