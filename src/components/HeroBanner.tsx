@@ -25,9 +25,7 @@ type HeroSlide = {
   hookLine: string;
 };
 
-function slugifyTitle(title: string, year: number) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "").replace(/^-+/, "")}-${year}`;
-}
+import { slugifyTitle } from "@/hooks/useAITitleSearch";
 
 // Curated hook lines by title. Falls back to the location-based template.
 const HOOK_LINES: Record<string, string> = {
@@ -203,7 +201,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
                 onClick={() => {
-                  navigate(`/title/${slugifyTitle(slide.title, slide.year)}`, {
+                  navigate(`/title/${slugifyTitle(slide.title, slide.year, slide.type)}`, {
                     state: {
                       title: slide.title,
                       year: slide.year,
@@ -218,7 +216,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               </button>
               <button
                 onClick={() => {
-                  navigate(`/title/${slugifyTitle(slide.title, slide.year)}`, {
+                  navigate(`/title/${slugifyTitle(slide.title, slide.year, slide.type)}`, {
                     state: {
                       title: slide.title,
                       year: slide.year,

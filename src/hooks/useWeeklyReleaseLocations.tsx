@@ -145,7 +145,7 @@ export function useWeeklyReleaseLocations() {
         };
 
         const weeklyTitles = titles.slice(0, 8);
-        const slugs = weeklyTitles.map((t) => slugifyTitle(t.title, t.year));
+        const slugs = weeklyTitles.map((t) => slugifyTitle(t.title, t.year, t.type));
         const expectedTypeBySlug = new Map(slugs.map((slug, index) => [slug, weeklyTitles[index].type]));
 
         let weeklyRows: TitleRow[] = [];

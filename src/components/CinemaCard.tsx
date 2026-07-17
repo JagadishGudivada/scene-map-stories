@@ -4,9 +4,7 @@ import { motion } from "framer-motion";
 import { Bookmark, MapPin, Star } from "lucide-react";
 import type { Title } from "@/lib/mockData";
 
-function slugify(title: string, year: number) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
-}
+import { slugifyTitle as slugify } from "@/hooks/useAITitleSearch";
 
 interface CinemaCardProps {
   title: Title;
@@ -51,7 +49,7 @@ export default function CinemaCard({
   };
 
   return (
-    <Link to={`/title/${slugify(title.title, title.year)}`}>
+    <Link to={`/title/${slugify(title.title, title.year, title.type)}`}>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}

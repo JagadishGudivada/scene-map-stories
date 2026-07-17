@@ -67,9 +67,9 @@ export default function Navigation() {
     clearResults();
   };
 
-  const handleTitleClick = (title: string, year: number, type?: string, creator?: string) => {
+  const handleTitleClick = (title: string, year: number, type?: string, creator?: string, tmdb_id?: number) => {
     closeSearch();
-    navigate(`/title/${slugifyTitle(title, year)}`, { state: { title, year, type, creator } });
+    navigate(`/title/${slugifyTitle(title, year, type)}`, { state: { title, year, type, creator, tmdb_id } });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -78,7 +78,7 @@ export default function Navigation() {
     // If we have results, jump to the top one; else just close.
     if (aiResults.length > 0) {
       const top = aiResults[0];
-      handleTitleClick(top.title, top.year);
+      handleTitleClick(top.title, top.year, top.type, top.creator, top.tmdb_id);
     }
   };
 
@@ -207,7 +207,7 @@ export default function Navigation() {
                             <button
                               key={`${t.title}-${t.year}-${i}`}
                               type="button"
-                              onClick={() => handleTitleClick(t.title, t.year, t.type, t.creator)}
+                              onClick={() => handleTitleClick(t.title, t.year, t.type, t.creator, t.tmdb_id)}
                               className="w-full flex items-start gap-3 px-3 py-2.5 hover:bg-muted/50 transition-colors text-left border-b border-border/50 last:border-b-0"
                             >
                               <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-amber/10 text-amber border border-amber/20">

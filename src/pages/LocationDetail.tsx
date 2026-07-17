@@ -146,8 +146,10 @@ function mergeLocationData(prev: any, patch: any, slug?: string) {
   };
 }
 
-function slugifyTitle(title: string, year: number) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "")}-${year}`;
+function slugifyTitle(title: string, year: number, type?: string) {
+  const base = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "")}-${year}`;
+  const suffix = type === "Series" ? "series" : type === "Book" ? "book" : type === "Movie" ? "movie" : "";
+  return suffix ? `${base}-${suffix}` : base;
 }
 
 export default function LocationDetail() {
@@ -918,7 +920,7 @@ export default function LocationDetail() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
               onClick={() =>
-                navigate(`/title/${slugifyTitle(title.title, title.year)}`, {
+                navigate(`/title/${slugifyTitle(title.title, title.year, title.type)}`, {
                   state: { title: title.title, year: title.year, type: title.type },
                 })
               }

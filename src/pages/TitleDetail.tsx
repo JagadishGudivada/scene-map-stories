@@ -63,8 +63,10 @@ function getGenreIcon(label: string) {
   return imdbGenreIconMap[normalizeGenreLabel(label)] || "🎬";
 }
 
-function slugify(title: string, year: number) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
+function slugify(title: string, year: number, type?: string) {
+  const base = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
+  const suffix = type === "Series" ? "series" : type === "Book" ? "book" : type === "Movie" ? "movie" : "";
+  return suffix ? `${base}-${suffix}` : base;
 }
 
 type AILocation = { label: string; lat: number; lng: number; description?: string };
@@ -167,11 +169,17 @@ export default function TitleDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const navState = useLocation().state as
-    | { title?: string; year?: number; type?: string; creator?: string; locationCount?: number }
+    | { title?: string; year?: number; type?: string; creator?: string; locationCount?: number; tmdb_id?: number }
     | null;
 
   const mockTitle = useMemo(
-    () => mockTitles.find((t) => slugify(t.title, t.year) === slug),
+    () => {
+      const legacy = slug?.replace(/-(movie|series|book)$/, "");
+      return mockTitles.find((t) => {
+        const base = slugify(t.title, t.year);
+        return base === slug || base === legacy;
+      });
+    },
     [slug]
   );
 
@@ -192,7 +200,7 @@ export default function TitleDetail() {
   }, [slug]);
 
   const openRelatedTitle = (t: any) => {
-    navigate(`/title/${slugify(t.title, t.year)}`, {
+    navigate(`/title/${slugify(t.title, t.year, t.type)}`, {
       state: {
         title: t.title,
         year: t.year,
@@ -275,7 +283,7 @@ export default function TitleDetail() {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
           },
-          body: JSON.stringify({ slug, title: navState?.title, year: navState?.year, creator: navState?.creator, type: navState?.type }),
+          body: JSON.stringify({ slug, title: navState?.title, year: navState?.year, creator: navState?.creator, type: navState?.type, tmdb_id: navState?.tmdb_id }),
         });
 
         if (!response.ok) {
