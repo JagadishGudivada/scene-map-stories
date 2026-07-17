@@ -283,7 +283,7 @@ export default function TitleDetail() {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
           },
-          body: JSON.stringify({ slug, title: navState?.title, year: navState?.year, creator: navState?.creator, type: navState?.type }),
+          body: JSON.stringify({ slug, title: navState?.title, year: navState?.year, creator: navState?.creator, type: navState?.type, tmdb_id: navState?.tmdb_id }),
         });
 
         if (!response.ok) {
