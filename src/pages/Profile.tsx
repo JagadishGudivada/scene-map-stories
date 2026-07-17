@@ -4,10 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Bookmark, CheckCircle2, Heart, Grid3X3, List, Users, Settings, Share2, X, Pencil, Plus, Globe, Trash2, Sparkles, Film } from "lucide-react";
 import EditProfileDialog, { type ProfileRow } from "@/components/EditProfileDialog";
 import CreatePostDialog from "@/components/CreatePostDialog";
-import PassportStampBadge from "@/components/PassportStampBadge";
 import { Button } from "@/components/ui/button";
 import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots, useAllWatchedTitles } from "@/hooks/useSaved";
-import { usePassportBadges } from "@/hooks/usePassportBadges";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -319,7 +317,6 @@ export default function Profile() {
     () => new Set(visitedSpotsData.map((spot) => spot.country)).size,
     [visitedSpotsData]
   );
-  const { badges: passportBadges } = usePassportBadges(visitedSpots, authUser?.id);
 
   const handleUnsaveTitle = async (titleSlug: string) => {
     if (!authUser) return;
@@ -481,69 +478,22 @@ export default function Profile() {
           </div>
         </header>
 
-        {/* Stats + Passport bento */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 sm:gap-6">
-          {/* Stats */}
-          <div className="md:col-span-8 grid grid-cols-4 gap-2 sm:gap-4">
-            {stats.map((stat, i) => (
-              <StatCard
-                key={stat.label}
-                label={stat.label}
-                value={stat.value}
-                color={stat.color}
-                delay={i * 0.08}
-                onClick={() => {
-                  if (!stat.jump) return;
-                  setActiveTab(stat.jump.tab);
-                  if (stat.jump.filter) setSavedFilter(stat.jump.filter);
-                }}
-              />
-            ))}
-          </div>
-
-          {/* Passport */}
-          <section className="hidden md:block md:col-span-4 relative bg-card/40 border border-border/60 rounded-2xl p-5 overflow-hidden group">
-            <div className="absolute -top-12 -right-12 w-40 h-40 bg-amber/10 blur-3xl rounded-full group-hover:bg-amber/15 transition-colors" aria-hidden />
-            <div className="relative flex items-start justify-between gap-3 mb-4">
-              <div className="space-y-0.5">
-                <h2 className="font-serif text-lg text-foreground leading-tight">Passport Stamps</h2>
-                <p className="text-[11px] text-muted-foreground">Unlocked through site visits</p>
-              </div>
-              <span className="px-2 py-1 rounded bg-amber/10 text-amber font-mono text-[10px] font-bold uppercase tracking-tighter whitespace-nowrap">
-                {passportBadges.length} earned
-              </span>
-            </div>
-
-            {visitedSpotsLoading ? (
-              <div className="grid grid-cols-5 gap-2.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="aspect-square rounded-full bg-muted/40 animate-pulse" />
-                ))}
-              </div>
-            ) : passportBadges.length === 0 ? (
-              <div className="grid grid-cols-5 gap-2.5">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="aspect-square rounded-full border border-dashed border-border/80" />
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
-                {passportBadges.slice(0, 10).map((badge) => (
-                  <div key={badge.id} className="flex flex-col items-center text-center gap-1">
-                    <PassportStampBadge
-                      badge={badge}
-                      country={badge.country}
-                      size="sm"
-                      generateOnMiss={isOwnProfile}
-                    />
-                    <p className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground truncate w-full">
-                      {badge.country}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-2 sm:gap-4">
+          {stats.map((stat, i) => (
+            <StatCard
+              key={stat.label}
+              label={stat.label}
+              value={stat.value}
+              color={stat.color}
+              delay={i * 0.08}
+              onClick={() => {
+                if (!stat.jump) return;
+                setActiveTab(stat.jump.tab);
+                if (stat.jump.filter) setSavedFilter(stat.jump.filter);
+              }}
+            />
+          ))}
         </div>
 
         {/* Tabs */}

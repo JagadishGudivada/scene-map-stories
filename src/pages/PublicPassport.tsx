@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Share2, Sparkles, Lock, Globe, ArrowRight, X } from "lucide-react";
+import { MapPin, Share2, Lock, Globe, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -32,16 +31,6 @@ export default function PublicPassport() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [visited, setVisited] = useState<VisitedSpotRow[]>([]);
-  const [showCta, setShowCta] = useState(false);
-  const [ctaDismissed, setCtaDismissed] = useState(false);
-
-  // Soft signup CTA for anonymous viewers — fires after 7s on the page.
-  useEffect(() => {
-    if (authUser) return;
-    if (ctaDismissed) return;
-    const t = setTimeout(() => setShowCta(true), 7000);
-    return () => clearTimeout(t);
-  }, [authUser, ctaDismissed]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,9 +114,6 @@ export default function PublicPassport() {
         <Lock className="w-10 h-10 text-muted-foreground mb-4" />
         <h1 className="font-serif text-3xl text-foreground mb-2">Passport not found</h1>
         <p className="text-muted-foreground text-sm mb-6">No traveler with this handle yet.</p>
-        <Link to="/auth" className="inline-flex items-center gap-2 h-10 px-5 rounded-full bg-gradient-amber text-amber font-semibold shadow-amber">
-          Claim your handle <ArrowRight className="w-4 h-4" />
-        </Link>
       </div>
     );
   }
@@ -193,21 +179,14 @@ export default function PublicPassport() {
             >
               <Share2 className="w-4 h-4 text-amber" /> Share passport
             </button>
-            {isOwner ? (
+            {isOwner && (
               <Link
                 to={`/u/${profile.username}`}
                 className="h-10 px-5 rounded-full bg-gradient-amber text-amber font-semibold flex items-center gap-2 shadow-amber"
               >
                 Open dashboard <ArrowRight className="w-4 h-4" />
               </Link>
-            ) : !authUser ? (
-              <Link
-                to="/auth"
-                className="h-10 px-5 rounded-full bg-gradient-amber text-amber font-semibold flex items-center gap-2 shadow-amber shimmer-sweep"
-              >
-                <Sparkles className="w-4 h-4" /> Start your passport
-              </Link>
-            ) : null}
+            )}
           </div>
         </header>
 
@@ -286,66 +265,9 @@ export default function PublicPassport() {
                 </div>
               </section>
             )}
-
-            {/* Closing nudge */}
-            {!authUser && (
-              <section className="mt-16 rounded-3xl border border-border/60 bg-card/40 p-8 sm:p-10 text-center overflow-hidden relative">
-                <div className="absolute -top-16 -right-16 w-48 h-48 bg-amber/15 blur-3xl rounded-full" aria-hidden />
-                <h3 className="font-serif text-2xl sm:text-3xl text-foreground mb-2">Start your own cinematic passport</h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto mb-5">
-                  Track every filming spot you've stood at. Earn country stamps. Share a passport like {displayName}'s.
-                </p>
-                <Link
-                  to="/auth"
-                  className="inline-flex items-center gap-2 h-11 px-6 rounded-full bg-gradient-amber text-amber font-semibold shadow-amber shimmer-sweep"
-                >
-                  <Sparkles className="w-4 h-4" /> Claim your handle
-                  <ArrowRight className="w-4 h-4" />
-                </Link>
-              </section>
-            )}
           </>
         )}
       </div>
-
-      {/* Soft signup CTA — floating */}
-      <AnimatePresence>
-        {showCta && !authUser && (
-          <motion.div
-            initial={{ y: 80, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 80, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 220, damping: 24 }}
-            className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-sm z-50"
-          >
-            <div className="rounded-2xl glass border border-amber/30 shadow-float p-4 flex items-start gap-3 backdrop-blur-xl bg-background/85">
-              <div className="w-9 h-9 rounded-xl bg-amber/15 text-amber flex items-center justify-center shrink-0">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-foreground leading-snug">Start your own passport</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Stamp every film spot you've stood at — free.</p>
-                <Link
-                  to="/auth"
-                  className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-amber hover:underline"
-                >
-                  Sign up free <ArrowRight className="w-3 h-3" />
-                </Link>
-              </div>
-              <button
-                onClick={() => {
-                  setShowCta(false);
-                  setCtaDismissed(true);
-                }}
-                className="text-muted-foreground hover:text-foreground transition-colors"
-                aria-label="Dismiss"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
