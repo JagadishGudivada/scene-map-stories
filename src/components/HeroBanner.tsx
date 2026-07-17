@@ -25,9 +25,7 @@ type HeroSlide = {
   hookLine: string;
 };
 
-function slugifyTitle(title: string, year: number) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "").replace(/^-+/, "")}-${year}`;
-}
+import { slugifyTitle } from "@/hooks/useAITitleSearch";
 
 // Curated hook lines by title. Falls back to the location-based template.
 const HOOK_LINES: Record<string, string> = {
