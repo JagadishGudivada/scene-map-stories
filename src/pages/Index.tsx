@@ -310,7 +310,7 @@ export default function Index() {
                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors text-left"
                           onClick={() => {
                             setShowAIDropdown(false);
-                            navigate(`/title/${slugifyTitle(t.title, t.year)}`, { state: { title: t.title, year: t.year, type: t.type, creator: t.creator } });
+                            navigate(`/title/${slugifyTitle(t.title, t.year, t.type)}`, { state: { title: t.title, year: t.year, type: t.type, creator: t.creator, tmdb_id: t.tmdb_id } });
                           }}
                         >
                           <Film className="w-4 h-4 text-amber shrink-0" />
