@@ -63,8 +63,10 @@ function getGenreIcon(label: string) {
   return imdbGenreIconMap[normalizeGenreLabel(label)] || "🎬";
 }
 
-function slugify(title: string, year: number) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
+function slugify(title: string, year: number, type?: string) {
+  const base = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "")}-${year}`;
+  const suffix = type === "Series" ? "series" : type === "Book" ? "book" : type === "Movie" ? "movie" : "";
+  return suffix ? `${base}-${suffix}` : base;
 }
 
 type AILocation = { label: string; lat: number; lng: number; description?: string };
