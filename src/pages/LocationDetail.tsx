@@ -918,7 +918,7 @@ export default function LocationDetail() {
               viewport={{ once: true, margin: "-50px" }}
               transition={{ delay: i * 0.08, duration: 0.5 }}
               onClick={() =>
-                navigate(`/title/${slugifyTitle(title.title, title.year)}`, {
+                navigate(`/title/${slugifyTitle(title.title, title.year, title.type)}`, {
                   state: { title: title.title, year: title.year, type: title.type },
                 })
               }
