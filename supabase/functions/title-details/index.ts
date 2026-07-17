@@ -241,6 +241,9 @@ serve(async (req) => {
         if (backdropImage) parsed.backdropImage = backdropImage;
       }
 
+      // Persist tmdb_id and slug-derived type so future reads are unambiguous.
+      if (typeof hintTmdbId === "number") parsed.tmdb_id = hintTmdbId;
+      if (slugType) parsed.type = slugType;
       upsertTitle(slug, parsed).catch(() => {});
 
       send("complete", parsed);
