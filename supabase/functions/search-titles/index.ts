@@ -49,6 +49,7 @@ async function tmdbMultiSearch(apiKey: string, query: string): Promise<TitleOut[
           title: String(r.title || r.name || "").trim(),
           year: y,
           type: r.media_type === "tv" ? "Series" : "Movie",
+          tmdb_id: typeof r.id === "number" ? r.id : undefined,
         } as TitleOut;
       })
       .filter((t) => t.title.length > 0);
