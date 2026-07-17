@@ -50,7 +50,7 @@ export default function TrendingRow({ titles }: TrendingRowProps) {
         {titles.map((title, i) => (
           <Link
             key={title.id}
-            to={`/title/${slugifyTitle(title.title, title.year)}`}
+            to={`/title/${slugifyTitle(title.title, title.year, title.type)}`}
             state={{
               title: title.title,
               year: title.year,
