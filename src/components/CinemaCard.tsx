@@ -49,7 +49,7 @@ export default function CinemaCard({
   };
 
   return (
-    <Link to={`/title/${slugify(title.title, title.year)}`}>
+    <Link to={`/title/${slugify(title.title, title.year, title.type)}`}>
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
