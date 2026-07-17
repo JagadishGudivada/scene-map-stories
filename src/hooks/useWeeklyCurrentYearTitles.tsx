@@ -104,7 +104,7 @@ function mapToTitleCard(result: TitleResult): Title {
   if (matched) {
     return {
       ...matched,
-      id: `weekly-${slugifyTitle(result.title, result.year)}`,
+      id: `weekly-${slugifyTitle(result.title, result.year, result.type)}`,
       year: result.year,
       type: result.type,
       coverImage: posterUrl || matched.coverImage,
@@ -127,7 +127,7 @@ function mapToTitleCard(result: TitleResult): Title {
   };
 
   return {
-    id: `weekly-${slugifyTitle(result.title, result.year)}`,
+    id: `weekly-${slugifyTitle(result.title, result.year, result.type)}`,
     title: result.title,
     year: result.year,
     type: result.type,
@@ -224,7 +224,7 @@ export function useWeeklyCurrentYearTitles() {
         }
 
         const mapped = selectedTitles.map((item) => mapToTitleCard(item));
-        const slugs = mapped.map((item) => slugifyTitle(item.title, item.year));
+        const slugs = mapped.map((item) => slugifyTitle(item.title, item.year, item.type));
 
         const countsBySlug = new Map<string, number>();
         if (slugs.length > 0) {
@@ -268,7 +268,7 @@ export function useWeeklyCurrentYearTitles() {
         }
 
         const normalized = mapped.map((item) => {
-          const override = countsBySlug.get(slugifyTitle(item.title, item.year));
+          const override = countsBySlug.get(slugifyTitle(item.title, item.year, item.type));
           if (typeof override !== "number") return item;
           return { ...item, locationCount: override };
         });
