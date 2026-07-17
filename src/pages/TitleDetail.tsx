@@ -194,7 +194,7 @@ export default function TitleDetail() {
   }, [slug]);
 
   const openRelatedTitle = (t: any) => {
-    navigate(`/title/${slugify(t.title, t.year)}`, {
+    navigate(`/title/${slugify(t.title, t.year, t.type)}`, {
       state: {
         title: t.title,
         year: t.year,
