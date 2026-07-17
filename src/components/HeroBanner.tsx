@@ -201,7 +201,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             <div className="flex flex-wrap items-center gap-2 sm:gap-3">
               <button
                 onClick={() => {
-                  navigate(`/title/${slugifyTitle(slide.title, slide.year)}`, {
+                  navigate(`/title/${slugifyTitle(slide.title, slide.year, slide.type)}`, {
                     state: {
                       title: slide.title,
                       year: slide.year,
@@ -216,7 +216,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               </button>
               <button
                 onClick={() => {
-                  navigate(`/title/${slugifyTitle(slide.title, slide.year)}`, {
+                  navigate(`/title/${slugifyTitle(slide.title, slide.year, slide.type)}`, {
                     state: {
                       title: slide.title,
                       year: slide.year,
