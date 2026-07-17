@@ -24,7 +24,7 @@ function resolveReasoningEffort(model: string, requested: string): "none" | "min
   return normalized as "none" | "minimal" | "low" | "medium" | "high";
 }
 
-type TitleOut = { title: string; year: number; type: "Movie" | "Series" | "Book"; creator?: string };
+type TitleOut = { title: string; year: number; type: "Movie" | "Series" | "Book"; creator?: string; tmdb_id?: number };
 
 async function tmdbMultiSearch(apiKey: string, query: string): Promise<TitleOut[]> {
   try {
