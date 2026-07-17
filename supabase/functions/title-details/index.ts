@@ -31,10 +31,17 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { slug, title: hintTitle, year: hintYear, creator: hintCreator, type: hintType } = await req.json();
+    const { slug, title: hintTitle, year: hintYear, creator: hintCreator, type: hintType, tmdb_id: hintTmdbId } = await req.json();
     if (!slug || typeof slug !== "string") {
       return json({ error: "slug required" }, 400);
     }
+
+    // If slug carries a type suffix (`-movie|-series|-book`), it is the source of truth.
+    const slugTypeMatch = slug.match(/-(movie|series|book)$/);
+    const slugType = slugTypeMatch
+      ? (slugTypeMatch[1] === "series" ? "Series" : slugTypeMatch[1] === "book" ? "Book" : "Movie")
+      : undefined;
+    const slugWithoutType = slugTypeMatch ? slug.slice(0, -slugTypeMatch[0].length) : slug;
 
     // Persistent table read-through (preferred)
     const stored = await getTitle(slug);
