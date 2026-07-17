@@ -63,6 +63,7 @@ export function useAITitleSearch() {
           year: Number(t.year),
           type: t.type === "Series" || t.type === "Book" ? t.type : "Movie",
           creator: t.creator || undefined,
+          tmdb_id: typeof t.tmdb_id === "number" ? t.tmdb_id : undefined,
         }));
         setResults(titles);
       } catch (e: any) {
