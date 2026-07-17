@@ -146,8 +146,10 @@ function mergeLocationData(prev: any, patch: any, slug?: string) {
   };
 }
 
-function slugifyTitle(title: string, year: number) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "")}-${year}`;
+function slugifyTitle(title: string, year: number, type?: string) {
+  const base = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+/, "").replace(/-+$/, "")}-${year}`;
+  const suffix = type === "Series" ? "series" : type === "Book" ? "book" : type === "Movie" ? "movie" : "";
+  return suffix ? `${base}-${suffix}` : base;
 }
 
 export default function LocationDetail() {
