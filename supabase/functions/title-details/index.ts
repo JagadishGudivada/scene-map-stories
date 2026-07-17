@@ -78,14 +78,15 @@ serve(async (req) => {
     // Reconstruct a human title from slug if no hint provided
     const slugTitle =
       hintTitle ||
-      slug
+      slugWithoutType
         .replace(/-(\d{4})$/, "")
         .split("-")
         .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
         .join(" ");
-    const slugYear = hintYear || Number(slug.match(/-(\d{4})$/)?.[1] || 0) || undefined;
+    const slugYear = hintYear || Number(slugWithoutType.match(/-(\d{4})$/)?.[1] || 0) || undefined;
 
-    const hintedType = normalizeTitleType(hintType);
+    // Slug type wins over hint (survives refresh/share); hint is fallback.
+    const hintedType = slugType || normalizeTitleType(hintType);
 
     const userPrompt = buildTitleScoutPrompt({
       title: slugTitle,
