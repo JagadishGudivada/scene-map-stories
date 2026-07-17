@@ -6,10 +6,30 @@ export type TitleResult = {
   year: number;
   type: "Movie" | "Series" | "Book";
   creator?: string;
+  tmdb_id?: number;
 };
 
-export function slugifyTitle(title: string, year: number) {
-  return `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "").replace(/^-+/, "")}-${year}`;
+const TYPE_SUFFIX: Record<string, string> = { Movie: "movie", Series: "series", Book: "book" };
+
+export function slugifyTitle(title: string, year: number, type?: string) {
+  const base = `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "").replace(/^-+/, "")}-${year}`;
+  const suffix = type ? TYPE_SUFFIX[type] : undefined;
+  return suffix ? `${base}-${suffix}` : base;
+}
+
+/** Parse a title slug into its parts. */
+export function parseTitleSlug(slug: string): { base: string; year?: number; type?: "Movie" | "Series" | "Book" } {
+  let s = slug;
+  let type: "Movie" | "Series" | "Book" | undefined;
+  const typeMatch = s.match(/-(movie|series|book)$/);
+  if (typeMatch) {
+    type = typeMatch[1] === "series" ? "Series" : typeMatch[1] === "book" ? "Book" : "Movie";
+    s = s.slice(0, -typeMatch[0].length);
+  }
+  const yearMatch = s.match(/-(\d{4})$/);
+  const year = yearMatch ? Number(yearMatch[1]) : undefined;
+  const base = yearMatch ? s.slice(0, -yearMatch[0].length) : s;
+  return { base, year, type };
 }
 
 export function useAITitleSearch() {
