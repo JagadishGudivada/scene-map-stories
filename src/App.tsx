@@ -23,6 +23,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SitePageRoute from "./pages/SitePageRoute";
 import NotFound from "./pages/NotFound";
 import PublicPassport from "./pages/PublicPassport";
+import TrailDetail from "./pages/TrailDetail";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ function AppRoutes() {
         <Route path="/spot/:slug" element={<FilmingSpotDetail />} />
         <Route path="/u/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/passport/:username" element={<PublicPassport />} />
+        <Route path="/trails/:id" element={<TrailDetail />} />
         <Route path="/auth" element={<Auth />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         {/* Footer / company pages */}
