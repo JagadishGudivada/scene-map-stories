@@ -8,6 +8,7 @@ import PostCard from "@/components/PostCard";
 import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import TrendyScreenSpots from "@/components/TrendyScreenSpots";
 import HowItWorks from "@/components/HowItWorks";
+import TrailsAndTours from "@/components/TrailsAndTours";
 import QuickFilterChips from "@/components/QuickFilterChips";
 import IconicLocations from "@/components/IconicLocations";
 import TrendingOnScreen from "@/components/TrendingOnScreen";
