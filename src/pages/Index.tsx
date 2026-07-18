@@ -597,6 +597,11 @@ export default function Index() {
                   <div className="mb-10 sm:mb-14">
                     <HowItWorks />
                   </div>
+
+                  {/* === TRAILS & TOURS === */}
+                  <div className="mb-10 sm:mb-14">
+                    <TrailsAndTours />
+                  </div>
                 </motion.div>
 
               ) : (
