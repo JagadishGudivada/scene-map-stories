@@ -2,20 +2,12 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { haversineKm } from "@/lib/geo";
 
 const DISMISS_KEY = "sarevista:nearby-dismissed";
 const RADIUS_KM = 8;
 
 type Nearby = { slug: string; name: string; city: string | null; country: string | null; distKm: number };
-
-function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number) {
-  const R = 6371;
-  const toRad = (v: number) => (v * Math.PI) / 180;
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-  const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(a));
-}
 
 export default function NearbySpotBanner() {
   const [nearby, setNearby] = useState<Nearby | null>(null);

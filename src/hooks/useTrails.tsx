@@ -1,225 +1,199 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  buildTrailById,
+  buildTrails,
+  kebabCityKey,
+  trailCityKeyFromId,
+  type LinkedSpot,
+  type RawTitleLocation,
+  type Trail,
+  type TrailStop,
+} from "@/lib/trails";
 
-export type TrailStop = {
-  slug: string;
-  name: string;
-  city: string | null;
-  country: string | null;
-  lat: number;
-  lng: number;
-  image: string | null;
-};
+export type { Trail, TrailStop };
 
-export type Trail = {
+const PAGE_SIZE = 1000;
+
+type TitleRow = {
   id: string;
-  name: string;
-  kind: "walking" | "drive";
-  stops: TrailStop[];
-  titleCount: number;
-  totalKm: number;
-  heroImage: string | null;
-  country: string | null;
+  slug: string;
+  title: string;
+  locations: unknown;
 };
 
-type LocRow = {
-  slug: string;
-  name: string;
+type TitleSpotRow = {
+  title_id: string;
+  spots: {
+    slug: string;
+    name: string;
+    city: string | null;
+    country: string | null;
+    lat: number | null;
+    lng: number | null;
+    image_url: string | null;
+  } | null;
+};
+
+type LocationImageRow = {
   city: string | null;
-  country: string | null;
-  lat: number | null;
-  lng: number | null;
   hero_image_url: string | null;
 };
 
-type TitleRow = { title: string; data: unknown };
-
-const R = 6371;
-const toRad = (n: number) => (n * Math.PI) / 180;
-function haversineKm(a: TrailStop, b: TrailStop) {
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const s =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
-  return 2 * R * Math.asin(Math.sqrt(s));
+function toNumberOrNull(v: unknown): number | null {
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
 }
 
-// Greedy nearest-neighbour ordering starting from the westernmost stop.
-function orderByProximity(stops: TrailStop[]): { ordered: TrailStop[]; totalKm: number } {
-  if (stops.length <= 1) return { ordered: stops, totalKm: 0 };
-  const remaining = [...stops];
-  let current = remaining.reduce((a, b) => (a.lng < b.lng ? a : b));
-  remaining.splice(remaining.indexOf(current), 1);
-  const ordered = [current];
-  let totalKm = 0;
-  while (remaining.length) {
-    let bestIdx = 0;
-    let bestD = Infinity;
-    for (let i = 0; i < remaining.length; i++) {
-      const d = haversineKm(current, remaining[i]);
-      if (d < bestD) {
-        bestD = d;
-        bestIdx = i;
-      }
-    }
-    totalKm += bestD;
-    current = remaining[bestIdx];
-    ordered.push(current);
-    remaining.splice(bestIdx, 1);
-  }
-  return { ordered, totalKm };
+function toStringOrNull(v: unknown): string | null {
+  return typeof v === "string" && v.trim() ? v : null;
 }
 
-// Cluster locations greedily: pick the point with the most neighbours within radiusKm,
-// take up to maxStops nearest, remove and repeat.
-function clusterByProximity(stops: TrailStop[], radiusKm: number, maxStops: number): TrailStop[][] {
-  const remaining = new Set(stops);
-  const clusters: TrailStop[][] = [];
-  while (remaining.size) {
-    const arr = [...remaining];
-    let seed = arr[0];
-    let seedNeighbours: TrailStop[] = [];
-    for (const p of arr) {
-      const neighbours = arr.filter((q) => q !== p && haversineKm(p, q) <= radiusKm);
-      if (neighbours.length > seedNeighbours.length) {
-        seed = p;
-        seedNeighbours = neighbours;
-      }
-    }
-    const withDist = seedNeighbours
-      .map((q) => ({ q, d: haversineKm(seed, q) }))
-      .sort((a, b) => a.d - b.d)
-      .slice(0, maxStops - 1)
-      .map((x) => x.q);
-    const cluster = [seed, ...withDist];
-    for (const p of cluster) remaining.delete(p);
-    clusters.push(cluster);
-  }
-  return clusters;
-}
-
-function extractCitiesFromTitleData(data: unknown): string[] {
-  if (!data || typeof data !== "object") return [];
-  const arr = (data as Record<string, unknown>).locations;
-  if (!Array.isArray(arr)) return [];
-  const out: string[] = [];
-  for (const loc of arr) {
-    if (loc && typeof loc === "object") {
-      const c = (loc as Record<string, unknown>).city;
-      if (typeof c === "string" && c.trim()) out.push(c.trim().toLowerCase());
-    }
+// titles.data->locations is untyped JSON written by AI enrichment — validate every field.
+function parseRawLocations(row: TitleRow): RawTitleLocation[] {
+  if (!Array.isArray(row.locations)) return [];
+  const out: RawTitleLocation[] = [];
+  for (const loc of row.locations) {
+    if (!loc || typeof loc !== "object") continue;
+    const rec = loc as Record<string, unknown>;
+    const label = toStringOrNull(rec.label);
+    if (!label) continue;
+    out.push({
+      titleId: row.id,
+      titleSlug: row.slug,
+      titleName: row.title,
+      label,
+      lat: toNumberOrNull(rec.lat),
+      lng: toNumberOrNull(rec.lng),
+      city: toStringOrNull(rec.city),
+      country: toStringOrNull(rec.country),
+    });
   }
   return out;
 }
 
-function slugifyTrail(s: string) {
-  return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+async function fetchAllPages<T>(
+  fetchPage: (from: number, to: number) => Promise<T[]>,
+): Promise<T[]> {
+  const all: T[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const page = await fetchPage(from, from + PAGE_SIZE - 1);
+    all.push(...page);
+    if (page.length < PAGE_SIZE) break;
+  }
+  return all;
 }
 
-export function useTrails(maxTrails = 4) {
-  const [trails, setTrails] = useState<Trail[]>([]);
-  const [loading, setLoading] = useState(true);
+type TrailSourceData = {
+  raw: RawTitleLocation[];
+  spots: LinkedSpot[];
+  /** City hero images from the locations table, keyed by kebab city key. */
+  cityImages: Record<string, string>;
+};
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
+async function fetchTrailSourceData(): Promise<TrailSourceData> {
+  const [titleRows, titleSpotRows, locationRows] = await Promise.all([
+    fetchAllPages<TitleRow>(async (from, to) => {
+      const { data, error } = await supabase
+        .from("titles")
+        .select("id, slug, title, locations:data->locations")
+        .order("id")
+        .range(from, to);
+      if (error) throw error;
+      return (data ?? []) as unknown as TitleRow[];
+    }),
+    fetchAllPages<TitleSpotRow>(async (from, to) => {
+      const { data, error } = await supabase
+        .from("title_spots")
+        .select("title_id, spots(slug, name, city, country, lat, lng, image_url)")
+        .order("id")
+        .range(from, to);
+      if (error) throw error;
+      return (data ?? []) as unknown as TitleSpotRow[];
+    }),
+    fetchAllPages<LocationImageRow>(async (from, to) => {
+      const { data, error } = await supabase
+        .from("locations")
+        .select("city, hero_image_url")
+        .not("city", "is", null)
+        .not("hero_image_url", "is", null)
+        .order("id")
+        .range(from, to);
+      if (error) throw error;
+      return (data ?? []) as LocationImageRow[];
+    }),
+  ]);
+
+  const raw = titleRows.flatMap(parseRawLocations);
+  const spots: LinkedSpot[] = [];
+  for (const row of titleSpotRows) {
+    const s = row.spots;
+    if (!s) continue;
+    spots.push({
+      titleId: row.title_id,
+      slug: s.slug,
+      name: s.name,
+      city: s.city,
+      country: s.country,
+      lat: s.lat,
+      lng: s.lng,
+      imageUrl: s.image_url,
+    });
+  }
+
+  const cityImages: Record<string, string> = {};
+  for (const row of locationRows) {
+    if (!row.city || !row.hero_image_url) continue;
+    const key = kebabCityKey(row.city);
+    if (key && !(key in cityImages)) cityImages[key] = row.hero_image_url;
+  }
+
+  return { raw, spots, cityImages };
+}
+
+/** Most stops resolve to no spot image; fall back to the city's hero image for the card. */
+function withHeroFallback(trail: Trail, cityImages: Record<string, string>): Trail {
+  if (trail.heroImage) return trail;
+  const key = trailCityKeyFromId(trail.id);
+  const image = key ? cityImages[key] : undefined;
+  return image ? { ...trail, heroImage: image } : trail;
+}
+
+function useTrailSourceData() {
+  return useQuery<TrailSourceData>({
+    queryKey: ["trails-source-data"],
+    queryFn: async () => {
       try {
-        const [{ data: locData }, { data: titleData }] = await Promise.all([
-          supabase
-            .from("locations")
-            .select("slug, name, city, country, lat, lng, hero_image_url")
-            .not("lat", "is", null)
-            .not("lng", "is", null),
-          supabase.from("titles").select("title, data").limit(1000),
-        ]);
-
-        const stops: TrailStop[] = ((locData ?? []) as LocRow[])
-          .filter((r) => r.lat != null && r.lng != null)
-          .map((r) => ({
-            slug: r.slug,
-            name: r.name,
-            city: r.city,
-            country: r.country,
-            lat: r.lat as number,
-            lng: r.lng as number,
-            image: r.hero_image_url,
-          }));
-
-        // Index titles by referenced city (lowercase).
-        const cityToTitles = new Map<string, Set<string>>();
-        for (const t of (titleData ?? []) as TitleRow[]) {
-          for (const c of extractCitiesFromTitleData(t.data)) {
-            let set = cityToTitles.get(c);
-            if (!set) {
-              set = new Set();
-              cityToTitles.set(c, set);
-            }
-            set.add(t.title);
-          }
-        }
-
-        // Cluster with a generous radius so we still get regional trails
-        // even when the DB is sparse.
-        const clusters = clusterByProximity(stops, 800, 15).filter((c) => c.length >= 2);
-
-        // Sort clusters by size, then by pairwise density.
-        clusters.sort((a, b) => b.length - a.length);
-
-        const built: Trail[] = clusters.slice(0, maxTrails).map((cluster, idx) => {
-          const { ordered, totalKm } = orderByProximity(cluster);
-          // Walking if the whole ordered path fits in ~12 km AND every leg is short.
-          const legs = ordered.slice(1).map((s, i) => haversineKm(ordered[i], s));
-          const maxLeg = legs.length ? Math.max(...legs) : 0;
-          const kind: Trail["kind"] =
-            totalKm <= 12 && maxLeg <= 3 ? "walking" : "drive";
-
-          const titles = new Set<string>();
-          for (const s of ordered) {
-            const key = (s.city ?? "").trim().toLowerCase();
-            const set = key ? cityToTitles.get(key) : undefined;
-            if (set) for (const t of set) titles.add(t);
-          }
-
-          const countries = Array.from(
-            new Set(ordered.map((s) => s.country).filter((c): c is string => !!c)),
-          );
-          const region =
-            countries.length === 1
-              ? countries[0]
-              : ordered[0].city
-                ? `${ordered[0].city} & Beyond`
-                : "Region";
-          const name =
-            kind === "walking"
-              ? `${ordered[0].city ?? region} Walking Trail`
-              : `${region} One-Day Drive`;
-
-          return {
-            id: slugifyTrail(`${name}-${idx}`),
-            name,
-            kind,
-            stops: ordered,
-            titleCount: titles.size,
-            totalKm,
-            heroImage: ordered.find((s) => s.image)?.image ?? null,
-            country: countries[0] ?? null,
-          };
-        });
-
-        if (!cancelled) {
-          setTrails(built);
-          setLoading(false);
-        }
+        return await fetchTrailSourceData();
       } catch (e) {
         console.error("useTrails error", e);
-        if (!cancelled) setLoading(false);
+        return { raw: [], spots: [], cityImages: {} };
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [maxTrails]);
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
 
-  return { trails, loading };
+export function useTrails(maxTrails = 4): { trails: Trail[]; loading: boolean } {
+  const { data, isLoading } = useTrailSourceData();
+  const trails = useMemo(
+    () =>
+      data
+        ? buildTrails(data.raw, data.spots, { maxTrails }).map((t) =>
+            withHeroFallback(t, data.cityImages),
+          )
+        : [],
+    [data, maxTrails],
+  );
+  return { trails, loading: isLoading };
+}
+
+export function useTrailById(id: string | undefined): { trail: Trail | null; loading: boolean } {
+  const { data, isLoading } = useTrailSourceData();
+  const trail = useMemo(() => {
+    if (!data || !id) return null;
+    const built = buildTrailById(id, data.raw, data.spots);
+    return built ? withHeroFallback(built, data.cityImages) : null;
+  }, [data, id]);
+  return { trail, loading: isLoading };
 }

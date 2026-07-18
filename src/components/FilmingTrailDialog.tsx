@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { haversineKm } from "@/lib/geo";
 
 export interface TrailStop {
   label: string;
@@ -42,19 +43,6 @@ interface FilmingTrailDialogProps {
   locations: TrailStop[];
 }
 
-const EARTH_KM = 6371;
-function haversineKm(a: TrailStop, b: TrailStop): number {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_KM * Math.asin(Math.sqrt(h));
-}
-
 /** Nearest-neighbor route optimization starting from `start`. */
 function optimizeRoute(stops: TrailStop[], startIndex = 0): TrailStop[] {
   if (stops.length <= 2) return [...stops];
@@ -66,7 +54,7 @@ function optimizeRoute(stops: TrailStop[], startIndex = 0): TrailStop[] {
     let bestIdx = 0;
     let bestDist = Infinity;
     for (let i = 0; i < remaining.length; i++) {
-      const d = haversineKm(current, remaining[i]);
+      const d = haversineKm(current.lat, current.lng, remaining[i].lat, remaining[i].lng);
       if (d < bestDist) {
         bestDist = d;
         bestIdx = i;
@@ -146,7 +134,7 @@ export default function FilmingTrailDialog({
   const legs = useMemo(() => {
     const result: number[] = [];
     for (let i = 1; i < order.length; i++) {
-      result.push(haversineKm(order[i - 1], order[i]));
+      result.push(haversineKm(order[i - 1].lat, order[i - 1].lng, order[i].lat, order[i].lng));
     }
     return result;
   }, [order]);
