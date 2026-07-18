@@ -10,7 +10,14 @@ export default function TrailDetail() {
 
   return (
     <div className="min-h-screen bg-background pt-20 pb-16">
-      <Seo title={trail ? `${trail.name} · Sarevista` : "Trail · Sarevista"} />
+      <Seo
+        title={trail ? `${trail.name} · Sarevista` : "Trail · Sarevista"}
+        description={
+          trail
+            ? `A ${trail.kind === "walking" ? "walking trail" : "one-day drive"} through ${trail.stops.length} real screen locations.`
+            : "Curated screen-location trail on Sarevista."
+        }
+      />
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <Link
           to="/"
