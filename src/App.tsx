@@ -23,6 +23,7 @@ import ResetPassword from "./pages/ResetPassword";
 import SitePageRoute from "./pages/SitePageRoute";
 import NotFound from "./pages/NotFound";
 import PublicPassport from "./pages/PublicPassport";
+import TrailDetail from "./pages/TrailDetail";
 
 const queryClient = new QueryClient();
 
