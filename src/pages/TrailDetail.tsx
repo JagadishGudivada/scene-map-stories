@@ -117,6 +117,7 @@ export default function TrailDetail() {
                 <div className="relative rounded-2xl overflow-hidden border border-border shadow-card">
                   <TrailMap
                     stops={stops}
+                    kind={trail.kind}
                     activeIndex={activeIndex}
                     onStopClick={scrollToStop}
                     className="h-72 lg:h-[calc(100vh-9rem)]"
