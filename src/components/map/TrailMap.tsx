@@ -10,8 +10,10 @@ import { useTheme } from "@/hooks/use-theme";
 import { haversineKm } from "@/lib/geo";
 import type { TrailStop } from "@/lib/trails";
 
-/** Consecutive stops farther apart than this get no connecting line — pins only. */
-const NEAR_LEG_KM = 10;
+/** Skip OSRM for legs above this — long-haul stops stay as pins only. */
+const MAX_LEG_KM_FOR_OSRM = 400;
+/** OSRM caps URL length; batch waypoints so requests stay comfortably small. */
+const MAX_WAYPOINTS_PER_REQUEST = 25;
 
 const ROUTE_SOURCE = "trail-route";
 const ROUTE_GLOW_LAYER = "trail-route-glow";
@@ -54,23 +56,78 @@ function stopBounds(stops: TrailStop[]): LngLatBoundsLike {
   ];
 }
 
-function routeFeature(stops: TrailStop[]): GeoJSON.Feature {
-  const segments: [number, number][][] = [];
+/** Straight-line fallback when OSRM can't (or shouldn't) route a leg. */
+function straightSegments(stops: TrailStop[]): [number, number][][] {
+  const segs: [number, number][][] = [];
   for (let i = 0; i < stops.length - 1; i++) {
     const a = stops[i];
     const b = stops[i + 1];
-    if (haversineKm(a.lat, a.lng, b.lat, b.lng) <= NEAR_LEG_KM) {
-      segments.push([
+    if (haversineKm(a.lat, a.lng, b.lat, b.lng) <= MAX_LEG_KM_FOR_OSRM) {
+      segs.push([
         [a.lng, a.lat],
         [b.lng, b.lat],
       ]);
     }
   }
+  return segs;
+}
+
+function emptyFeature(): GeoJSON.Feature {
   return {
     type: "Feature",
-    geometry: { type: "MultiLineString", coordinates: segments },
+    geometry: { type: "MultiLineString", coordinates: [] },
     properties: {},
   };
+}
+
+function toFeature(coords: [number, number][][]): GeoJSON.Feature {
+  return {
+    type: "Feature",
+    geometry: { type: "MultiLineString", coordinates: coords },
+    properties: {},
+  };
+}
+
+/**
+ * Fetch real road/foot geometry via OSRM's public router. Batches large trails
+ * into overlapping chunks so each request stays under the URL limit.
+ */
+async function fetchOsrmSegments(
+  stops: TrailStop[],
+  profile: "foot" | "driving",
+  signal: AbortSignal,
+): Promise<[number, number][][] | null> {
+  if (stops.length < 2) return [];
+  const segments: [number, number][][] = [];
+
+  for (let start = 0; start < stops.length - 1; start += MAX_WAYPOINTS_PER_REQUEST - 1) {
+    const chunk = stops.slice(start, start + MAX_WAYPOINTS_PER_REQUEST);
+    if (chunk.length < 2) break;
+
+    // Skip the whole chunk if any leg is intercontinental — OSRM would fail or
+    // return an absurd detour; the straight-line fallback handles those.
+    let skipChunk = false;
+    for (let i = 0; i < chunk.length - 1; i++) {
+      const a = chunk[i];
+      const b = chunk[i + 1];
+      if (haversineKm(a.lat, a.lng, b.lat, b.lng) > MAX_LEG_KM_FOR_OSRM) {
+        skipChunk = true;
+        break;
+      }
+    }
+    if (skipChunk) continue;
+
+    const coordString = chunk.map((s) => `${s.lng},${s.lat}`).join(";");
+    const url = `https://router.project-osrm.org/route/v1/${profile}/${coordString}?overview=full&geometries=geojson`;
+    const res = await fetch(url, { signal });
+    if (!res.ok) throw new Error(`OSRM ${res.status}`);
+    const data = await res.json();
+    const geom = data?.routes?.[0]?.geometry?.coordinates as [number, number][] | undefined;
+    if (!geom || geom.length < 2) throw new Error("OSRM: empty geometry");
+    segments.push(geom);
+  }
+
+  return segments;
 }
 
 /** Idempotent: setData on the live source, or create source + layers on a fresh style. */
@@ -86,8 +143,8 @@ function applyRoute(map: MapLibreMap, data: GeoJSON.Feature) {
       id: ROUTE_GLOW_LAYER,
       type: "line",
       source: ROUTE_SOURCE,
-      layout: { "line-cap": "round" },
-      paint: { "line-color": AMBER, "line-width": 7, "line-opacity": 0.15, "line-blur": 2 },
+      layout: { "line-cap": "round", "line-join": "round" },
+      paint: { "line-color": AMBER, "line-width": 8, "line-opacity": 0.18, "line-blur": 2 },
     });
   }
   if (!map.getLayer(ROUTE_LAYER)) {
@@ -95,11 +152,11 @@ function applyRoute(map: MapLibreMap, data: GeoJSON.Feature) {
       id: ROUTE_LAYER,
       type: "line",
       source: ROUTE_SOURCE,
+      layout: { "line-cap": "round", "line-join": "round" },
       paint: {
         "line-color": AMBER,
-        "line-width": 2.2,
-        "line-opacity": 0.85,
-        "line-dasharray": DASH_SEQUENCE[0],
+        "line-width": 3.2,
+        "line-opacity": 0.95,
       },
     });
   }
@@ -107,46 +164,77 @@ function applyRoute(map: MapLibreMap, data: GeoJSON.Feature) {
 
 interface TrailMapProps {
   stops: TrailStop[];
+  /** Determines OSRM profile — walking trails use foot routing, drives use car. */
+  kind?: "walking" | "drive";
   /** Stop currently in focus (scroll-synced from the list); highlighted + panned to. */
   activeIndex: number | null;
   onStopClick?: (index: number) => void;
   className?: string;
 }
 
-export default function TrailMap({ stops, activeIndex, onStopClick, className = "" }: TrailMapProps) {
+export default function TrailMap({
+  stops,
+  kind = "walking",
+  activeIndex,
+  onStopClick,
+  className = "",
+}: TrailMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const rafRef = useRef(0);
   const stopsRef = useRef(stops);
   stopsRef.current = stops;
+  const kindRef = useRef(kind);
+  kindRef.current = kind;
   const onStopClickRef = useRef(onStopClick);
   onStopClickRef.current = onStopClick;
+  /** Cached routed geometry for the current stops; re-applied on style/theme swaps. */
+  const routeFeatureRef = useRef<GeoJSON.Feature>(emptyFeature());
+  /** true once OSRM succeeds — dashed animation only runs on straight-line fallback. */
+  const isRoutedRef = useRef(false);
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const appliedDarkRef = useRef<boolean | null>(null);
   const isDarkRef = useRef(isDark);
   isDarkRef.current = isDark;
 
+  const stopDashAnimation = () => cancelAnimationFrame(rafRef.current);
+
+  const setStaticDash = (map: MapLibreMap, dash: number[] | null) => {
+    if (!map.getLayer(ROUTE_LAYER)) return;
+    try {
+      map.setPaintProperty(ROUTE_LAYER, "line-dasharray", dash);
+    } catch {
+      // layer may be gone if the style just swapped
+    }
+  };
+
   const startDashAnimation = (map: MapLibreMap) => {
-    cancelAnimationFrame(rafRef.current);
+    stopDashAnimation();
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
     let step = 0;
+    setStaticDash(map, DASH_SEQUENCE[0]);
     const animate = (ts: number) => {
       const next = Math.floor((ts / 90) % DASH_SEQUENCE.length);
       if (next !== step) {
         step = next;
-        try {
-          if (map.getLayer(ROUTE_LAYER)) {
-            map.setPaintProperty(ROUTE_LAYER, "line-dasharray", DASH_SEQUENCE[step]);
-          }
-        } catch {
-          // map torn down mid-frame during unmount — the rAF is cancelled in cleanup
-        }
+        setStaticDash(map, DASH_SEQUENCE[step]);
       }
       rafRef.current = requestAnimationFrame(animate);
     };
     rafRef.current = requestAnimationFrame(animate);
+  };
+
+  /** Push cached geometry back onto the map after a style swap or fresh mount. */
+  const reapplyCurrentRoute = (map: MapLibreMap) => {
+    applyRoute(map, routeFeatureRef.current);
+    if (isRoutedRef.current) {
+      stopDashAnimation();
+      setStaticDash(map, null);
+    } else {
+      startDashAnimation(map);
+    }
   };
 
   // Data lifecycle: lazily create the map on first stops, then push updates into
@@ -188,19 +276,44 @@ export default function TrailMap({ stops, activeIndex, onStopClick, className = 
       return new maplibregl.Marker({ element: el }).setLngLat([s.lng, s.lat]).addTo(map!);
     });
 
-    const drawRoute = () => {
-      applyRoute(map!, routeFeature(stops));
-      startDashAnimation(map!);
+    // Seed the fallback route immediately, then upgrade to real OSRM geometry.
+    routeFeatureRef.current = toFeature(straightSegments(stops));
+    isRoutedRef.current = false;
+
+    const controller = new AbortController();
+
+    const initialiseRoute = () => {
+      reapplyCurrentRoute(map!);
+      // Fetch real routing in the background — falls through to dashed straight
+      // lines if the router is unreachable or a leg is too long to route.
+      fetchOsrmSegments(stops, kindRef.current === "drive" ? "driving" : "foot", controller.signal)
+        .then((segments) => {
+          if (!segments || segments.length === 0 || controller.signal.aborted) return;
+          routeFeatureRef.current = toFeature(segments);
+          isRoutedRef.current = true;
+          const m = mapRef.current;
+          if (m && m.getSource(ROUTE_SOURCE)) {
+            (m.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatureRef.current);
+            stopDashAnimation();
+            setStaticDash(m, null);
+          }
+        })
+        .catch(() => {
+          // Silent fallback — the dashed straight-line route is already visible.
+        });
     };
+
     if (!created && map.isStyleLoaded()) {
-      drawRoute();
-      return;
+      initialiseRoute();
+    } else {
+      map.once("load", initialiseRoute);
     }
-    map.once("load", drawRoute);
+
     return () => {
-      map!.off("load", drawRoute);
+      controller.abort();
+      map!.off("load", initialiseRoute);
     };
-  }, [stops]);
+  }, [stops, kind]);
 
   // Theme lifecycle: swap the base style in place; setStyle wipes custom
   // sources/layers, so the route is re-applied once the new style loads.
@@ -208,23 +321,18 @@ export default function TrailMap({ stops, activeIndex, onStopClick, className = 
     const map = mapRef.current;
     if (!map || appliedDarkRef.current === isDark) return;
     appliedDarkRef.current = isDark;
-    // diff:false forces a full style reload so "style.load" fires; the default
-    // diff path strips custom layers without ever emitting the event.
     map.setStyle(getMapStyle(isDark), { diff: false });
-    const reapplyRoute = () => {
-      applyRoute(map, routeFeature(stopsRef.current));
-      startDashAnimation(map);
-    };
-    map.once("style.load", reapplyRoute);
+    const onStyleLoad = () => reapplyCurrentRoute(map);
+    map.once("style.load", onStyleLoad);
     return () => {
-      map.off("style.load", reapplyRoute);
+      map.off("style.load", onStyleLoad);
     };
   }, [isDark]);
 
   // Unmount: cancel the dash rAF, destroy markers, and tear the canvas down.
   useEffect(() => {
     return () => {
-      cancelAnimationFrame(rafRef.current);
+      stopDashAnimation();
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       mapRef.current?.remove();
