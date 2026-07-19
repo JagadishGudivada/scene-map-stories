@@ -94,8 +94,14 @@ type TrailSourceData = {
 async function fetchTrailSourceData(): Promise<TrailSourceData> {
   const [titleRows, titleSpotRows, locationRows] = await Promise.all([
     fetchAllPages<TitleRow>(async (from, to) => {
-      const { data, error } = await supabase
-        .from("titles")
+      const { data, error } = await (supabase
+        .from("titles") as unknown as {
+          select: (cols: string) => {
+            order: (c: string) => {
+              range: (a: number, b: number) => Promise<{ data: unknown[] | null; error: unknown }>;
+            };
+          };
+        })
         .select("id, slug, title, locations:data->locations")
         .order("id")
         .range(from, to);
