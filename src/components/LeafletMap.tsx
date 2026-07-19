@@ -81,7 +81,7 @@ const LIGHT_TILES = [
   "https://c.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png",
 ];
 
-function getMapStyle(isDark: boolean): StyleSpecification {
+export function getMapStyle(isDark: boolean): StyleSpecification {
   const tiles = isDark ? DARK_TILES : LIGHT_TILES;
   return {
     version: 8,
