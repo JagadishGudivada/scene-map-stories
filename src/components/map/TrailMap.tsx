@@ -272,7 +272,6 @@ export default function TrailMap({
           const m = mapRef.current;
           if (m && m.getSource(ROUTE_SOURCE)) {
             (m.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatureRef.current);
-            stopDashAnimation();
             setStaticDash(m, null);
           }
         })
