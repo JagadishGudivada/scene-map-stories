@@ -199,8 +199,6 @@ export default function TrailMap({
   const isDarkRef = useRef(isDark);
   isDarkRef.current = isDark;
 
-  const stopDashAnimation = () => cancelAnimationFrame(rafRef.current);
-
   const setStaticDash = (map: MapLibreMap, dash: number[] | null) => {
     if (!map.getLayer(ROUTE_LAYER)) return;
     try {
@@ -210,31 +208,11 @@ export default function TrailMap({
     }
   };
 
-  const startDashAnimation = (map: MapLibreMap) => {
-    stopDashAnimation();
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    let step = 0;
-    setStaticDash(map, DASH_SEQUENCE[0]);
-    const animate = (ts: number) => {
-      const next = Math.floor((ts / 90) % DASH_SEQUENCE.length);
-      if (next !== step) {
-        step = next;
-        setStaticDash(map, DASH_SEQUENCE[step]);
-      }
-      rafRef.current = requestAnimationFrame(animate);
-    };
-    rafRef.current = requestAnimationFrame(animate);
-  };
-
   /** Push cached geometry back onto the map after a style swap or fresh mount. */
   const reapplyCurrentRoute = (map: MapLibreMap) => {
     applyRoute(map, routeFeatureRef.current);
-    if (isRoutedRef.current) {
-      stopDashAnimation();
-      setStaticDash(map, null);
-    } else {
-      startDashAnimation(map);
-    }
+    // Static dashed line while falling back to straight legs, solid once routed.
+    setStaticDash(map, isRoutedRef.current ? null : [2, 2]);
   };
 
   // Data lifecycle: lazily create the map on first stops, then push updates into
