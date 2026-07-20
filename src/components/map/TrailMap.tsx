@@ -227,14 +227,27 @@ export default function TrailMap({
       const el = document.createElement("button");
       el.type = "button";
       el.className = "trail-map-marker";
-      el.textContent = String(i + 1).padStart(2, "0");
       el.dataset.name = s.name.split(",")[0]?.trim() || s.name;
       el.setAttribute("aria-label", `Stop ${i + 1}: ${s.name}`);
+      el.innerHTML = `
+        <svg class="trail-map-marker__pin" viewBox="0 0 24 32" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 0C5.373 0 0 5.373 0 12c0 8.5 12 20 12 20s12-11.5 12-20C24 5.373 18.627 0 12 0z" fill="url(#trailPinGrad)"/>
+          <circle cx="12" cy="12" r="4.2" fill="hsl(var(--charcoal))"/>
+          <defs>
+            <linearGradient id="trailPinGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="hsl(45, 90%, 65%)"/>
+              <stop offset="100%" stop-color="hsl(38, 80%, 48%)"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      `;
       el.addEventListener("click", (ev) => {
         ev.stopPropagation();
         onStopClickRef.current?.(i);
       });
-      return new maplibregl.Marker({ element: el }).setLngLat([s.lng, s.lat]).addTo(map!);
+      return new maplibregl.Marker({ element: el, anchor: "bottom" })
+        .setLngLat([s.lng, s.lat])
+        .addTo(map!);
     });
 
     // Seed the fallback route immediately, then upgrade to real OSRM geometry.
