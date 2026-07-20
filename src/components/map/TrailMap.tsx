@@ -309,7 +309,7 @@ export default function TrailMap({
   // Unmount: cancel the dash rAF, destroy markers, and tear the canvas down.
   useEffect(() => {
     return () => {
-      stopDashAnimation();
+      cancelAnimationFrame(rafRef.current);
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       mapRef.current?.remove();
