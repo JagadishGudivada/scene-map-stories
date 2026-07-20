@@ -21,23 +21,6 @@ const ROUTE_LAYER = "trail-route-line";
 const AMBER = "hsl(38, 80%, 56%)";
 const FIT_OPTIONS = { padding: 56, maxZoom: 13.5 };
 
-// Marching-ants dash phases (standard MapLibre animated-dash technique).
-const DASH_SEQUENCE: number[][] = [
-  [0, 4, 3],
-  [0.5, 4, 2.5],
-  [1, 4, 2],
-  [1.5, 4, 1.5],
-  [2, 4, 1],
-  [2.5, 4, 0.5],
-  [3, 4, 0],
-  [0, 0.5, 3, 3.5],
-  [0, 1, 3, 3],
-  [0, 1.5, 3, 2.5],
-  [0, 2, 3, 2],
-  [0, 2.5, 3, 1.5],
-  [0, 3, 3, 1],
-  [0, 3.5, 3, 0.5],
-];
 
 function stopBounds(stops: TrailStop[]): LngLatBoundsLike {
   let minLat = stops[0].lat;
@@ -199,8 +182,6 @@ export default function TrailMap({
   const isDarkRef = useRef(isDark);
   isDarkRef.current = isDark;
 
-  const stopDashAnimation = () => cancelAnimationFrame(rafRef.current);
-
   const setStaticDash = (map: MapLibreMap, dash: number[] | null) => {
     if (!map.getLayer(ROUTE_LAYER)) return;
     try {
@@ -210,31 +191,11 @@ export default function TrailMap({
     }
   };
 
-  const startDashAnimation = (map: MapLibreMap) => {
-    stopDashAnimation();
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    let step = 0;
-    setStaticDash(map, DASH_SEQUENCE[0]);
-    const animate = (ts: number) => {
-      const next = Math.floor((ts / 90) % DASH_SEQUENCE.length);
-      if (next !== step) {
-        step = next;
-        setStaticDash(map, DASH_SEQUENCE[step]);
-      }
-      rafRef.current = requestAnimationFrame(animate);
-    };
-    rafRef.current = requestAnimationFrame(animate);
-  };
-
   /** Push cached geometry back onto the map after a style swap or fresh mount. */
   const reapplyCurrentRoute = (map: MapLibreMap) => {
     applyRoute(map, routeFeatureRef.current);
-    if (isRoutedRef.current) {
-      stopDashAnimation();
-      setStaticDash(map, null);
-    } else {
-      startDashAnimation(map);
-    }
+    // Static dashed line while falling back to straight legs, solid once routed.
+    setStaticDash(map, isRoutedRef.current ? null : [2, 2]);
   };
 
   // Data lifecycle: lazily create the map on first stops, then push updates into
@@ -294,7 +255,6 @@ export default function TrailMap({
           const m = mapRef.current;
           if (m && m.getSource(ROUTE_SOURCE)) {
             (m.getSource(ROUTE_SOURCE) as GeoJSONSource).setData(routeFeatureRef.current);
-            stopDashAnimation();
             setStaticDash(m, null);
           }
         })
@@ -332,7 +292,7 @@ export default function TrailMap({
   // Unmount: cancel the dash rAF, destroy markers, and tear the canvas down.
   useEffect(() => {
     return () => {
-      stopDashAnimation();
+      cancelAnimationFrame(rafRef.current);
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
       mapRef.current?.remove();
