@@ -21,23 +21,6 @@ const ROUTE_LAYER = "trail-route-line";
 const AMBER = "hsl(38, 80%, 56%)";
 const FIT_OPTIONS = { padding: 56, maxZoom: 13.5 };
 
-// Marching-ants dash phases (standard MapLibre animated-dash technique).
-const DASH_SEQUENCE: number[][] = [
-  [0, 4, 3],
-  [0.5, 4, 2.5],
-  [1, 4, 2],
-  [1.5, 4, 1.5],
-  [2, 4, 1],
-  [2.5, 4, 0.5],
-  [3, 4, 0],
-  [0, 0.5, 3, 3.5],
-  [0, 1, 3, 3],
-  [0, 1.5, 3, 2.5],
-  [0, 2, 3, 2],
-  [0, 2.5, 3, 1.5],
-  [0, 3, 3, 1],
-  [0, 3.5, 3, 0.5],
-];
 
 function stopBounds(stops: TrailStop[]): LngLatBoundsLike {
   let minLat = stops[0].lat;
