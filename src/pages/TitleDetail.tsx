@@ -694,21 +694,72 @@ export default function TitleDetail() {
   ).slice(0, 8);
   const communityPosts = mockPosts.slice(0, 2);
 
-  const seoTitle = `${view.title} (${view.year}) Filming Locations`;
-  const seoDesc = (view.synopsis ||
-    `Discover real filming locations from ${view.title} (${view.year}). Map the places that brought this ${view.type.toLowerCase()} to life.`).slice(0, 160);
-  const movieSchema = {
+  const kindWord = view.type === "Book" ? "set" : "filmed";
+  const seoTitle = `Where was ${view.title} (${view.year}) ${kindWord}? Filming locations map`;
+  const seoDesc = (
+    `Every real location from ${view.title} (${view.year}) mapped stop-by-stop${
+      view.locations?.length ? ` — ${view.locations.length} places` : ""
+    }. ${view.synopsis || ""}`
+  ).slice(0, 160);
+  const canonicalUrl = `https://sarevista.com/title/${slug}`;
+  const locationList = (view.locations || []).slice(0, 20).map((loc: any, i: number) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    item: {
+      "@type": "Place",
+      name: loc.label,
+      geo: loc.lat && loc.lng
+        ? { "@type": "GeoCoordinates", latitude: loc.lat, longitude: loc.lng }
+        : undefined,
+      description: loc.description,
+    },
+  }));
+  const workSchema = {
     "@context": "https://schema.org",
     "@type": view.type === "Series" ? "TVSeries" : view.type === "Book" ? "Book" : "Movie",
     name: view.title,
     datePublished: String(view.year),
     image: view.coverImage,
-    description: seoDesc,
+    description: view.synopsis || seoDesc,
+    url: canonicalUrl,
+    inLanguage: "en",
     aggregateRating: view.rating
       ? { "@type": "AggregateRating", ratingValue: view.rating, bestRating: 10, ratingCount: 1 }
       : undefined,
     genre: view.genres,
+    ...(view.creator
+      ? {
+          [view.type === "Book" ? "author" : "director"]: {
+            "@type": "Person",
+            name: view.creator,
+          },
+        }
+      : {}),
+    ...(locationList.length
+      ? {
+          contentLocation: locationList.map((li: any) => li.item),
+        }
+      : {}),
   };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://sarevista.com/" },
+      { "@type": "ListItem", position: 2, name: "Titles", item: "https://sarevista.com/explore" },
+      { "@type": "ListItem", position: 3, name: `${view.title} (${view.year})`, item: canonicalUrl },
+    ],
+  };
+  const itemListSchema = locationList.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: `Filming locations from ${view.title}`,
+        numberOfItems: locationList.length,
+        itemListElement: locationList,
+      }
+    : null;
+  const movieSchema = [workSchema, breadcrumbSchema, ...(itemListSchema ? [itemListSchema] : [])];
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
