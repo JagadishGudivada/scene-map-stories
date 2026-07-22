@@ -533,7 +533,7 @@ export default function LocationDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
-      <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={placeSchema} />
+      <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={jsonLd} canonicalPath={`/location/${slug}`} />
       {slug && (
         <RevealButton
           context={{
