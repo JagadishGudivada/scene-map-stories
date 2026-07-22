@@ -8,6 +8,7 @@ import PostCard from "@/components/PostCard";
 import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import TrendyScreenSpots from "@/components/TrendyScreenSpots";
 import HowItWorks from "@/components/HowItWorks";
+import WhySarevista from "@/components/WhySarevista";
 import TrailsAndTours from "@/components/TrailsAndTours";
 import QuickFilterChips from "@/components/QuickFilterChips";
 import IconicLocations from "@/components/IconicLocations";
@@ -193,10 +194,10 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background pb-10 md:pb-8">
       <Seo
-        title="Sarevista — Filming Locations Map for Movies, Series & Books"
-        description="Discover, save, and share real filming locations from your favourite movies, series, and books. Cinema meets travel — your memory map."
+        title="Sarevista — Your Screen-Location Memory Map"
+        description="Not a filming-locations directory. Turn every movie, series, and book you love into a personal map of real places you've been — and places to go next."
       />
-      <h1 className="sr-only">Sarevista — Your Map to Filming Locations from Movies, Series & Books</h1>
+      <h1 className="sr-only">Sarevista — the screen-location memory map for movies, series & books</h1>
       {/* === HERO SECTION === */}
       <div className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-[72px] md:pt-24">
@@ -596,6 +597,11 @@ export default function Index() {
                   {/* === HOW IT WORKS === */}
                   <div className="mb-10 sm:mb-14">
                     <HowItWorks />
+                  </div>
+
+                  {/* === WHY SAREVISTA === */}
+                  <div className="mb-10 sm:mb-14">
+                    <WhySarevista />
                   </div>
 
                   {/* === TRAILS & TOURS === */}

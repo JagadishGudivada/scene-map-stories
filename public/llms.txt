@@ -1,8 +1,8 @@
 # Sarevista
 
-> Discover, save, and share real-world filming locations from your favourite movies, series, and books. Cinema meets travel — not a list, your memory map.
+> The screen-location memory map. Sarevista is not a filming-locations directory — it turns every movie, series, and book you love into a personal map of real places you've been and places to go next.
 
-Sarevista turns the films, series, and books you love into real places you can visit. We catalog filming spots verified by our community, layer in cultural context, and help you plan trips around the stories that moved you.
+Sarevista pairs a global catalogue of verified screen and page locations with a personal layer that no other filming-locations site offers: a passport that fills in as you visit, tier badges, a fog-of-war world map, curated walking trails and one-day drives, and an AI concierge that scouts locations from natural-language prompts ("quiet cafés from Before Sunrise", "Peaky Blinders pubs in Birmingham"). Books, series, and films sit on the same map — from Middle-earth to Middle England — so the loop from watching to visiting to remembering happens in one place.
 
 ## Pages
 
