@@ -486,22 +486,54 @@ export default function LocationDetail() {
     );
   }
 
-  const locSeoTitle = `${cityData.name}, ${cityData.country} — Filming Locations`;
+  const locSeoTitle = `${cityData.name} filming locations — movies & series filmed in ${cityData.name}`;
   const locSeoDesc = (cityData.tagline ||
-    `Explore filming locations in ${cityData.name}, ${cityData.country}. ${cityData.totalLocations}+ on-screen spots from movies and series.`).slice(0, 160);
+    `Every real filming location in ${cityData.name}, ${cityData.country} mapped: ${cityData.totalLocations}+ on-screen spots from movies, series and books you can visit.`).slice(0, 160);
+  const canonicalUrl = `https://sarevista.com/location/${slug}`;
   const placeSchema = {
     "@context": "https://schema.org",
     "@type": "Place",
     name: cityData.name,
-    address: { "@type": "PostalAddress", addressCountry: cityData.country },
+    url: canonicalUrl,
+    address: { "@type": "PostalAddress", addressLocality: cityData.name, addressCountry: cityData.country },
     geo: { "@type": "GeoCoordinates", latitude: cityData.coords.lat, longitude: cityData.coords.lng },
     image: cityData.coverImage,
     description: locSeoDesc,
   };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://sarevista.com/" },
+      { "@type": "ListItem", position: 2, name: "Destinations", item: "https://sarevista.com/destinations" },
+      { "@type": "ListItem", position: 3, name: cityData.country, item: `https://sarevista.com/destinations?country=${encodeURIComponent(cityData.country)}` },
+      { "@type": "ListItem", position: 4, name: cityData.name, item: canonicalUrl },
+    ],
+  };
+  const spotsForList: any[] = Array.isArray((cityData as any).spots) ? (cityData as any).spots : [];
+  const itemListSchema = spotsForList.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: `Filming locations in ${cityData.name}`,
+        numberOfItems: spotsForList.length,
+        itemListElement: spotsForList.slice(0, 20).map((s: any, i: number) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "TouristAttraction",
+            name: s.name || s.label,
+            description: s.description,
+            geo: s.lat && s.lng ? { "@type": "GeoCoordinates", latitude: s.lat, longitude: s.lng } : undefined,
+          },
+        })),
+      }
+    : null;
+  const jsonLd = [placeSchema, breadcrumbSchema, ...(itemListSchema ? [itemListSchema] : [])];
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
-      <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={placeSchema} />
+      <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={jsonLd} canonicalPath={`/location/${slug}`} />
       {slug && (
         <RevealButton
           context={{

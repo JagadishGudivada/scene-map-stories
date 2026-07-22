@@ -281,22 +281,44 @@ export default function FilmingSpotDetail() {
 
   const Icon = typeIcons[spot.type] || Film;
 
-  const spotSeoTitle = `${spot.name}, ${spot.city} — Filming Location`;
+  const firstTitle = spot.titles?.[0];
+  const spotSeoTitle = firstTitle
+    ? `${spot.name}, ${spot.city} — filming location from ${firstTitle}`
+    : `${spot.name}, ${spot.city} — Filming Location`;
   const spotSeoDesc = (spot.description ||
-    `${spot.name} in ${spot.city}, ${spot.country} — featured in ${spot.titles.join(", ") || "screen and story"}.`).slice(0, 160);
-  const spotSchema = {
+    `Visit ${spot.name} in ${spot.city}, ${spot.country} — the real filming location from ${spot.titles.join(", ") || "screen and story"}. Coordinates, scene notes, and how to get there.`).slice(0, 160);
+  const canonicalUrl = `https://sarevista.com/spot/${spot.slug}`;
+  const placeSchema = {
     "@context": "https://schema.org",
-    "@type": "Place",
+    "@type": "TouristAttraction",
     name: spot.name,
+    url: canonicalUrl,
     address: { "@type": "PostalAddress", addressLocality: spot.city, addressCountry: spot.country },
     geo: { "@type": "GeoCoordinates", latitude: spot.lat, longitude: spot.lng },
     description: spotSeoDesc,
     image: (spot as any).image,
+    containedInPlace: { "@type": "Place", name: spot.city, address: { "@type": "PostalAddress", addressCountry: spot.country } },
+    ...(spot.titles?.length
+      ? {
+          subjectOf: spot.titles.map((t: string) => ({ "@type": "CreativeWork", name: t })),
+        }
+      : {}),
   };
+  const breadcrumbSchema = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: "https://sarevista.com/" },
+      { "@type": "ListItem", position: 2, name: spot.country, item: `https://sarevista.com/destinations?country=${encodeURIComponent(spot.country)}` },
+      { "@type": "ListItem", position: 3, name: spot.city, item: `https://sarevista.com/location/${encodeURIComponent(spot.city.toLowerCase().replace(/\s+/g, "-"))}` },
+      { "@type": "ListItem", position: 4, name: spot.name, item: canonicalUrl },
+    ],
+  };
+  const spotSchema = [placeSchema, breadcrumbSchema];
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-20 md:pt-24">
-      <Seo title={spotSeoTitle} description={spotSeoDesc} type="article" image={(spot as any).image} jsonLd={spotSchema} />
+      <Seo title={spotSeoTitle} description={spotSeoDesc} type="article" image={(spot as any).image} jsonLd={spotSchema} canonicalPath={`/spot/${spot.slug}`} />
       <RevealButton
         context={{
           kind: "spot",
