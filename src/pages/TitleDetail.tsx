@@ -763,7 +763,7 @@ export default function TitleDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
-      <Seo title={seoTitle} description={seoDesc} type="article" image={view.coverImage} jsonLd={movieSchema} />
+      <Seo title={seoTitle} description={seoDesc} type="article" image={view.coverImage} jsonLd={movieSchema} canonicalPath={`/title/${slug}`} />
       {slug && (
         <RevealButton
           context={{
