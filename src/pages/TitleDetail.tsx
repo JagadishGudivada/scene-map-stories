@@ -906,6 +906,17 @@ export default function TitleDetail() {
           </section>
         )}
 
+        {/* Trailers (TMDB) */}
+        <TrailerSection
+          slug={slug}
+          title={view.title}
+          year={view.year}
+          type={view.type as "Movie" | "Series" | "Book"}
+          tmdbId={(aiDetails as any)?.tmdb_id ?? navState?.tmdb_id}
+          cached={(aiDetails as any)?.videos}
+        />
+
+
         {/* Filming Locations */}
         <section className="mb-12">
           <div className="flex items-center gap-3 mb-5 flex-wrap">
