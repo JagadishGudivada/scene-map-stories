@@ -148,14 +148,25 @@ export default function RevealAchievementCard({
               </div>
             </div>
 
-            <button
-              onClick={handleShare}
-              disabled={sharing}
-              className="mt-4 w-full h-11 rounded-full bg-gradient-to-r from-amber to-[#D3771F] text-charcoal font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              <Share2 className="w-4 h-4" />
-              {sharing ? "Preparing…" : "Share this stop"}
-            </button>
+            <div className="mt-4 grid grid-cols-1 gap-2">
+              <button
+                onClick={handleStory}
+                disabled={sharing !== "none"}
+                className="w-full h-11 rounded-full bg-gradient-to-r from-amber to-[#D3771F] text-charcoal font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <Instagram className="w-4 h-4" />
+                {sharing === "story" ? "Preparing…" : "Add to Instagram Story"}
+              </button>
+              <button
+                onClick={handleShare}
+                disabled={sharing !== "none"}
+                className="w-full h-10 rounded-full border border-border text-foreground/85 hover:bg-muted/40 font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60 transition-colors"
+              >
+                <Share2 className="w-4 h-4" />
+                {sharing === "card" ? "Preparing…" : "Share this stop"}
+              </button>
+            </div>
+
           </motion.div>
         </motion.div>
       )}
