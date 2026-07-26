@@ -12,6 +12,8 @@ import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
 import ShareMenu from "@/components/ShareMenu";
 import ReportInfoDialog from "@/components/ReportInfoDialog";
+import TrailerSection from "@/components/TrailerSection";
+
 import AddLocationDialog from "@/components/AddLocationDialog";
 import FilmingTrailDialog from "@/components/FilmingTrailDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
