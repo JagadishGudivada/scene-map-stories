@@ -824,7 +824,8 @@ export default function TitleDetail() {
 
               {view.genres.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-5">
-                  {view.genres.map((g) => (
+                  {Array.from(new Set(view.genres.map((g) => g.trim()))).map((g) => (
+
                   <span
                     key={g}
                     className="glass rounded-full px-3 py-1 text-xs text-foreground border border-border inline-flex items-center gap-1.5"
