@@ -30,7 +30,7 @@ export default function RevealAchievementCard({
   onClose: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [sharing, setSharing] = useState(false);
+  const [sharing, setSharing] = useState<"none" | "card" | "story">("none");
 
   useEffect(() => {
     if (!payload) return;
@@ -40,10 +40,18 @@ export default function RevealAchievementCard({
 
   const handleShare = async () => {
     if (!cardRef.current) return;
-    setSharing(true);
+    setSharing("card");
     await shareOrDownloadCard(cardRef.current);
-    setSharing(false);
+    setSharing("none");
   };
+
+  const handleStory = async () => {
+    if (!cardRef.current) return;
+    setSharing("story");
+    await shareStoryCard(cardRef.current);
+    setSharing("none");
+  };
+
 
   const accent = typeColor[payload?.type ?? "Movie"] ?? "#F4C77B";
 
