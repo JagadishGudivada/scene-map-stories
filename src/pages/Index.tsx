@@ -604,6 +604,12 @@ export default function Index() {
                     <WhySarevista />
                   </div>
 
+                  {/* === FROM THE PAGE TO THE PLACE (BOOKS) === */}
+                  <div className="mb-10 sm:mb-14">
+                    <FromThePage />
+                  </div>
+
+
                   {/* === TRAILS & TOURS === */}
                   <div className="mb-10 sm:mb-14">
                     <TrailsAndTours />
