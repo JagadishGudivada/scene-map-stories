@@ -9,6 +9,8 @@ import RecentlyVisitedSpots from "@/components/RecentlyVisitedSpots";
 import TrendyScreenSpots from "@/components/TrendyScreenSpots";
 import HowItWorks from "@/components/HowItWorks";
 import WhySarevista from "@/components/WhySarevista";
+import FromThePage from "@/components/FromThePage";
+
 import TrailsAndTours from "@/components/TrailsAndTours";
 import QuickFilterChips from "@/components/QuickFilterChips";
 import IconicLocations from "@/components/IconicLocations";
@@ -603,6 +605,12 @@ export default function Index() {
                   <div className="mb-10 sm:mb-14">
                     <WhySarevista />
                   </div>
+
+                  {/* === FROM THE PAGE TO THE PLACE (BOOKS) === */}
+                  <div className="mb-10 sm:mb-14">
+                    <FromThePage />
+                  </div>
+
 
                   {/* === TRAILS & TOURS === */}
                   <div className="mb-10 sm:mb-14">

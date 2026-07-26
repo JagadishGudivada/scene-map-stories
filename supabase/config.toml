@@ -48,3 +48,6 @@ verify_jwt = false
 
 
 
+
+[functions.title-videos]
+verify_jwt = false

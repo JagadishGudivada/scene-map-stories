@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Share2, X, Sparkles } from "lucide-react";
-import { shareOrDownloadCard } from "@/lib/shareCard";
+import { MapPin, Share2, X, Sparkles, Instagram } from "lucide-react";
+import { shareOrDownloadCard, shareStoryCard } from "@/lib/shareCard";
+
 import sarevistaLogo from "@/assets/sarevista-logo-transparent-cropped.png.asset.json";
 
 export type RevealPayload = {
@@ -29,7 +30,7 @@ export default function RevealAchievementCard({
   onClose: () => void;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [sharing, setSharing] = useState(false);
+  const [sharing, setSharing] = useState<"none" | "card" | "story">("none");
 
   useEffect(() => {
     if (!payload) return;
@@ -39,10 +40,18 @@ export default function RevealAchievementCard({
 
   const handleShare = async () => {
     if (!cardRef.current) return;
-    setSharing(true);
+    setSharing("card");
     await shareOrDownloadCard(cardRef.current);
-    setSharing(false);
+    setSharing("none");
   };
+
+  const handleStory = async () => {
+    if (!cardRef.current) return;
+    setSharing("story");
+    await shareStoryCard(cardRef.current);
+    setSharing("none");
+  };
+
 
   const accent = typeColor[payload?.type ?? "Movie"] ?? "#F4C77B";
 
@@ -139,14 +148,25 @@ export default function RevealAchievementCard({
               </div>
             </div>
 
-            <button
-              onClick={handleShare}
-              disabled={sharing}
-              className="mt-4 w-full h-11 rounded-full bg-gradient-to-r from-amber to-[#D3771F] text-charcoal font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
-            >
-              <Share2 className="w-4 h-4" />
-              {sharing ? "Preparing…" : "Share this stop"}
-            </button>
+            <div className="mt-4 grid grid-cols-1 gap-2">
+              <button
+                onClick={handleStory}
+                disabled={sharing !== "none"}
+                className="w-full h-11 rounded-full bg-gradient-to-r from-amber to-[#D3771F] text-charcoal font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+              >
+                <Instagram className="w-4 h-4" />
+                {sharing === "story" ? "Preparing…" : "Add to Instagram Story"}
+              </button>
+              <button
+                onClick={handleShare}
+                disabled={sharing !== "none"}
+                className="w-full h-10 rounded-full border border-border text-foreground/85 hover:bg-muted/40 font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-60 transition-colors"
+              >
+                <Share2 className="w-4 h-4" />
+                {sharing === "card" ? "Preparing…" : "Share this stop"}
+              </button>
+            </div>
+
           </motion.div>
         </motion.div>
       )}

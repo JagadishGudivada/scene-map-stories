@@ -12,6 +12,8 @@ import SpotActionsModal from "@/components/SpotActionsModal";
 import PostCard from "@/components/PostCard";
 import ShareMenu from "@/components/ShareMenu";
 import ReportInfoDialog from "@/components/ReportInfoDialog";
+import TrailerSection from "@/components/TrailerSection";
+
 import AddLocationDialog from "@/components/AddLocationDialog";
 import FilmingTrailDialog from "@/components/FilmingTrailDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -822,7 +824,8 @@ export default function TitleDetail() {
 
               {view.genres.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-5">
-                  {view.genres.map((g) => (
+                  {Array.from(new Set(view.genres.map((g) => g.trim()))).map((g) => (
+
                   <span
                     key={g}
                     className="glass rounded-full px-3 py-1 text-xs text-foreground border border-border inline-flex items-center gap-1.5"
@@ -905,6 +908,17 @@ export default function TitleDetail() {
             <p className="text-muted-foreground leading-relaxed">{view.synopsis}</p>
           </section>
         )}
+
+        {/* Trailers (TMDB) */}
+        <TrailerSection
+          slug={slug}
+          title={view.title}
+          year={view.year}
+          type={view.type as "Movie" | "Series" | "Book"}
+          tmdbId={(aiDetails as any)?.tmdb_id ?? navState?.tmdb_id}
+          cached={(aiDetails as any)?.videos}
+        />
+
 
         {/* Filming Locations */}
         <section className="mb-12">
