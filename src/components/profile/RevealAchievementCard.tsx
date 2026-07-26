@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Share2, X, Sparkles } from "lucide-react";
-import { shareOrDownloadCard } from "@/lib/shareCard";
+import { MapPin, Share2, X, Sparkles, Instagram } from "lucide-react";
+import { shareOrDownloadCard, shareStoryCard } from "@/lib/shareCard";
+
 import sarevistaLogo from "@/assets/sarevista-logo-transparent-cropped.png.asset.json";
 
 export type RevealPayload = {
