@@ -246,12 +246,14 @@ export default function Index() {
             />
             <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
               {searchQuery && (
-                <button onClick={handleClearSearch} className="p-1.5 rounded-lg hover:bg-muted/50">
+                <button onClick={handleClearSearch} aria-label="Clear search" className="p-1.5 rounded-lg hover:bg-muted/50">
                   <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
               <button
                 onClick={() => setShowFilters(!showFilters)}
+                aria-label={showFilters ? "Hide filters" : "Show filters"}
+                aria-expanded={showFilters}
                 className={`p-2.5 rounded-xl transition-all ${
                   showFilters || hasActiveFilters
                     ? "bg-amber/10 text-amber border border-amber/30"

@@ -174,6 +174,7 @@ export default function Navigation() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       onClick={() => setSearchOpen(true)}
+                      aria-label="Open search"
                       className="w-9 h-9 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all"
                     >
                       <Search className="w-4 h-4" />
@@ -263,7 +264,7 @@ export default function Navigation() {
                     <div className="w-9 h-9 rounded-full amber-ring overflow-hidden">
                       <img
                         src={user.user_metadata?.avatar_url || `https://api.dicebear.com/9.x/avataaars/svg?seed=${user.email}`}
-                        alt="Profile"
+                        alt="Your profile picture"
                         className="w-full h-full object-cover bg-muted"
                       />
                     </div>

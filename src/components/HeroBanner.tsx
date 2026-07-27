@@ -188,7 +188,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             </div>
 
             {/* title */}
-            <h1 className="font-serif italic text-2xl sm:text-6xl leading-[1.05] text-[#F6EFE2] mb-2 sm:mb-5 max-w-[18ch]">
+            <h2 className="font-serif italic text-2xl sm:text-6xl leading-[1.05] text-[#F6EFE2] mb-2 sm:mb-5 max-w-[18ch]">
               {slide.title}
             </h1>
 
