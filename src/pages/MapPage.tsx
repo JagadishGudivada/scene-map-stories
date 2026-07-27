@@ -260,6 +260,7 @@ export default function MapPage() {
         title="Discovery Map — Filming Locations Worldwide"
         description="Explore an interactive world map of filming locations from movies, series, and books. Plan your next cinematic trip."
       />
+      <h1 className="sr-only">Filming Locations Map — explore movie, series &amp; book locations worldwide</h1>
       <div className="fixed inset-0 pt-16 md:pt-20">
         <LeafletMap
           pins={displayPins}
@@ -294,7 +295,7 @@ export default function MapPage() {
                 />
                 <div className="absolute right-3 flex items-center gap-2">
                   {searchQuery && (
-                    <button onClick={handleClearSearch} className="p-1.5 rounded-lg hover:bg-muted/50">
+                    <button onClick={handleClearSearch} aria-label="Clear search" className="p-1.5 rounded-lg hover:bg-muted/50">
                       <X className="w-4 h-4 text-muted-foreground" />
                     </button>
                   )}

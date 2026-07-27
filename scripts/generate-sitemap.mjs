@@ -101,7 +101,11 @@ export async function generateSitemap() {
       fetchAll("locations", "/location/"),
       fetchAll("spots", "/spot/"),
     ]);
-    dynamicUrls = [...titles, ...locations, ...spots].map((r) =>
+    const filmingSpots = locations.map((r) => ({
+      loc: `${r.loc}/filming-spots`,
+      lastmod: r.lastmod,
+    }));
+    dynamicUrls = [...titles, ...locations, ...filmingSpots, ...spots].map((r) =>
       urlEntry(r.loc, r.lastmod, "weekly", "0.7")
     );
   } catch (e) {

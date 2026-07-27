@@ -188,9 +188,9 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             </div>
 
             {/* title */}
-            <h1 className="font-serif italic text-2xl sm:text-6xl leading-[1.05] text-[#F6EFE2] mb-2 sm:mb-5 max-w-[18ch]">
+            <h2 className="font-serif italic text-2xl sm:text-6xl leading-[1.05] text-[#F6EFE2] mb-2 sm:mb-5 max-w-[18ch]">
               {slide.title}
-            </h1>
+            </h2>
 
             {/* hook line */}
             <p className="text-xs sm:text-base text-[#F6EFE2]/85 leading-snug sm:leading-relaxed mb-4 sm:mb-7 max-w-[42ch] line-clamp-2 sm:line-clamp-none">
