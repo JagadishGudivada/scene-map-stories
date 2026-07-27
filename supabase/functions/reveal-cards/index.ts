@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { db } from "../_shared/store.ts";
 import { getCached } from "../_shared/aiCache.ts";
 import { createLogger } from "../_shared/logger.ts";
+import { guardColdPath, sanitizeQuery, badRequest } from "../_shared/security.ts";
 import {
   buildRevealCardsScoutPrompt,
   getRevealCardsScoutSystemPrompt,
@@ -32,14 +33,25 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { kind, slug, name, context } = await req.json();
-    if (!kind || !slug || !name) {
-      return json({ error: "kind, slug, name required" }, 400);
+    const body = await req.json().catch(() => null);
+    if (!body || typeof body !== "object") return badRequest("Invalid body");
+    const { kind, slug, name, context } = body as Record<string, unknown>;
+    if (kind !== "title" && kind !== "location" && kind !== "spot") {
+      return badRequest("kind must be title, location or spot");
     }
+    const cleanName = sanitizeQuery(name, { min: 1, max: 120 });
+    if (!cleanName) return badRequest("name required (1-120 chars)");
+    if (typeof slug !== "string") return badRequest("slug required");
 
-    const cacheKey = `${kind}:${slug}`;
+    const safeContext = sanitizeContext(context);
+
+    const cacheKey = `${kind}:${slug.trim().toLowerCase()}`;
     const cached = await getCached<Payload>(FN, cacheKey);
     if (cached?.cards?.length) return json(cached);
+
+    // Cold (paid AI) path: validate slug shape + per-IP rate limit.
+    const guard = guardColdPath(req, { slug, kind });
+    if (guard) return guard;
 
     const AI_API_KEY = Deno.env.get("AI_API_KEY") || Deno.env.get("LOVABLE_API_KEY");
     const AI_CHAT_COMPLETIONS_URL =
@@ -48,7 +60,7 @@ serve(async (req) => {
     const AI_MODEL = Deno.env.get("AI_MODEL") || "google/gemini-2.5-flash";
     if (!AI_API_KEY) throw new Error("AI_API_KEY not configured");
 
-    const subject = describe(kind as Kind, name, context);
+    const subject = describe(kind as Kind, cleanName, safeContext);
 
     const prompt = buildRevealCardsScoutPrompt({ subject });
 
@@ -139,6 +151,19 @@ serve(async (req) => {
     return json({ error: String(e?.message || e) });
   }
 });
+
+function sanitizeContext(ctx: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!ctx || typeof ctx !== "object") return out;
+  const allowed = ["year", "type", "country", "title"];
+  for (const key of allowed) {
+    const v = (ctx as Record<string, unknown>)[key];
+    if (v === undefined || v === null) continue;
+    const cleaned = sanitizeQuery(String(v), { min: 1, max: 80 });
+    if (cleaned) out[key] = cleaned;
+  }
+  return out;
+}
 
 function describe(kind: Kind, name: string, ctx?: Record<string, unknown>) {
   if (kind === "title")
