@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { normalizeWebsiteUrl } from "@/lib/safeUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -92,6 +93,16 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
 
   const handleSave = async () => {
     if (!user) return;
+    const rawWebsite = website.trim();
+    const safeWebsite = rawWebsite ? normalizeWebsiteUrl(rawWebsite) : null;
+    if (rawWebsite && !safeWebsite) {
+      toast({
+        title: "Invalid website",
+        description: "Enter a valid http(s) URL, e.g. https://example.com",
+        variant: "destructive",
+      });
+      return;
+    }
     setSaving(true);
     const payload = {
       user_id: user.id,
@@ -99,7 +110,7 @@ export default function EditProfileDialog({ open, onOpenChange, profile, onSaved
       username: username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "") || null,
       bio: bio.trim() || null,
       location: location.trim() || null,
-      website: website.trim() || null,
+      website: safeWebsite,
       avatar_url: avatarUrl,
       cover_url: coverUrl,
       is_public_passport: isPublicPassport,

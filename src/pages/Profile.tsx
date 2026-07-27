@@ -6,6 +6,7 @@ import EditProfileDialog, { type ProfileRow } from "@/components/EditProfileDial
 import CreatePostDialog from "@/components/CreatePostDialog";
 import { Button } from "@/components/ui/button";
 import { useAllSavedTitles, useAllSavedLocations, useAllSavedSpots, useAllVisitedSpots, useAllWatchedTitles } from "@/hooks/useSaved";
+import { safeExternalUrl } from "@/lib/safeUrl";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -154,7 +155,7 @@ export default function Profile() {
   const coverUrl: string | undefined = profile?.cover_url || undefined;
   const bio: string | undefined = profile?.bio || undefined;
   const userLocation: string | undefined = profile?.location || undefined;
-  const website: string | undefined = profile?.website || undefined;
+  const website: string | undefined = safeExternalUrl(profile?.website);
   const initials = displayName
     .split(/\s+/)
     .map((p) => p[0])
