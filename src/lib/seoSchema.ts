@@ -39,6 +39,7 @@ export function buildBreadcrumbSchema(crumbs: Crumb[], currentPath: string) {
   return {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
+    "@id": `${absUrl(currentPath)}#breadcrumb`,
     itemListElement: crumbs.map((c, i) => ({
       "@type": "ListItem",
       position: i + 1,
