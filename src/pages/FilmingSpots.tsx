@@ -6,11 +6,9 @@ import {
 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
 import type { AppMap, MapPin as MapPinType } from "@/components/LeafletMap";
-import {
-  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { citiesFilmingData, type FilmingSpotData } from "@/lib/filmingSpotsData";
 import Seo from "@/components/Seo";
+import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
 import { buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, type Crumb, type RelatedLink } from "@/lib/seoSchema";
 
 const typeIcons: Record<string, React.ElementType> = {
@@ -105,31 +103,7 @@ export default function FilmingSpots() {
       />
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/" className="text-muted-foreground hover:text-amber text-xs">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <ChevronRight className="w-3 h-3 text-muted-foreground" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to={`/location/${slug}`} className="text-muted-foreground hover:text-amber text-xs">
-                  {city.name}
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <ChevronRight className="w-3 h-3 text-muted-foreground" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <span className="text-amber text-xs font-medium">Filming Spots</span>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <SeoBreadcrumbs items={crumbs} />
       </div>
 
       {/* Header */}

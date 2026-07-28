@@ -12,6 +12,7 @@ import PassportBadgeUnlockSheet from "@/components/PassportBadgeUnlockSheet";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
+import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
 import { absUrl, buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, type Crumb, type RelatedLink } from "@/lib/seoSchema";
 import { RevealButton } from "@/components/RevealDeck";
 import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
@@ -21,9 +22,6 @@ import {
   getBadgeTierForVisits,
   type PassportBadge,
 } from "@/hooks/usePassportBadges";
-import {
-  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 
 const typeIcons: Record<string, React.ElementType> = {
   Movie: Film,
@@ -346,35 +344,7 @@ export default function FilmingSpotDetail() {
       />
       {/* Breadcrumb */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/" className="text-muted-foreground hover:text-amber text-xs">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator><ChevronRight className="w-3 h-3 text-muted-foreground" /></BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to={`/location/${spot.citySlug}`} className="text-muted-foreground hover:text-amber text-xs">
-                  {spot.city}
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator><ChevronRight className="w-3 h-3 text-muted-foreground" /></BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to={`/location/${spot.citySlug}/filming-spots`} className="text-muted-foreground hover:text-amber text-xs">
-                  Filming Spots
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator><ChevronRight className="w-3 h-3 text-muted-foreground" /></BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <span className="text-amber text-xs font-medium">{spot.name}</span>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <SeoBreadcrumbs items={crumbs} />
       </div>
 
       {/* Header */}
