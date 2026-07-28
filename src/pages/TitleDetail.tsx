@@ -21,6 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { useSavedTitle, useWatchedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
+import { buildTitleSeoTitle, buildTitleSeoDescription, buildTitleFaqSchema } from "@/lib/seoTitles";
 import { RevealButton } from "@/components/RevealDeck";
 import heroRomeImg from "@/assets/hero-rome.jpg";
 
@@ -766,7 +767,12 @@ export default function TitleDetail() {
         itemListElement: locationList,
       }
     : null;
-  const movieSchema = [workSchema, breadcrumbSchema, ...(itemListSchema ? [itemListSchema] : [])];
+  const movieSchema = [
+    workSchema,
+    breadcrumbSchema,
+    ...(itemListSchema ? [itemListSchema] : []),
+    ...(faqSchema ? [faqSchema] : []),
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
