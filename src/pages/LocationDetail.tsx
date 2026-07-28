@@ -17,6 +17,8 @@ import ReportInfoDialog from "@/components/ReportInfoDialog";
 import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import VerificationAccordion from "@/components/VerificationAccordion";
 import Seo from "@/components/Seo";
+import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
+import { absUrl, buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, citySlug, type Crumb, type RelatedLink } from "@/lib/seoSchema";
 import { RevealButton } from "@/components/RevealDeck";
 import type { MapPin as MapPinType } from "@/components/LeafletMap";
 import heroRomeImg from "@/assets/hero-rome-location.jpg";
@@ -489,7 +491,8 @@ export default function LocationDetail() {
   const locSeoTitle = `${cityData.name} filming locations — movies & series filmed in ${cityData.name}`;
   const locSeoDesc = (cityData.tagline ||
     `Every real filming location in ${cityData.name}, ${cityData.country} mapped: ${cityData.totalLocations}+ on-screen spots from movies, series and books you can visit.`).slice(0, 160);
-  const canonicalUrl = `https://sarevista.com/location/${slug}`;
+  const canonicalPath = `/location/${slug}`;
+  const canonicalUrl = absUrl(canonicalPath);
   const placeSchema = {
     "@context": "https://schema.org",
     "@type": "Place",
@@ -500,16 +503,14 @@ export default function LocationDetail() {
     image: cityData.coverImage,
     description: locSeoDesc,
   };
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://sarevista.com/" },
-      { "@type": "ListItem", position: 2, name: "Destinations", item: "https://sarevista.com/destinations" },
-      { "@type": "ListItem", position: 3, name: cityData.country, item: `https://sarevista.com/destinations?country=${encodeURIComponent(cityData.country)}` },
-      { "@type": "ListItem", position: 4, name: cityData.name, item: canonicalUrl },
-    ],
-  };
+  const crumbs: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: "Destinations", path: "/destinations" },
+    { name: cityData.country, path: `/destinations?country=${encodeURIComponent(cityData.country)}` },
+    { name: cityData.name },
+  ];
+  const breadcrumbSchema = buildBreadcrumbSchema(crumbs, canonicalPath);
+;
   const spotsForList: any[] = Array.isArray((cityData as any).spots) ? (cityData as any).spots : [];
   const itemListSchema = spotsForList.length
     ? {
