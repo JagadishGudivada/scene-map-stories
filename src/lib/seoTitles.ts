@@ -63,11 +63,11 @@ const typeNoun = (t?: SeoMediaType) =>
 export function buildTitleSeoTitle({ title, year, type }: TitleSeoInput): string {
   const y = year ? ` (${year})` : "";
   if (isBook(type)) {
-    return clamp(`${title} locations${y} — where the book is set, mapped`, 62);
+    return clamp(`${title}${y} locations — where the book is set`, 46);
   }
   return clamp(
-    `${title} filming locations${y} — where was the ${typeNoun(type)} filmed?`,
-    62
+    `${title}${y} filming locations — where it was filmed`,
+    46
   );
 }
 
