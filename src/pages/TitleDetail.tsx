@@ -21,6 +21,7 @@ import { Progress } from "@/components/ui/progress";
 import { useSavedTitle, useWatchedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
+import { buildTitleSeoTitle, buildTitleSeoDescription, buildTitleFaqSchema } from "@/lib/seoTitles";
 import { RevealButton } from "@/components/RevealDeck";
 import heroRomeImg from "@/assets/hero-rome.jpg";
 
@@ -696,14 +697,19 @@ export default function TitleDetail() {
   ).slice(0, 8);
   const communityPosts = mockPosts.slice(0, 2);
 
-  const kindWord = view.type === "Book" ? "set" : "filmed";
-  const seoTitle = `Where was ${view.title} (${view.year}) ${kindWord}? Filming locations map`;
-  const seoDesc = (
-    `Every real location from ${view.title} (${view.year}) mapped stop-by-stop${
-      view.locations?.length ? ` — ${view.locations.length} places` : ""
-    }. ${view.synopsis || ""}`
-  ).slice(0, 160);
+  const seoInput = {
+    title: view.title,
+    year: view.year,
+    type: view.type,
+    synopsis: view.synopsis,
+    creator: view.creator,
+    locations: view.locations,
+  };
+  const seoTitle = buildTitleSeoTitle(seoInput);
+  const seoDesc = buildTitleSeoDescription(seoInput);
+  const faqSchema = buildTitleFaqSchema(seoInput);
   const canonicalUrl = `https://sarevista.com/title/${slug}`;
+
   const locationList = (view.locations || []).slice(0, 20).map((loc: any, i: number) => ({
     "@type": "ListItem",
     position: i + 1,
@@ -761,7 +767,12 @@ export default function TitleDetail() {
         itemListElement: locationList,
       }
     : null;
-  const movieSchema = [workSchema, breadcrumbSchema, ...(itemListSchema ? [itemListSchema] : [])];
+  const movieSchema = [
+    workSchema,
+    breadcrumbSchema,
+    ...(itemListSchema ? [itemListSchema] : []),
+    ...(faqSchema ? [faqSchema] : []),
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
