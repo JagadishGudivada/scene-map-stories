@@ -24,9 +24,26 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return json({ error: "Unauthorized" }, 401);
+    }
+
     const { suggestionId } = await req.json();
     if (!suggestionId || typeof suggestionId !== "string") {
       return json({ error: "suggestionId required" }, 400);
+    }
+
+    const authClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await authClient.auth.getClaims(token);
+    const callerId = claimsData?.claims?.sub;
+    if (claimsError || !callerId) {
+      return json({ error: "Unauthorized" }, 401);
     }
 
     const supabase = createClient(
@@ -40,6 +57,11 @@ Deno.serve(async (req) => {
       .eq("id", suggestionId)
       .maybeSingle();
     if (fetchErr || !row) return json({ error: "Suggestion not found" }, 404);
+
+    // Only the owner may trigger verification, and only while still pending.
+    if (row.user_id !== callerId) return json({ error: "Suggestion not found" }, 404);
+    if (row.status !== "pending") return json({ error: "Suggestion already processed" }, 409);
+
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) return json({ error: "AI not configured" }, 500);
