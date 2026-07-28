@@ -22,6 +22,8 @@ import { useSavedTitle, useWatchedTitle } from "@/hooks/useSaved";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
 import { buildTitleSeoTitle, buildTitleSeoDescription, buildTitleFaqSchema } from "@/lib/seoTitles";
+import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
+import { absUrl, citySlug, buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, type Crumb, type RelatedLink } from "@/lib/seoSchema";
 import { RevealButton } from "@/components/RevealDeck";
 import heroRomeImg from "@/assets/hero-rome.jpg";
 
@@ -708,7 +710,8 @@ export default function TitleDetail() {
   const seoTitle = buildTitleSeoTitle(seoInput);
   const seoDesc = buildTitleSeoDescription(seoInput);
   const faqSchema = buildTitleFaqSchema(seoInput);
-  const canonicalUrl = `https://sarevista.com/title/${slug}`;
+  const canonicalPath = `/title/${slug}`;
+  const canonicalUrl = absUrl(canonicalPath);
 
   const locationList = (view.locations || []).slice(0, 20).map((loc: any, i: number) => ({
     "@type": "ListItem",
@@ -749,15 +752,40 @@ export default function TitleDetail() {
         }
       : {}),
   };
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://sarevista.com/" },
-      { "@type": "ListItem", position: 2, name: "Titles", item: "https://sarevista.com/explore" },
-      { "@type": "ListItem", position: 3, name: `${view.title} (${view.year})`, item: canonicalUrl },
-    ],
-  };
+  const typeLabel = view.type === "Series" ? "Series" : view.type === "Book" ? "Books" : "Movies";
+  const crumbs: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: typeLabel, path: `/explore?type=${encodeURIComponent(view.type || "Movie")}` },
+    { name: `${view.title}${view.year ? ` (${view.year})` : ""}` },
+  ];
+  const breadcrumbSchema = buildBreadcrumbSchema(crumbs, canonicalPath);
+  const relatedCityLinks: RelatedLink[] = Array.from(
+    new Map(
+      (view.locations || [])
+        .map((loc: any) => {
+          const city = String(loc.label || "").split(",")[0].trim();
+          const cSlug = citySlug(city);
+          if (!city || !cSlug) return null;
+          return [cSlug, {
+            name: `${view.type === "Book" ? "Stories" : "Movies & series"} filmed in ${city}`,
+            path: `/location/${cSlug}`,
+            description: `Filming locations in ${city} you can visit.`,
+          } as RelatedLink];
+        })
+        .filter(Boolean) as Array<[string, RelatedLink]>
+    ).values()
+  ).slice(0, 8);
+  const relatedLinksSchema = buildRelatedLinksSchema(
+    `Explore filming locations from ${view.title}`,
+    relatedCityLinks
+  );
+  const webPageSchema = buildWebPageSchema({
+    name: seoTitle,
+    description: seoDesc,
+    path: canonicalPath,
+    primaryImage: view.coverImage,
+  });
+;
   const itemListSchema = locationList.length
     ? {
         "@context": "https://schema.org",
@@ -768,15 +796,17 @@ export default function TitleDetail() {
       }
     : null;
   const movieSchema = [
+    webPageSchema,
     workSchema,
     breadcrumbSchema,
+    ...(relatedLinksSchema ? [relatedLinksSchema] : []),
     ...(itemListSchema ? [itemListSchema] : []),
     ...(faqSchema ? [faqSchema] : []),
   ];
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-8">
-      <Seo title={seoTitle} description={seoDesc} type="article" image={view.coverImage} jsonLd={movieSchema} canonicalPath={`/title/${slug}`} />
+      <Seo title={seoTitle} description={seoDesc} type="article" image={view.coverImage} jsonLd={movieSchema} canonicalPath={canonicalPath} upPath="/explore" />
       {slug && (
         <RevealButton
           context={{
