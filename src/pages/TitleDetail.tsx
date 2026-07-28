@@ -1128,6 +1128,29 @@ export default function TitleDetail() {
           )}
         </section>
 
+        {relatedCityLinks.length > 0 && (
+          <section className="mb-12" aria-labelledby="explore-cities-heading">
+            <h2 id="explore-cities-heading" className="font-serif text-2xl text-foreground mb-4">
+              Explore these places
+            </h2>
+            <ul className="flex flex-wrap gap-2">
+              {relatedCityLinks.map((link) => (
+                <li key={link.path}>
+                  <Link
+                    to={link.path}
+                    className="inline-flex items-center gap-1.5 rounded-full glass border border-border px-3.5 py-1.5 text-xs text-foreground hover:border-amber/40 hover:text-amber transition-colors"
+                  >
+                    <MapPin className="w-3 h-3" />
+                    {link.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+
+
         <SpotActionsModal
           pin={selectedLocationPin}
           onClose={() => setSelectedLocationPin(null)}
