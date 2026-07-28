@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
     if (!aiRes.ok) {
       const txt = await aiRes.text();
       log.error("AI error", txt, { status: aiRes.status });
-      await supabase.from("location_suggestions").update({ status: "pending", ai_notes: `AI error ${aiRes.status}` }).eq("id", suggestionId);
+      await supabase.from("location_suggestions").update({ status: "pending", ai_notes: `AI error ${aiRes.status}` }).eq("id", suggestionId).eq("user_id", callerId);
       return json({ error: "AI provider error" }, 200);
     }
 
@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
       verified_lng: verified ? Number(parsed.lng) : null,
       verified_label: verified ? String(parsed.label || row.location_name) : null,
       ai_notes: typeof parsed.notes === "string" ? parsed.notes.slice(0, 500) : null,
-    }).eq("id", suggestionId);
+    }).eq("id", suggestionId).eq("user_id", callerId);
 
     return json({ ok: true, verified, evidenceCount: evidence.length });
   } catch (e) {
