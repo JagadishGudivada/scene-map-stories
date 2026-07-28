@@ -943,6 +943,8 @@ export default function TitleDetail() {
         </div>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 mt-10">
+        <SeoBreadcrumbs items={crumbs} className="mb-6" />
+
         {view.synopsis && (
           <section className="mb-10">
             <h2 className="font-serif text-2xl text-foreground mb-3">Synopsis</h2>
