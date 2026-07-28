@@ -12,6 +12,8 @@ import PassportBadgeUnlockSheet from "@/components/PassportBadgeUnlockSheet";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
 import Seo from "@/components/Seo";
+import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
+import { absUrl, buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, type Crumb, type RelatedLink } from "@/lib/seoSchema";
 import { RevealButton } from "@/components/RevealDeck";
 import { DEFAULT_PEXELS_IMAGE, fetchPexelsImage } from "@/lib/pexels";
 import { useAllVisitedSpots, useBeenHereSpot, useSavedSpot } from "@/hooks/useSaved";
@@ -20,9 +22,6 @@ import {
   getBadgeTierForVisits,
   type PassportBadge,
 } from "@/hooks/usePassportBadges";
-import {
-  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 
 const typeIcons: Record<string, React.ElementType> = {
   Movie: Film,
@@ -287,7 +286,8 @@ export default function FilmingSpotDetail() {
     : `${spot.name}, ${spot.city} — Filming Location`;
   const spotSeoDesc = (spot.description ||
     `Visit ${spot.name} in ${spot.city}, ${spot.country} — the real filming location from ${spot.titles.join(", ") || "screen and story"}. Coordinates, scene notes, and how to get there.`).slice(0, 160);
-  const canonicalUrl = `https://sarevista.com/spot/${spot.slug}`;
+  const canonicalPath = `/spot/${spot.slug}`;
+  const canonicalUrl = absUrl(canonicalPath);
   const placeSchema = {
     "@context": "https://schema.org",
     "@type": "TouristAttraction",
@@ -304,21 +304,36 @@ export default function FilmingSpotDetail() {
         }
       : {}),
   };
-  const breadcrumbSchema = {
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Home", item: "https://sarevista.com/" },
-      { "@type": "ListItem", position: 2, name: spot.country, item: `https://sarevista.com/destinations?country=${encodeURIComponent(spot.country)}` },
-      { "@type": "ListItem", position: 3, name: spot.city, item: `https://sarevista.com/location/${encodeURIComponent(spot.city.toLowerCase().replace(/\s+/g, "-"))}` },
-      { "@type": "ListItem", position: 4, name: spot.name, item: canonicalUrl },
-    ],
-  };
-  const spotSchema = [placeSchema, breadcrumbSchema];
+  const crumbs: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: spot.country, path: `/destinations?country=${encodeURIComponent(spot.country)}` },
+    { name: spot.city, path: `/location/${spot.citySlug}` },
+    { name: "Filming Spots", path: `/location/${spot.citySlug}/filming-spots` },
+    { name: spot.name },
+  ];
+  const breadcrumbSchema = buildBreadcrumbSchema(crumbs, canonicalPath);
+  const relatedLinks: RelatedLink[] = [
+    { name: `All filming spots in ${spot.city}`, path: `/location/${spot.citySlug}/filming-spots` },
+    { name: `${spot.city} filming locations guide`, path: `/location/${spot.citySlug}` },
+    ...(spot.titles || []).slice(0, 6).map((t: string) => ({
+      name: `${t} filming locations`,
+      path: `/title/${t.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      description: `Every real place ${t} was filmed.`,
+    })),
+  ];
+  const relatedLinksSchema = buildRelatedLinksSchema(`Related to ${spot.name}`, relatedLinks);
+  const webPageSchema = buildWebPageSchema({
+    name: spotSeoTitle,
+    description: spotSeoDesc,
+    path: canonicalPath,
+    primaryImage: (spot as any).image,
+  });
+;
+  const spotSchema = [webPageSchema, placeSchema, breadcrumbSchema, ...(relatedLinksSchema ? [relatedLinksSchema] : [])];
 
   return (
     <div className="min-h-screen bg-background text-foreground pt-20 md:pt-24">
-      <Seo title={spotSeoTitle} description={spotSeoDesc} type="article" image={(spot as any).image} jsonLd={spotSchema} canonicalPath={`/spot/${spot.slug}`} />
+      <Seo title={spotSeoTitle} description={spotSeoDesc} type="article" image={(spot as any).image} jsonLd={spotSchema} canonicalPath={canonicalPath} upPath={`/location/${spot.citySlug}/filming-spots`} />
       <RevealButton
         context={{
           kind: "spot",
@@ -329,35 +344,7 @@ export default function FilmingSpotDetail() {
       />
       {/* Breadcrumb */}
       <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/" className="text-muted-foreground hover:text-amber text-xs">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator><ChevronRight className="w-3 h-3 text-muted-foreground" /></BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to={`/location/${spot.citySlug}`} className="text-muted-foreground hover:text-amber text-xs">
-                  {spot.city}
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator><ChevronRight className="w-3 h-3 text-muted-foreground" /></BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to={`/location/${spot.citySlug}/filming-spots`} className="text-muted-foreground hover:text-amber text-xs">
-                  Filming Spots
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator><ChevronRight className="w-3 h-3 text-muted-foreground" /></BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <span className="text-amber text-xs font-medium">{spot.name}</span>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <SeoBreadcrumbs items={crumbs} />
       </div>
 
       {/* Header */}

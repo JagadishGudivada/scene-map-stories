@@ -6,11 +6,10 @@ import {
 } from "lucide-react";
 import LeafletMap from "@/components/LeafletMap";
 import type { AppMap, MapPin as MapPinType } from "@/components/LeafletMap";
-import {
-  Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { citiesFilmingData, type FilmingSpotData } from "@/lib/filmingSpotsData";
 import Seo from "@/components/Seo";
+import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
+import { buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, type Crumb, type RelatedLink } from "@/lib/seoSchema";
 
 const typeIcons: Record<string, React.ElementType> = {
   Movie: Film,
@@ -70,39 +69,41 @@ export default function FilmingSpots() {
     }
   }
 
+  const canonicalPath = `/location/${slug || "rome"}/filming-spots`;
+  const spotsSeoTitle = `${city.name} filming spots — all on-screen locations mapped`;
+  const spotsSeoDesc = `Explore ${city.spots.length}+ real filming spots in ${city.name}, ${city.country} from movies, series and books. Map, scene notes and visit tips.`;
+  const crumbs: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: city.country, path: `/destinations?country=${encodeURIComponent(city.country)}` },
+    { name: city.name, path: `/location/${slug || "rome"}` },
+    { name: "Filming Spots" },
+  ];
+  const spotsRelatedLinks: RelatedLink[] = city.spots.slice(0, 20).map((s) => ({
+    name: `${s.name}, ${city.name}`,
+    path: `/spot/${s.slug || s.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    description: s.titles?.length ? `Seen in ${s.titles.join(", ")}.` : undefined,
+  }));
+  const spotsJsonLd = [
+    buildWebPageSchema({ name: spotsSeoTitle, description: spotsSeoDesc, path: canonicalPath }),
+    buildBreadcrumbSchema(crumbs, canonicalPath),
+    ...(buildRelatedLinksSchema(`Filming spots in ${city.name}`, spotsRelatedLinks)
+      ? [buildRelatedLinksSchema(`Filming spots in ${city.name}`, spotsRelatedLinks)!]
+      : []),
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground pt-20 md:pt-24">
       <Seo
-        title={`${city.name} Filming Spots — On-Screen Locations`}
-        description={`Explore ${city.spots.length}+ real filming spots in ${city.name} from movies, series, and books. Map, scenes, and visit tips.`}
+        title={spotsSeoTitle}
+        description={spotsSeoDesc}
+        type="article"
+        jsonLd={spotsJsonLd}
+        canonicalPath={canonicalPath}
+        upPath={`/location/${slug || "rome"}`}
       />
       {/* Breadcrumb */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-4 pb-2">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/" className="text-muted-foreground hover:text-amber text-xs">Home</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <ChevronRight className="w-3 h-3 text-muted-foreground" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to={`/location/${slug}`} className="text-muted-foreground hover:text-amber text-xs">
-                  {city.name}
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator>
-              <ChevronRight className="w-3 h-3 text-muted-foreground" />
-            </BreadcrumbSeparator>
-            <BreadcrumbItem>
-              <span className="text-amber text-xs font-medium">Filming Spots</span>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <SeoBreadcrumbs items={crumbs} />
       </div>
 
       {/* Header */}
