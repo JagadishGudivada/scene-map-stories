@@ -530,11 +530,40 @@ export default function LocationDetail() {
         })),
       }
     : null;
-  const jsonLd = [placeSchema, breadcrumbSchema, ...(itemListSchema ? [itemListSchema] : [])];
+  const relatedLinks: RelatedLink[] = [
+    {
+      name: `All filming spots in ${cityData.name}`,
+      path: `/location/${slug}/filming-spots`,
+      description: `Map of every confirmed filming spot in ${cityData.name}.`,
+    },
+    ...titlesData.slice(0, 8).map((t) => ({
+      name: `${t.title} filming locations`,
+      path: `/title/${t.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${String(t.type || "movie").toLowerCase()}`,
+      description: `Where ${t.title} was filmed.`,
+    })),
+    ...relatedLocations.slice(0, 6).map((l: any) => ({
+      name: `${l.name} filming locations`,
+      path: `/location/${citySlug(l.slug || l.name)}`,
+    })),
+  ];
+  const relatedLinksSchema = buildRelatedLinksSchema(`Related to ${cityData.name}`, relatedLinks);
+  const webPageSchema = buildWebPageSchema({
+    name: locSeoTitle,
+    description: locSeoDesc,
+    path: canonicalPath,
+    primaryImage: cityData.coverImage,
+  });
+  const jsonLd = [
+    webPageSchema,
+    placeSchema,
+    breadcrumbSchema,
+    ...(itemListSchema ? [itemListSchema] : []),
+    ...(relatedLinksSchema ? [relatedLinksSchema] : []),
+  ];
 
   return (
     <div className="min-h-screen bg-background pb-24 md:pb-0">
-      <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={jsonLd} canonicalPath={`/location/${slug}`} />
+      <Seo title={locSeoTitle} description={locSeoDesc} type="article" image={cityData.coverImage} jsonLd={jsonLd} canonicalPath={canonicalPath} upPath="/destinations" />
       {slug && (
         <RevealButton
           context={{
@@ -572,11 +601,7 @@ export default function LocationDetail() {
         {/* Breadcrumb */}
         <div className="absolute top-20 left-[5%] z-10">
           <div className="text-[13px] font-sans text-muted-foreground flex items-center gap-2">
-            <Link to="/" className="text-amber hover:text-amber/80 transition-colors">
-              Popular Filming Locations
-            </Link>
-            <span className="mx-2 text-muted-foreground/50">›</span>
-            <span>{cityData.flag} {cityData.name}</span>
+            <SeoBreadcrumbs items={crumbs} />
             {aiLoading && <Loader2 className="w-3.5 h-3.5 text-amber animate-spin ml-2" />}
             {aiError && <span className="ml-2 text-destructive text-xs">{aiError}</span>}
           </div>
