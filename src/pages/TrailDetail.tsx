@@ -3,6 +3,8 @@ import { Link, useParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Film, MapPin, Route } from "lucide-react";
 import Seo from "@/components/Seo";
+import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
+import { buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, citySlug, type Crumb, type RelatedLink } from "@/lib/seoSchema";
 import FilmingTrailDialog from "@/components/FilmingTrailDialog";
 import TrailMap from "@/components/map/TrailMap";
 import { useTrailById } from "@/hooks/useTrails";
@@ -53,24 +55,55 @@ export default function TrailDetail() {
 
   const activeStop = activeIndex != null ? stops[activeIndex] : null;
 
+  const canonicalPath = `/trails/${id ?? ""}`;
+  const trailCity = trail?.name?.split(/[—–-]/)[0]?.trim() || "";
+  const trailSeoTitle = trail
+    ? `${trail.name} — ${trail.kind === "walking" ? "walking trail" : "one-day drive"} of filming locations`
+    : "Filming location trail";
+  const trailSeoDesc = trail
+    ? `A ${trail.kind === "walking" ? "walking trail" : "one-day drive"} through ${trail.stops.length} real screen locations${trailCity ? ` in ${trailCity}` : ""}, mapped stop-by-stop with directions.`
+    : "Curated screen-location trail on Sarevista.";
+  const crumbs: Crumb[] = [
+    { name: "Home", path: "/" },
+    { name: "Trails & Tours", path: "/destinations" },
+    ...(trailCity ? [{ name: trailCity, path: `/location/${citySlug(trailCity)}` }] : []),
+    { name: trail?.name || "Trail" },
+  ];
+  const trailRelatedLinks: RelatedLink[] = (trail?.stops || []).slice(0, 20).map((s: any) => ({
+    name: s.name || s.label,
+    path: s.slug ? `/spot/${s.slug}` : `/location/${citySlug(s.city || trailCity || s.name || "")}`,
+  }));
+  const trailLinksSchema = buildRelatedLinksSchema(
+    trail ? `Stops on ${trail.name}` : "Trail stops",
+    trailRelatedLinks
+  );
+  const trailJsonLd = [
+    buildWebPageSchema({ name: trailSeoTitle, description: trailSeoDesc, path: canonicalPath }),
+    buildBreadcrumbSchema(crumbs, canonicalPath),
+    ...(trailLinksSchema ? [trailLinksSchema] : []),
+  ];
+
   return (
     <div className="min-h-screen bg-background pt-20 pb-16">
       <Seo
-        title={trail ? `${trail.name} · Sarevista` : "Trail · Sarevista"}
-        description={
-          trail
-            ? `A ${trail.kind === "walking" ? "walking trail" : "one-day drive"} through ${trail.stops.length} real screen locations.`
-            : "Curated screen-location trail on Sarevista."
-        }
+        title={trailSeoTitle}
+        description={trailSeoDesc}
+        type="article"
+        canonicalPath={canonicalPath}
+        upPath="/destinations"
+        jsonLd={trailJsonLd}
       />
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <Link
-          to="/"
-          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-6"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back
-        </Link>
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Back
+          </Link>
+          <SeoBreadcrumbs items={crumbs} />
+        </div>
 
         {loading ? (
           <p className="text-sm text-muted-foreground">Loading trail…</p>
