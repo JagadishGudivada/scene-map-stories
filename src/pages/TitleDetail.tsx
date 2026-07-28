@@ -696,14 +696,19 @@ export default function TitleDetail() {
   ).slice(0, 8);
   const communityPosts = mockPosts.slice(0, 2);
 
-  const kindWord = view.type === "Book" ? "set" : "filmed";
-  const seoTitle = `Where was ${view.title} (${view.year}) ${kindWord}? Filming locations map`;
-  const seoDesc = (
-    `Every real location from ${view.title} (${view.year}) mapped stop-by-stop${
-      view.locations?.length ? ` — ${view.locations.length} places` : ""
-    }. ${view.synopsis || ""}`
-  ).slice(0, 160);
+  const seoInput = {
+    title: view.title,
+    year: view.year,
+    type: view.type,
+    synopsis: view.synopsis,
+    creator: view.creator,
+    locations: view.locations,
+  };
+  const seoTitle = buildTitleSeoTitle(seoInput);
+  const seoDesc = buildTitleSeoDescription(seoInput);
+  const faqSchema = buildTitleFaqSchema(seoInput);
   const canonicalUrl = `https://sarevista.com/title/${slug}`;
+
   const locationList = (view.locations || []).slice(0, 20).map((loc: any, i: number) => ({
     "@type": "ListItem",
     position: i + 1,
