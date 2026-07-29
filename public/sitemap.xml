@@ -168,6 +168,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/call-me-by-your-name-2007-book</loc>
+    <lastmod>2026-07-29</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/clarkson-s-farm-2021</loc>
     <lastmod>2026-06-17</lastmod>
     <changefreq>weekly</changefreq>
@@ -278,6 +284,12 @@
   <url>
     <loc>https://sarevista.com/title/gang-leader-2019</loc>
     <lastmod>2026-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/title/gladiator-movie</loc>
+    <lastmod>2026-07-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -980,6 +992,12 @@
   <url>
     <loc>https://sarevista.com/spot/cantacuzino-castle</loc>
     <lastmod>2026-06-18</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/spot/colosseum</loc>
+    <lastmod>2026-07-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
