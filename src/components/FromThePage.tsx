@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { BookOpen, ArrowRight } from "lucide-react";
+import { getCachedCover, resolveBookCovers } from "@/lib/bookCovers";
 
 const books = [
   {
@@ -34,38 +35,28 @@ const books = [
   },
 ];
 
-// Open Library Covers API — https://openlibrary.org/dev/docs/api/covers
-const coverByIsbn = (isbn: string) =>
-  `https://covers.openlibrary.org/b/isbn/${isbn}-L.jpg?default=false`;
-const coverById = (id: number) =>
-  `https://covers.openlibrary.org/b/id/${id}-L.jpg`;
-
 function useOpenLibraryCovers() {
-  const [covers, setCovers] = useState<Record<string, string>>({});
+  // Seed synchronously from cache so repeat visits paint covers with no fetch.
+  const [covers, setCovers] = useState<Record<string, string>>(() => {
+    const seed: Record<string, string> = {};
+    for (const b of books) {
+      const hit = getCachedCover(b.slug);
+      if (hit) seed[b.slug] = hit;
+    }
+    return seed;
+  });
 
   useEffect(() => {
+    const missing = books.filter((b) => !getCachedCover(b.slug));
+    if (missing.length === 0) return;
+
     let cancelled = false;
-    (async () => {
-      const entries = await Promise.all(
-        books.map(async (b) => {
-          try {
-            const url = new URL("https://openlibrary.org/search.json");
-            url.searchParams.set("title", b.title);
-            url.searchParams.set("author", b.author);
-            url.searchParams.set("fields", "cover_i");
-            url.searchParams.set("limit", "5");
-            const res = await fetch(url.toString());
-            const data = await res.json();
-            const doc = (data?.docs || []).find((d: any) => d.cover_i);
-            if (doc?.cover_i) return [b.slug, coverById(doc.cover_i)] as const;
-          } catch {
-            /* fall through to ISBN cover */
-          }
-          return [b.slug, coverByIsbn(b.isbn)] as const;
-        })
-      );
-      if (!cancelled) setCovers(Object.fromEntries(entries));
-    })();
+    resolveBookCovers(
+      missing.map((b) => ({ key: b.slug, title: b.title, author: b.author, isbn: b.isbn }))
+    ).then((resolved) => {
+      if (!cancelled) setCovers((prev) => ({ ...prev, ...resolved }));
+    });
+
     return () => {
       cancelled = true;
     };
