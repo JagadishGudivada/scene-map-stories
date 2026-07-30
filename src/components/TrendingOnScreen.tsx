@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { Flame } from "lucide-react";
 import { TRENDING_ON_SCREEN, type TrendingSpot } from "@/lib/trendingOnScreen";
 import { usePexelsImage } from "@/hooks/usePexelsImage";
+import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import "flag-icons/css/flag-icons.min.css";
 
 const currentYear = new Date().getFullYear();
