@@ -1,14 +1,13 @@
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { Flame } from "lucide-react";
 import { TRENDING_ON_SCREEN, type TrendingSpot } from "@/lib/trendingOnScreen";
 import { usePexelsImage } from "@/hooks/usePexelsImage";
+import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import "flag-icons/css/flag-icons.min.css";
 
 const currentYear = new Date().getFullYear();
 
 function TrendingCard({ s, i }: { s: TrendingSpot; i: number }) {
-  const navigate = useNavigate();
   const src = usePexelsImage(s.venueName, s.city, undefined, s.image);
   return (
     <motion.article
@@ -55,12 +54,15 @@ function TrendingCard({ s, i }: { s: TrendingSpot; i: number }) {
           <span className="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 sm:px-3 sm:py-1 text-[10px] sm:text-[11px] font-medium text-foreground/85">
             {s.hashtag}
           </span>
-          <button
-            onClick={() => navigate(`/map?search=${encodeURIComponent(s.mapQuery)}`)}
-            className="inline-flex items-center h-8 sm:h-9 px-3 sm:px-4 rounded-full bg-gold-deep text-charcoal text-xs sm:text-sm font-semibold hover:brightness-105 transition"
-          >
-            Plan a visit
-          </button>
+          <PlanYourTripDialog
+            locationName={s.city}
+            spotName={s.venueName}
+            trigger={
+              <button className="inline-flex items-center h-8 sm:h-9 px-3 sm:px-4 rounded-full bg-gold-deep text-charcoal text-xs sm:text-sm font-semibold hover:brightness-105 transition">
+                Plan a visit
+              </button>
+            }
+          />
         </div>
       </div>
     </motion.article>
