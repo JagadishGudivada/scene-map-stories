@@ -1,76 +1,108 @@
+# Sarevista Launch Plan — Cloudflare/Wrangler, Playwright smoke tests, affiliate revenue
 
-# Beating CineMapper — Positioning & Product Plan
+You deploy the frontend yourself from VSCode with Wrangler to Cloudflare Workers (`wrangler.toml` is already set up as a static-assets Worker with SPA fallback). The backend (database, auth, edge functions) stays on Lovable Cloud. This plan covers production readiness, critical end-to-end tests, affiliate monetisation, and an organic launch sequence.
 
-## What CineMapper is (from Semrush + their site)
+## Phase 1 — Production readiness
 
-- **Traffic**: ~2.5K/mo US mobile, ~1.8K UK — small but ranking #1 for "filming locations".
-- **Product**: A single global filming-location **map**, a **Film/TV browser**, and **CineTrails** (same trail idea we just shipped). Community submissions, socials, cookie banner. Feels like a hobbyist Firebase app.
-- **Weakness signals**: loading screen quote gimmick, no personal layer (no passport/journey/profile), no books, no AI, generic SEO ("filming locations" homepage does 57% of their traffic — one-page-carries-the-site).
-- **Category competitors** (from Semrush): findthatlocation.com (2.5K/mo, biggest), lafilmlocations.com, filmingmap.com, wearedorothy.com. All are **directories**. None own the "personal journey" angle.
+1. Confirm Wrangler auth locally (`npx wrangler login`), or `CLOUDFLARE_API_TOKEN` + `CLOUDFLARE_ACCOUNT_ID` for CI.
+2. Build and deploy: `npm run build` then `npx wrangler deploy --env production`.
+3. Verify deep links (`/title/:slug`, `/trails/:id`, `/map`, `/passport/:username`) resolve via SPA fallback, and mobile renders clean.
+4. Attach the custom domain in Cloudflare (Workers → sarevista → Settings → Triggers → Custom Domains).
+5. Once the real domain is live, update the site URL constant in `src/lib/seoSchema.ts`, `index.html`, `public/robots.txt`, and regenerate `public/sitemap.xml` via the build, then re-deploy. Every meta/SEO change needs a rebuild + re-deploy because the site is a static SPA.
+6. Submit the sitemap in Google Search Console and baseline analytics.
+7. Re-run the security scan and the Supabase linter before the public deploy.
 
-## The core insight
+## Phase 2 — Affiliate links (the pennies)
 
-CineMapper (and every competitor) is a **directory** — "here are places from movies". Sarevista's memory already lives in `mem://index.md`: **"Not a list. Your memory map."** That's the wedge. We don't beat CineMapper by having more pins; we beat them by being the only product where **watching → visiting → remembering** is one continuous loop.
+The plumbing already exists: `src/lib/affiliates.ts` holds a partner registry with an empty `AFFILIATE_IDS` map and `buildUrl` per partner, `PlanYourTripDialog` renders the cards, and `trackAffiliateClick` logs every click into `affiliate_clicks`. Right now the URLs are plain public search links with no partner ID attached, so no commission is earned. The work is to sign up, drop the IDs in, and switch the two generic links to real affiliate networks.
 
-Three moats we can build that they structurally can't copy without a rewrite:
+### 2.1 Sign up for the programmes
 
-1. **Personal layer** — Passport, Fog-of-War, Tier badges, Memory Lane, milestones. Already shipped. Double down.
-2. **AI-native discovery** — Gemini scout, Film Concierge, AI location search. Already in the codebase. They have none.
-3. **Beyond film** — Books + series + movies with `tmdb_id`, trailers next. "Screen + page locations", not just filming.
+| Partner | Where to apply | What you get | Typical payout |
+|---|---|---|---|
+| Booking.com (hotels) | booking.com/affiliate-program | `aid` partner ID | 4–6% of stay commission |
+| GetYourGuide (tours) | partner.getyourguide.com | `partner_id` | 8% of tour price |
+| Skyscanner / Travelpayouts (flights) | Skyscanner Partners, or Travelpayouts for easier approval | marker / `associateid` | ~1–2% per booking |
+| Airalo (eSIM) | airalo.com/partners | `ref` code | 10–15% |
+| SafetyWing (insurance) | safetywing.com/affiliates | `referenceID` | ~10% recurring |
 
-## Plan (phased, ~4 workstreams)
+Approval notes: GetYourGuide and Airalo approve fast and pay well for a travel-content site. Booking.com wants a live site with real content — apply after the Cloudflare deploy with the custom domain. Skyscanner direct is strict; Travelpayouts is the practical fallback and aggregates flights + hotels under one account.
 
-### 1. Sharpen positioning on the landing page
+### 2.2 Wire the IDs in
 
-Reframe hero + meta so a first-time visitor immediately sees we're **not** another filming-locations directory.
+- Store each ID as a query fragment in `AFFILIATE_IDS` (e.g. `booking: "aid=1234567"`, `getyourguide: "partner_id=ABC123"`). The existing `appendId` helper already appends them to every built URL, so filling the map is enough for those partners.
+- Replace the two links that currently point at non-affiliate destinations:
+  - **Flights** currently deep-links to Google Flights, which pays nothing. Switch `buildUrl` to the Skyscanner/Travelpayouts affiliate search URL with the marker and origin/destination params.
+  - **Get Directions** (Google Maps) stays as a non-earning utility — keep it, it is a genuine user need and builds trust.
+- These are public affiliate IDs, not secrets, so they belong in the codebase (not in the secrets store). Only add a secret if a partner later needs a server-side API key for live pricing.
+- Add `rel="sponsored"` where missing (already present in `PlanYourTripDialog`) and keep the existing affiliate disclosure line — required by most programmes and by FTC/EU rules.
 
-- Hero H1 stays but sub-hero adds a comparison line: *"Directories show you pins. Sarevista remembers where you've been."*
-- Add a small "Why Sarevista" strip below `HowItWorks` with 3 tiles: **Your passport, not a directory** · **AI concierge, not a search box** · **Books, series & film — one map**.
-- Update `<title>`/meta description + `llms.txt` around "screen-location memory map" — stop competing head-on for "filming locations" (CineMapper owns it), win the long tail: "where was <title> filmed", "<title> filming locations map", "<city> filming locations trail".
+### 2.3 Expand the surface area
 
-### 2. SEO — attack the long tail, not the head term
+Same dialog, more entry points, so more clicks:
 
-CineMapper's #1 keyword ("filming locations") is a fortress. Their #2–4 are per-title pages (`/film/percyjacksonolympians`, `/cinetrails/andor-uk`, `/page/tenet`) — that's where the real, winnable traffic is.
+- The "Plan a visit" button on landing-page trending cards already opens the dialog. Add the same dialog to trail detail pages ("Book this trail") and city/location detail pages ("Stay near these locations").
+- On trail pages, pass the trail's first stop coordinates so the hotel and tour queries are city-accurate.
+- Add a compact single-line affiliate strip (flights / stay / tours) at the bottom of title detail pages, tied to the top filming city.
 
-- Ensure every `/title/:slug` page has: title-specific H1, filming-location count, city list, JSON-LD `Movie`/`TVSeries`, and internal links to trail + spots.
-- Ensure every `/trails/:id` page has: city-in-title H1 ("London walking trail through 8 filming locations"), OG image, structured data.
-- Generate a `/filming-locations/:city` index page (pulls from `locations` table) for city-level SEO — CineMapper has nothing here.
-- Regenerate `sitemap.xml` to include all titles, trails, and city pages.
+### 2.4 Measure and optimise
 
-### 3. Feature moves that widen the gap
+- Build a small internal report from the `affiliate_clicks` table (clicks by partner, by service, by spot) so you can see which partner and which page earn.
+- Compare click counts against each partner's dashboard to spot broken deep links (a partner ID in the wrong param silently loses attribution).
+- Drop or reorder partners with no conversions after the first month; card order in `AFFILIATE_PARTNERS` controls the visual order.
 
-Ship the things CineMapper can't fast-follow because their data model doesn't support it:
+### 2.5 Compliance
 
-- **Trailers on title pages** (TMDB videos endpoint — `tmdb_id` already stored).
-- **Books as a first-class type** — already partially wired via the `-book` slug suffix. Add a book icon in filters and a "From the page to the place" section on the landing page.
-- **Shareable stop card** — already built; add a one-tap "Add to Instagram Story" flow post-check-in. This is the viral loop CineMapper lacks entirely.
-- **"I've been here" check-in** on every spot page, feeding Fog-of-War + Passport. Currently the loop starts at Profile; move the entry point onto the spot page.
+- Keep the disclosure visible in the dialog and add a short affiliate-disclosure paragraph to the existing site pages content.
+- Do not attach affiliate params to links shared into social posts unless the platform allows it (some flag affiliate links as spam).
 
-### 4. Community + defensibility
+## Phase 3 — Playwright smoke tests
 
-CineMapper accepts user submissions but has no profile/social layer. Ours does.
+Add a thin end-to-end layer for the flows that must never break. Install `@playwright/test`, add `playwright.config.ts` pointed at `http://localhost:8080`, keep specs in `e2e/` so they stay separate from the existing Vitest tests in `src/`, and add `e2e` / `e2e:ui` scripts.
 
-- Enable **public passport pages** (`/u/:username`) to be shared — every share is a backlink and a signup funnel.
-- Add a **"Contributed by @user"** attribution on locations users add via `AddLocationDialog`, with a link to their passport. Turns contributors into promoters.
-- Weekly **"Trail of the week"** email (transactional infra already exists) featuring one user's public passport route.
+| Spec | Flow | Why |
+|---|---|---|
+| `homepage` | `/` renders hero, search accepts input, no console errors | front door |
+| `title-search` | search a known title, pick result, land on `/title/:slug` | core funnel |
+| `plan-trip` | open Plan Your Trip from a spot and from a trending card, assert every partner link is an absolute https URL containing its affiliate ID | protects revenue |
+| `save-to-passport` | sign in, mark a spot visited, see it on the profile | core loop |
+| `public-passport` | `/passport/:username` renders and shares | viral loop |
+| `trail-page` | `/trails/:id` renders map and stops | SEO landing page |
+| `mobile-smoke` | one core flow at mobile viewport | most traffic |
+
+Auth-dependent specs use the Lovable-managed Supabase session env vars; no credentials in the repo. Run `npm run test && npm run e2e` before every `wrangler deploy --env production`.
+
+## Phase 4 — Organic launch
+
+Lead with the memory-map positioning, not "another filming-locations map": *"Not a directory of filming locations. A personal map of the real places behind every film, series, and book you love."*
+
+| Channel | Tactic |
+|---|---|
+| Product Hunt | soft launch with founder story + one "where was X filmed" example |
+| Indie Hackers | build-in-public post on the pivot from directory to memory map |
+| Reddit | `r/filmlocations`, `r/cinetourism`, `r/letterboxd`, `r/travel`, plus city subreddits — share a city trail and ask for local tips, space posts 1–2 weeks apart |
+| X / LinkedIn | founder thread: "10 filming locations you can actually visit", with screenshots |
+| Instagram / TikTok | scene-vs-real-place shorts using Scene Mode and the share cards |
+| Newsletters | pitch 5–10 niche film/travel newsletters |
+
+Launch week: deploy and verify (day 1) → Product Hunt + Indie Hackers (day 2) → X/LinkedIn (day 3) → first Reddit post (day 4) → short-form video (day 5) → newsletter outreach (day 6) → analytics review and double down (day 7).
+
+## Phase 5 — Post-launch loop
+
+Read analytics weekly, fix the highest-friction drop-off, add title/city pages for queries already earning impressions, repeat whatever content performed, and track affiliate revenue per page so the monetised pages get the SEO attention.
 
 ## Technical notes
 
-- No schema changes needed for phase 1–2. Phase 3 needs a `spot_checkins` table (user_id, spot_id, visited_at) with RLS, GRANTs to `authenticated`, and a `has_visited(spot, user)` helper — feeds Fog-of-War directly.
-- Trailers: extend `title-details` edge function to also call `/movie/{id}/videos` + `/tv/{id}/videos`; cache in `titles.data->videos`.
-- City index pages: new route `/filming-locations/:citySlug`, powered by a Supabase view grouping `locations` by kebab city key (same key `useTrails` already uses).
-- SEO/JSON-LD lives in the existing `Seo.tsx` component — extend it with a `structuredData` prop.
+- No database schema changes needed. `affiliate_clicks` already exists with anon-insert click logging and CHECK constraints.
+- Affiliate IDs are public identifiers and go in `src/lib/affiliates.ts` — no secrets required.
+- Optional CI: a GitHub Actions job running `npm ci`, `npm run test`, `npm run e2e`, then `npx wrangler deploy --env production`; `CLOUDFLARE_DEPLOY.md` has a starting example.
+- Booking.com approval generally requires a live custom domain, so deploy first, then apply.
 
-## What we are *not* doing
+## Suggested order
 
-- Not competing for "filming locations" as a head term — too expensive vs. CineMapper's existing rank + backlink profile.
-- Not adding more pins for the sake of pin count. Directory arms races are a losing game.
-- Not copying CineTrails naming or layout — ours (`Trails & Tours`) already differentiates on walking vs. one-day drive.
-
-## Suggested execution order
-
-1. Positioning + meta + "Why Sarevista" strip (small, high leverage).
-2. Title page SEO polish + JSON-LD + sitemap regeneration.
-3. City index pages.
-4. Trailers on title pages.
-5. Check-ins + public passport share loop.
+1. Deploy to Cloudflare and attach the domain.
+2. Apply to GetYourGuide, Airalo, Travelpayouts now; Booking.com once the domain is live.
+3. Wire the IDs into `affiliates.ts` and switch the flights link to a real affiliate URL.
+4. Expand the Plan Your Trip dialog to trail, location, and title pages.
+5. Install Playwright and write the seven smoke specs.
+6. Soft launch, then review clicks and traffic weekly.
