@@ -6,6 +6,7 @@ import Seo from "@/components/Seo";
 import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
 import { buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, citySlug, type Crumb, type RelatedLink } from "@/lib/seoSchema";
 import FilmingTrailDialog from "@/components/FilmingTrailDialog";
+import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import TrailMap from "@/components/map/TrailMap";
 import { useTrailById } from "@/hooks/useTrails";
 import type { TrailStop } from "@/hooks/useTrails";
