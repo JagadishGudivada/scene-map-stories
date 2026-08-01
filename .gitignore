@@ -33,6 +33,10 @@ supabase/migrations/all_migrations_combined_single_transaction.sql
 supabase/config.toml
 supabase/.temp/cli-latest
 .env
+scripts/
+.claude/
+.github/
+
 
 # Playwright
 /test-results/
