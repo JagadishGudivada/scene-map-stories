@@ -240,3 +240,31 @@ jobs:
   `not_found_handling = "single-page-application"` replaces it.
 - `compatibility_flags = ["nodejs_compat"]` is enabled so a future Worker script
   can use Node built-ins if needed; it has no cost for assets-only deploys.
+
+---
+
+## Affiliate IDs (build-time)
+
+Outbound "Plan Your Trip" links earn commission only when a partner ID is
+attached. IDs live in `src/lib/affiliates.ts` and can be overridden per build
+with public env vars:
+
+```
+VITE_AFF_TRAVELPAYOUTS=marker=123456
+VITE_AFF_BOOKING=aid=1234567
+VITE_AFF_GETYOURGUIDE=partner_id=ABC123
+VITE_AFF_AIRALO=ref=ABC123
+VITE_AFF_SAFETYWING=referenceID=ABC123
+```
+
+These are public URL parameters, not secrets. They are inlined at build time, so
+changing one requires `npm run build && npx wrangler deploy --env production`.
+
+## Pre-deploy checklist
+
+```bash
+npm run test        # unit tests
+npm run e2e         # Playwright smoke tests (see e2e/README.md)
+npm run build
+npx wrangler deploy --env production
+```

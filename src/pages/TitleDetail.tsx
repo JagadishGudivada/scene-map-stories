@@ -16,6 +16,7 @@ import TrailerSection from "@/components/TrailerSection";
 
 import AddLocationDialog from "@/components/AddLocationDialog";
 import FilmingTrailDialog from "@/components/FilmingTrailDialog";
+import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useSavedTitle, useWatchedTitle } from "@/hooks/useSaved";
@@ -775,6 +776,11 @@ export default function TitleDetail() {
         .filter(Boolean) as Array<[string, RelatedLink]>
     ).values()
   ).slice(0, 8);
+  /** First real filming city — anchors the "plan a visit" affiliate strip. */
+  const topFilmingCity: string | null =
+    (view.locations || [])
+      .map((loc: any) => String(loc.label || "").split(",")[0].trim())
+      .find((city: string) => city.length > 1) || null;
   const relatedLinksSchema = buildRelatedLinksSchema(
     `Explore filming locations from ${view.title}`,
     relatedCityLinks
@@ -1148,6 +1154,27 @@ export default function TitleDetail() {
             </ul>
           </section>
         )}
+
+        {topFilmingCity && (
+          <section className="mb-12" aria-labelledby="plan-visit-heading">
+            <div className="glass rounded-2xl border border-border/60 p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <h2 id="plan-visit-heading" className="font-serif italic text-xl text-foreground">
+                  Go stand in {topFilmingCity}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Flights, stays and tours for the places behind {view.title}.
+                </p>
+              </div>
+              <PlanYourTripDialog
+                locationName={topFilmingCity}
+                triggerClassName="h-10 px-5 rounded-full bg-gradient-amber text-charcoal font-bold text-sm shadow-amber hover:opacity-90 transition-opacity whitespace-nowrap"
+              />
+            </div>
+          </section>
+        )}
+
+
 
 
 
