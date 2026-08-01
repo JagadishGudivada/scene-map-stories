@@ -16,6 +16,7 @@ import TrailerSection from "@/components/TrailerSection";
 
 import AddLocationDialog from "@/components/AddLocationDialog";
 import FilmingTrailDialog from "@/components/FilmingTrailDialog";
+import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { useSavedTitle, useWatchedTitle } from "@/hooks/useSaved";
