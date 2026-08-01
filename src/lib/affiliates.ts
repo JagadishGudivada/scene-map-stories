@@ -88,19 +88,40 @@ const appendId = (url: string, idParam: string) =>
 
 export const AFFILIATE_PARTNERS: AffiliatePartner[] = [
   {
-    partner: "skyscanner",
+    // Flights: earns via Travelpayouts (preferred) or Skyscanner Partners.
+    // With no ID configured it degrades to a plain Google Flights search so the
+    // card still works for users — it just earns nothing until you paste an ID.
+    partner: "flights",
     service: "flights",
     emoji: "✈️",
     label: "Find Flights",
     description: ({ originLabel, locationName }) =>
       `From ${originLabel} → ${locationName}`,
     buildUrl: ({ originQuery, locationName }) => {
-      const url = `https://www.google.com/travel/flights?q=${enc(
+      const origin = enc(originQuery);
+      const destination = enc(locationName);
+
+      if (AFFILIATE_IDS.travelpayouts) {
+        // Travelpayouts white-label flight search (aviasales inventory).
+        return appendId(
+          `https://www.aviasales.com/search?origin_name=${origin}&destination_name=${destination}`,
+          AFFILIATE_IDS.travelpayouts,
+        );
+      }
+
+      if (AFFILIATE_IDS.skyscanner) {
+        return appendId(
+          `https://www.skyscanner.net/transport/flights/?origin=${origin}&destination=${destination}`,
+          AFFILIATE_IDS.skyscanner,
+        );
+      }
+
+      return `https://www.google.com/travel/flights?q=${enc(
         `Flights from ${originQuery} to ${locationName}`,
       )}`;
-      return appendId(url, AFFILIATE_IDS.skyscanner);
     },
   },
+
   {
     partner: "booking",
     service: "hotels",
