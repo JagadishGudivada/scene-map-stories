@@ -129,15 +129,32 @@ export default function TrailDetail() {
               .
             </p>
 
-            {trail.stops.length >= 2 && (
-              <button
-                onClick={() => setTrailOpen(true)}
-                className="mb-8 inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-gradient-amber text-charcoal font-bold text-xs shadow-amber hover:opacity-90 transition-opacity"
-              >
-                <Route className="w-3.5 h-3.5" />
-                Build Trail
-              </button>
-            )}
+            <div className="mb-8 flex flex-wrap items-center gap-2">
+              {trail.stops.length >= 2 && (
+                <button
+                  onClick={() => setTrailOpen(true)}
+                  className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full bg-gradient-amber text-charcoal font-bold text-xs shadow-amber hover:opacity-90 transition-opacity"
+                >
+                  <Route className="w-3.5 h-3.5" />
+                  Build Trail
+                </button>
+              )}
+              <PlanYourTripDialog
+                locationName={trailCity || trail.name}
+                spotName={trail.stops[0] ? displayParts(trail.stops[0]).name : undefined}
+                lat={trail.stops[0]?.lat}
+                lng={trail.stops[0]?.lng}
+                trigger={
+                  <button
+                    className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-full glass border border-border/60 font-semibold text-xs text-foreground hover:border-amber transition-colors"
+                    aria-label={`Plan a trip to ${trailCity || trail.name}`}
+                  >
+                    🗺️ Plan this trail
+                  </button>
+                }
+              />
+            </div>
+
 
             <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-10 lg:items-start">
               {/* Map first in DOM so it leads on mobile; pinned right column on desktop. */}
