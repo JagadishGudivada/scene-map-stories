@@ -1149,6 +1149,27 @@ export default function TitleDetail() {
           </section>
         )}
 
+        {topFilmingCity && (
+          <section className="mb-12" aria-labelledby="plan-visit-heading">
+            <div className="glass rounded-2xl border border-border/60 p-5 flex flex-col sm:flex-row sm:items-center gap-4">
+              <div className="flex-1">
+                <h2 id="plan-visit-heading" className="font-serif italic text-xl text-foreground">
+                  Go stand in {topFilmingCity}
+                </h2>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Flights, stays and tours for the places behind {view.title}.
+                </p>
+              </div>
+              <PlanYourTripDialog
+                locationName={topFilmingCity}
+                triggerClassName="h-10 px-5 rounded-full bg-gradient-amber text-charcoal font-bold text-sm shadow-amber hover:opacity-90 transition-opacity whitespace-nowrap"
+              />
+            </div>
+          </section>
+        )}
+
+
+
 
 
         <SpotActionsModal
