@@ -775,6 +775,11 @@ export default function TitleDetail() {
         .filter(Boolean) as Array<[string, RelatedLink]>
     ).values()
   ).slice(0, 8);
+  /** First real filming city — anchors the "plan a visit" affiliate strip. */
+  const topFilmingCity: string | null =
+    (view.locations || [])
+      .map((loc: any) => String(loc.label || "").split(",")[0].trim())
+      .find((city: string) => city.length > 1) || null;
   const relatedLinksSchema = buildRelatedLinksSchema(
     `Explore filming locations from ${view.title}`,
     relatedCityLinks
