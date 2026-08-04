@@ -59,7 +59,7 @@ function useSlugToggle(
         .from(table)
         .select("id")
         .eq("user_id", user.id)
-        .eq(column, slug)
+        .eq(column as never, slug)
         .maybeSingle();
       if (cancelled) return;
       if (error) {
@@ -86,7 +86,7 @@ function useSlugToggle(
           .from(table)
           .delete()
           .eq("user_id", user.id)
-          .eq(column, slug);
+          .eq(column as never, slug);
         if (error) throw error;
         setActive(false);
         toast({ title: "Removed", description: copy.removedDescription });
@@ -272,11 +272,11 @@ function useSlugList(
     setLoading(true);
     const { data, error } = await supabase
       .from(table)
-      .select(column)
+      .select(column as string)
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
     if (error) console.error(`[useSaved] failed to list ${table}`, error);
-    setSlugs(((data ?? []) as Array<Record<string, string>>).map((d) => d[column]));
+    setSlugs(((data ?? []) as unknown as Array<Record<string, string>>).map((d) => d[column]));
     setLoading(false);
   }, [user, table, column]);
 
