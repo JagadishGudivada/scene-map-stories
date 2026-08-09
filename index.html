@@ -29,31 +29,48 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Sarevista",
-        "url": "https://sarevista.com/",
-        "description": "Discover filming locations from your favourite movies, series, and books.",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://sarevista.com/?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
-      }
-    </script>
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Sarevista",
-        "url": "https://sarevista.com/",
-        "logo": "https://sarevista.com/og-sarevista.jpg",
-        "sameAs": [
-          "https://www.instagram.com/sarevista",
-          "https://twitter.com/Sarevista",
-          "https://www.youtube.com/@sarevista"
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://sarevista.com/#organization",
+            "name": "Sarevista",
+            "url": "https://sarevista.com/",
+            "description": "Sarevista turns the movies, series and books you love into a personal map of the real places behind them.",
+            "logo": {
+              "@type": "ImageObject",
+              "@id": "https://sarevista.com/#logo",
+              "url": "https://sarevista.com/og-sarevista.jpg",
+              "caption": "Sarevista"
+            },
+            "image": { "@id": "https://sarevista.com/#logo" },
+            "sameAs": [
+              "https://www.instagram.com/sarevista",
+              "https://twitter.com/Sarevista",
+              "https://www.youtube.com/@sarevista"
+            ]
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://sarevista.com/#website",
+            "name": "Sarevista",
+            "alternateName": "Sarevista — Screen-Location Memory Map",
+            "url": "https://sarevista.com/",
+            "description": "Discover filming locations from your favourite movies, series, and books — and map the ones you've visited.",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://sarevista.com/#organization" },
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://sarevista.com/?q={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          }
         ]
       }
     </script>
+
   </head>
 
   <body>
