@@ -5,8 +5,29 @@
  * otherwise Google discards the breadcrumb trail as "URL not matching".
  */
 
-export const SITE_URL = "https://scene-map-stories.lovable.app";
+export const SITE_URL = "https://sarevista.com";
 export const SITE_NAME = "Sarevista";
+
+/**
+ * Stable entity @ids. 2026 structured-data practice: every page node points at
+ * the same Organization/WebSite entity instead of re-declaring it, so search
+ * engines and AI answer engines resolve one entity rather than N duplicates.
+ */
+export const ORG_ID = `${SITE_URL}/#organization`;
+export const WEBSITE_ID = `${SITE_URL}/#website`;
+export const orgRef = { "@id": ORG_ID };
+export const websiteRef = { "@id": WEBSITE_ID };
+
+/** ImageObject node (richer than a bare URL string for image entities). */
+export function imageObject(url?: string, caption?: string) {
+  if (!url) return undefined;
+  return {
+    "@type": "ImageObject",
+    url: absUrl(url),
+    contentUrl: absUrl(url),
+    ...(caption ? { caption } : {}),
+  };
+}
 
 /** Turn a path (or already-absolute URL) into an absolute canonical URL. */
 export function absUrl(path: string): string {
@@ -76,14 +97,21 @@ export function buildRelatedLinksSchema(name: string, links: RelatedLink[]) {
   };
 }
 
-/** WebPage node tying the page to the site + its breadcrumb trail. */
+/**
+ * WebPage node tying the page to the site entity, its breadcrumb trail and the
+ * publishing Organization. Includes `speakable` (voice/assistant surfaces) and
+ * `inLanguage` / `isAccessibleForFree`, both used by AI answer engines in 2026.
+ */
 export function buildWebPageSchema(opts: {
   name: string;
   description: string;
   path: string;
   primaryImage?: string;
+  dateModified?: string;
+  datePublished?: string;
 }) {
   const url = absUrl(opts.path);
+  const img = imageObject(opts.primaryImage, opts.name);
   return {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -91,8 +119,19 @@ export function buildWebPageSchema(opts: {
     url,
     name: opts.name,
     description: opts.description,
-    ...(opts.primaryImage ? { primaryImageOfPage: opts.primaryImage } : {}),
-    isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_URL },
+    inLanguage: "en",
+    isAccessibleForFree: true,
+    ...(img ? { primaryImageOfPage: img, image: img } : {}),
+    ...(opts.datePublished ? { datePublished: opts.datePublished } : {}),
+    ...(opts.dateModified ? { dateModified: opts.dateModified } : {}),
+    isPartOf: websiteRef,
+    about: orgRef,
+    publisher: orgRef,
     breadcrumb: { "@id": `${url}#breadcrumb` },
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", "h2", "[data-speakable]"],
+    },
   };
 }
+
