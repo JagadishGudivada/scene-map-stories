@@ -96,7 +96,7 @@ export default function Explore() {
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <div className="flex items-center gap-2 mb-2">
             <Compass className="w-5 h-5 text-amber" />
-            <h1 className="font-serif text-4xl text-foreground">Explore</h1>
+            <h1 className="font-serif text-4xl text-foreground">Explore Community Filming Memories</h1>
           </div>
           <p className="text-muted-foreground text-sm">Latest memories shared by the community</p>
         </motion.div>
@@ -111,6 +111,9 @@ export default function Explore() {
           </div>
         ) : (
           <div className="space-y-6">
+            {posts.length >= 3 && (
+              <h2 className="sr-only">Community feed — {posts.length} recent posts</h2>
+            )}
             {posts.map((post, i) => {
               const profile = profiles[post.user_id];
               const displayName = profile?.display_name || profile?.username || "Anonymous";
