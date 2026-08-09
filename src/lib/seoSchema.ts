@@ -5,8 +5,29 @@
  * otherwise Google discards the breadcrumb trail as "URL not matching".
  */
 
-export const SITE_URL = "https://scene-map-stories.lovable.app";
+export const SITE_URL = "https://sarevista.com";
 export const SITE_NAME = "Sarevista";
+
+/**
+ * Stable entity @ids. 2026 structured-data practice: every page node points at
+ * the same Organization/WebSite entity instead of re-declaring it, so search
+ * engines and AI answer engines resolve one entity rather than N duplicates.
+ */
+export const ORG_ID = `${SITE_URL}/#organization`;
+export const WEBSITE_ID = `${SITE_URL}/#website`;
+export const orgRef = { "@id": ORG_ID };
+export const websiteRef = { "@id": WEBSITE_ID };
+
+/** ImageObject node (richer than a bare URL string for image entities). */
+export function imageObject(url?: string, caption?: string) {
+  if (!url) return undefined;
+  return {
+    "@type": "ImageObject",
+    url: absUrl(url),
+    contentUrl: absUrl(url),
+    ...(caption ? { caption } : {}),
+  };
+}
 
 /** Turn a path (or already-absolute URL) into an absolute canonical URL. */
 export function absUrl(path: string): string {
