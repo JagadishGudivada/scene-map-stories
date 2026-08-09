@@ -97,14 +97,21 @@ export function buildRelatedLinksSchema(name: string, links: RelatedLink[]) {
   };
 }
 
-/** WebPage node tying the page to the site + its breadcrumb trail. */
+/**
+ * WebPage node tying the page to the site entity, its breadcrumb trail and the
+ * publishing Organization. Includes `speakable` (voice/assistant surfaces) and
+ * `inLanguage` / `isAccessibleForFree`, both used by AI answer engines in 2026.
+ */
 export function buildWebPageSchema(opts: {
   name: string;
   description: string;
   path: string;
   primaryImage?: string;
+  dateModified?: string;
+  datePublished?: string;
 }) {
   const url = absUrl(opts.path);
+  const img = imageObject(opts.primaryImage, opts.name);
   return {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -112,8 +119,19 @@ export function buildWebPageSchema(opts: {
     url,
     name: opts.name,
     description: opts.description,
-    ...(opts.primaryImage ? { primaryImageOfPage: opts.primaryImage } : {}),
-    isPartOf: { "@type": "WebSite", name: SITE_NAME, url: SITE_URL },
+    inLanguage: "en",
+    isAccessibleForFree: true,
+    ...(img ? { primaryImageOfPage: img, image: img } : {}),
+    ...(opts.datePublished ? { datePublished: opts.datePublished } : {}),
+    ...(opts.dateModified ? { dateModified: opts.dateModified } : {}),
+    isPartOf: websiteRef,
+    about: orgRef,
+    publisher: orgRef,
     breadcrumb: { "@id": `${url}#breadcrumb` },
+    speakable: {
+      "@type": "SpeakableSpecification",
+      cssSelector: ["h1", "h2", "[data-speakable]"],
+    },
   };
 }
+
