@@ -238,6 +238,7 @@ export default function FilmingSpots() {
                   setActiveSpot(null);
                 }}
                 className="w-8 h-8 rounded-full glass flex items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label="Close spot details"
               >
                 <X className="w-4 h-4" />
               </button>

@@ -870,7 +870,7 @@ export default function LocationDetail() {
                 className="w-full h-10 pl-9 pr-9 rounded-xl glass text-sm text-foreground placeholder:text-muted-foreground border-none outline-none focus:ring-1 focus:ring-amber/50"
               />
               {spotSearch && (
-                <button onClick={() => setSpotSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                <button onClick={() => setSpotSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2" aria-label="Clear search">
                   <X className="w-3.5 h-3.5 text-muted-foreground" />
                 </button>
               )}
