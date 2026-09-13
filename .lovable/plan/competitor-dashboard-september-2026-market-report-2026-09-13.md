@@ -2,7 +2,7 @@
 
 Two deliverables: a private strategy page inside the app, and a downloadable market analysis report.
 
-## 1. Private competitor dashboard
+## 1. Private competitor dashboard --- Don't create this one.
 
 A hidden page at `/strategy` — not linked from the menu or footer, excluded from search engines and the sitemap. You reach it by typing the address.
 
