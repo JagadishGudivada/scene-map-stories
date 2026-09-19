@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { invokeCached } from "@/lib/aiClientCache";
 
 export type TitleResult = {
@@ -37,6 +37,16 @@ export function useAITitleSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aliveRef = useRef(true);
+
+  // Cancel any pending debounce and ignore late responses after unmount.
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const search = useCallback((query: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
