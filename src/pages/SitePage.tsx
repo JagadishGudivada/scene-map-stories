@@ -4,20 +4,20 @@ import Footer from "@/components/Footer";
 import Seo from "@/components/Seo";
 
 interface Section {
-  heading: string;
-  body: string | string[];
+  readonly heading: string;
+  readonly body: string | readonly string[];
 }
 
 interface SitePageProps {
   eyebrow?: string;
   title: string;
   intro?: string;
-  sections: Section[];
+  sections: readonly Section[];
 }
 
 export default function SitePage({ eyebrow, title, intro, sections }: SitePageProps) {
   const seoDesc = (intro ||
-    sections.map((s) => (Array.isArray(s.body) ? s.body.join(" ") : s.body)).join(" ")
+    sections.map((s) => (typeof s.body === "string" ? s.body : s.body.join(" "))).join(" ")
   ).slice(0, 160);
 
   return (
@@ -48,7 +48,7 @@ export default function SitePage({ eyebrow, title, intro, sections }: SitePagePr
           {sections.map((s, i) => (
             <section key={i}>
               <h2 className="font-serif text-2xl text-foreground mb-3">{s.heading}</h2>
-              {Array.isArray(s.body) ? (
+              {typeof s.body !== "string" ? (
                 <ul className="space-y-2 text-muted-foreground leading-relaxed">
                   {s.body.map((b, j) => (
                     <li key={j} className="flex gap-3">

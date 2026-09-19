@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { invokeCached } from "@/lib/aiClientCache";
 
 export type TitleResult = {
@@ -37,6 +37,16 @@ export function useAITitleSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aliveRef = useRef(true);
+
+  // Cancel any pending debounce and ignore late responses after unmount.
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const search = useCallback((query: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -65,15 +75,17 @@ export function useAITitleSearch() {
           creator: t.creator || undefined,
           tmdb_id: typeof t.tmdb_id === "number" ? t.tmdb_id : undefined,
         }));
+        if (!aliveRef.current) return;
         setResults(titles);
       } catch (e: any) {
+        if (!aliveRef.current) return;
         const msg = e?.message || "";
         if (/429/.test(msg)) setError("Too many searches — please wait a moment.");
         else if (/402/.test(msg)) setError("AI credits exhausted.");
         else setError("Search failed");
         setResults([]);
       } finally {
-        setIsSearching(false);
+        if (aliveRef.current) setIsSearching(false);
       }
     }, 350);
   }, []);

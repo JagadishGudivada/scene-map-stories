@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { invokeCached } from "@/lib/aiClientCache";
+import type { SearchLocationsResponse } from "@/types/edge";
 import type { MapPin } from "@/components/LeafletMap";
 
 export function useAILocationSearch() {
@@ -7,6 +8,16 @@ export function useAILocationSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aliveRef = useRef(true);
+
+  // Cancel any pending debounce and ignore late responses after unmount.
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const searchLocations = useCallback((query: string) => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -39,8 +50,10 @@ export function useAILocationSearch() {
           image: loc.image || undefined,
         }));
 
+        if (!aliveRef.current) return;
         setAiResults(locations);
       } catch (err: any) {
+        if (!aliveRef.current) return;
         console.error("AI search error:", err);
         const msg = err?.message || "";
         if (/429/.test(msg)) setAiError("Too many searches — please wait a moment.");
@@ -48,7 +61,7 @@ export function useAILocationSearch() {
         else setAiError("Search failed");
         setAiResults([]);
       } finally {
-        setIsSearching(false);
+        if (aliveRef.current) setIsSearching(false);
       }
     }, 300);
   }, []);
