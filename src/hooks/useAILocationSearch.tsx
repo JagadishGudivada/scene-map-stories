@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { invokeCached } from "@/lib/aiClientCache";
+import type { SearchLocationsResponse } from "@/types/edge";
 import type { MapPin } from "@/components/LeafletMap";
 
 export function useAILocationSearch() {

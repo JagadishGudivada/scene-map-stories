@@ -80,7 +80,8 @@ export async function invokeCached<T = any>(
     const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
     const { data, error } = await supabase.functions.invoke(functionName, { body, headers });
     if (error) throw error;
-    if ((data as any)?.error) throw new Error((data as any).error);
+    const payloadError = (data as { error?: unknown } | null)?.error;
+    if (payloadError) throw new Error(String(payloadError));
     const entry: Entry = { value: data, expiresAt: Date.now() + ttlSeconds * 1000 };
     memory.set(memKey, entry);
     if (persist !== "memory") writePersistent(functionName, cacheKey, entry, persist);
@@ -88,11 +89,12 @@ export async function invokeCached<T = any>(
   })();
 
   inflight.set(memKey, promise);
-  try {
-    return await promise;
-  } finally {
-    inflight.delete(memKey);
-  }
+  // Drop the failed attempt from the in-flight map regardless of who is
+  // awaiting it, so the next caller retries instead of inheriting the error.
+  promise.catch(() => {}).finally(() => {
+    if (inflight.get(memKey) === promise) inflight.delete(memKey);
+  });
+  return promise;
 }
 
 /** Fire-and-forget prefetch. Safe to call repeatedly. */
