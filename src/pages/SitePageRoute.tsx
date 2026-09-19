@@ -8,5 +8,5 @@ export default function SitePageRoute() {
   const slug = pathname.replace(/^\//, "").replace(/\/$/, "") as SitePageSlug;
   const page = sitePages[slug];
   if (!page) return <NotFound />;
-  return <SitePage {...page} sections={[...page.sections] as any} />;
+  return <SitePage {...page} />;
 }
