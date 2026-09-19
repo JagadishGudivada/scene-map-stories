@@ -75,15 +75,17 @@ export function useAITitleSearch() {
           creator: t.creator || undefined,
           tmdb_id: typeof t.tmdb_id === "number" ? t.tmdb_id : undefined,
         }));
+        if (!aliveRef.current) return;
         setResults(titles);
       } catch (e: any) {
+        if (!aliveRef.current) return;
         const msg = e?.message || "";
         if (/429/.test(msg)) setError("Too many searches — please wait a moment.");
         else if (/402/.test(msg)) setError("AI credits exhausted.");
         else setError("Search failed");
         setResults([]);
       } finally {
-        setIsSearching(false);
+        if (aliveRef.current) setIsSearching(false);
       }
     }, 350);
   }, []);

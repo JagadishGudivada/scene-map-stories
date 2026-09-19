@@ -49,8 +49,10 @@ export function useAILocationSearch() {
           image: loc.image || undefined,
         }));
 
+        if (!aliveRef.current) return;
         setAiResults(locations);
       } catch (err: any) {
+        if (!aliveRef.current) return;
         console.error("AI search error:", err);
         const msg = err?.message || "";
         if (/429/.test(msg)) setAiError("Too many searches — please wait a moment.");
@@ -58,7 +60,7 @@ export function useAILocationSearch() {
         else setAiError("Search failed");
         setAiResults([]);
       } finally {
-        setIsSearching(false);
+        if (aliveRef.current) setIsSearching(false);
       }
     }, 300);
   }, []);
