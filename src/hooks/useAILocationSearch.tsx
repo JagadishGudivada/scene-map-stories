@@ -34,14 +34,14 @@ export function useAILocationSearch() {
     debounceRef.current = setTimeout(async () => {
       try {
         const q = query.trim();
-        const data = await invokeCached<any>(
+        const data = await invokeCached<SearchLocationsResponse>(
           "search-locations",
           { query: q },
           q.toLowerCase(),
           { ttlSeconds: 60 * 60 * 24, persist: "session" }
         );
 
-        const locations: MapPin[] = (data?.locations || []).map((loc: any) => ({
+        const locations: MapPin[] = (data?.locations || []).map((loc) => ({
           lat: loc.lat,
           lng: loc.lng,
           label: loc.label,

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { invokeCached } from "@/lib/aiClientCache";
+import type { SearchTitlesResponse } from "@/types/edge";
 
 export type TitleResult = {
   title: string;
