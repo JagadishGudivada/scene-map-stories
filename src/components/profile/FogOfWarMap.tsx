@@ -114,7 +114,7 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
       // Attach visited flag per feature
       const features = geo.features.map((f: any) => {
         const name = normalize(f.properties?.ADMIN || f.properties?.NAME || f.properties?.NAME_LONG);
-        const isVisited = visitedSet.has(name);
+        const isVisited = visitedSetRef.current.has(name);
         return { ...f, properties: { ...f.properties, _visited: isVisited ? 1 : 0, _key: name } };
       });
       const fc = { type: "FeatureCollection", features };
@@ -126,7 +126,7 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
         type: "fill",
         source: "countries",
         paint: {
-          "fill-color": isDark ? "#0D0D0D" : "#3a3a3a",
+          "fill-color": isDarkRef.current ? "#0D0D0D" : "#3a3a3a",
           "fill-opacity": ["case", ["==", ["get", "_visited"], 1], 0, 0.55],
         },
       });
@@ -159,7 +159,6 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
       map.remove();
       mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update visited set on data change
