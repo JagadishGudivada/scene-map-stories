@@ -78,9 +78,9 @@ export function useAITitleSearch() {
         }));
         if (!aliveRef.current) return;
         setResults(titles);
-      } catch (e: any) {
+      } catch (e: unknown) {
         if (!aliveRef.current) return;
-        const msg = e?.message || "";
+        const msg = e instanceof Error ? e.message : "";
         if (/429/.test(msg)) setError("Too many searches — please wait a moment.");
         else if (/402/.test(msg)) setError("AI credits exhausted.");
         else setError("Search failed");
