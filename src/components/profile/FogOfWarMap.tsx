@@ -193,17 +193,8 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
     if (!map || !ready) return;
     const src = map.getSource("countries") as maplibregl.GeoJSONSource | undefined;
     if (!src || !cachedGeoJson?.features) return;
-    const updated = {
-      type: "FeatureCollection" as const,
-      features: cachedGeoJson.features.map((f: any) => {
-        const name = normalize(f.properties?.ADMIN || f.properties?.NAME || f.properties?.NAME_LONG);
-        return {
-          ...f,
-          properties: { ...f.properties, _visited: visitedSet.has(name) ? 1 : 0, _key: name },
-        };
-      }),
-    };
-    src.setData(updated as any);
+    const updated = withVisitedFlags(cachedGeoJson, visitedSet);
+    src.setData(updated as GeoJSON.FeatureCollection);
   }, [visitedSet, ready]);
 
   // Render pins
