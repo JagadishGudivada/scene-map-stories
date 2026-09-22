@@ -109,7 +109,7 @@ export default function FilmingSpotDetail() {
 
         const { invokeCached } = await import("@/lib/aiClientCache");
         const cacheKey = `${slug}|${routeState?.titleHint || ""}`;
-        const data = await invokeCached<any>(
+        const data = await invokeCached<SpotDetailsResponse>(
           "spot-details",
           {
             slug,
