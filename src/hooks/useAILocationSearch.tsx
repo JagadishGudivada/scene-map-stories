@@ -34,14 +34,14 @@ export function useAILocationSearch() {
     debounceRef.current = setTimeout(async () => {
       try {
         const q = query.trim();
-        const data = await invokeCached<any>(
+        const data = await invokeCached<SearchLocationsResponse>(
           "search-locations",
           { query: q },
           q.toLowerCase(),
           { ttlSeconds: 60 * 60 * 24, persist: "session" }
         );
 
-        const locations: MapPin[] = (data?.locations || []).map((loc: any) => ({
+        const locations: MapPin[] = (data?.locations || []).map((loc) => ({
           lat: loc.lat,
           lng: loc.lng,
           label: loc.label,
@@ -52,10 +52,9 @@ export function useAILocationSearch() {
 
         if (!aliveRef.current) return;
         setAiResults(locations);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!aliveRef.current) return;
-        console.error("AI search error:", err);
-        const msg = err?.message || "";
+        const msg = err instanceof Error ? err.message : "";
         if (/429/.test(msg)) setAiError("Too many searches — please wait a moment.");
         else if (/402/.test(msg)) setAiError("AI credits exhausted.");
         else setAiError("Search failed");

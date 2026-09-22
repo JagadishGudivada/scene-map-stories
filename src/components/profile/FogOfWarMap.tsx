@@ -39,22 +39,53 @@ function normalize(name?: string | null) {
   return COUNTRY_ALIASES[n] ?? n;
 }
 
-let cachedGeoJson: any = null;
-async function loadCountries(): Promise<any> {
+/** Minimal shape of the Natural Earth countries file this map consumes. */
+type CountryFeature = {
+  type: "Feature";
+  geometry: unknown;
+  properties: Record<string, unknown> | null;
+};
+type CountryCollection = { type: "FeatureCollection"; features: CountryFeature[] };
+
+function countryName(props: Record<string, unknown> | null): string {
+  const raw = props?.ADMIN ?? props?.NAME ?? props?.NAME_LONG;
+  return normalize(typeof raw === "string" ? raw : null);
+}
+
+/** Tag every country with whether the user has visited it, for the paint expressions. */
+function withVisitedFlags(geo: CountryCollection, visited: Set<string>): CountryCollection {
+  return {
+    type: "FeatureCollection",
+    features: geo.features.map((f) => {
+      const name = countryName(f.properties);
+      return {
+        ...f,
+        properties: { ...(f.properties ?? {}), _visited: visited.has(name) ? 1 : 0, _key: name },
+      };
+    }),
+  };
+}
+
+let cachedGeoJson: CountryCollection | null = null;
+async function loadCountries(): Promise<CountryCollection> {
   if (cachedGeoJson) return cachedGeoJson;
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
-      cachedGeoJson = JSON.parse(cached);
+      cachedGeoJson = JSON.parse(cached) as CountryCollection;
       return cachedGeoJson;
     }
-  } catch {}
+  } catch {
+    // unreadable cache — fall through to the network
+  }
   const res = await fetch(COUNTRIES_URL);
-  const json = await res.json();
+  const json = (await res.json()) as CountryCollection;
   cachedGeoJson = json;
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(json));
-  } catch {}
+  } catch {
+    // quota exceeded — the map still works without the cache
+  }
   return json;
 }
 
@@ -79,10 +110,18 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
     [visitedCountries]
   );
 
-  // Init map
+  // The map is created once; these refs give that one-time setup the latest
+  // values without making the map itself depend on them (a second effect below
+  // pushes later visited changes into the live source).
+  const visitedSetRef = useRef(visitedSet);
+  visitedSetRef.current = visitedSet;
+  const isDarkRef = useRef(isDark);
+  isDarkRef.current = isDark;
+
+  // Init map — intentionally mount-only.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const tiles = isDark
+    const tiles = isDarkRef.current
       ? "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
       : "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
     const map = new maplibregl.Map({
@@ -93,7 +132,7 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
           base: { type: "raster", tiles: [tiles], tileSize: 256, attribution: "© CARTO © OpenStreetMap" },
         },
         layers: [{ id: "base", type: "raster", source: "base" }],
-      } as any,
+      } as maplibregl.StyleSpecification,
       center: [10, 25],
       zoom: 1.2,
       attributionControl: false,
@@ -104,13 +143,8 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
       const geo = await loadCountries();
       if (!mapRef.current) return;
       // Attach visited flag per feature
-      const features = geo.features.map((f: any) => {
-        const name = normalize(f.properties?.ADMIN || f.properties?.NAME || f.properties?.NAME_LONG);
-        const isVisited = visitedSet.has(name);
-        return { ...f, properties: { ...f.properties, _visited: isVisited ? 1 : 0, _key: name } };
-      });
-      const fc = { type: "FeatureCollection", features };
-      map.addSource("countries", { type: "geojson", data: fc as any });
+      const fc = withVisitedFlags(geo, visitedSetRef.current);
+      map.addSource("countries", { type: "geojson", data: fc as GeoJSON.FeatureCollection });
 
       // Dim overlay for unvisited
       map.addLayer({
@@ -118,7 +152,7 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
         type: "fill",
         source: "countries",
         paint: {
-          "fill-color": isDark ? "#0D0D0D" : "#3a3a3a",
+          "fill-color": isDarkRef.current ? "#0D0D0D" : "#3a3a3a",
           "fill-opacity": ["case", ["==", ["get", "_visited"], 1], 0, 0.55],
         },
       });
@@ -151,7 +185,6 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
       map.remove();
       mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update visited set on data change
@@ -160,17 +193,8 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
     if (!map || !ready) return;
     const src = map.getSource("countries") as maplibregl.GeoJSONSource | undefined;
     if (!src || !cachedGeoJson?.features) return;
-    const updated = {
-      type: "FeatureCollection" as const,
-      features: cachedGeoJson.features.map((f: any) => {
-        const name = normalize(f.properties?.ADMIN || f.properties?.NAME || f.properties?.NAME_LONG);
-        return {
-          ...f,
-          properties: { ...f.properties, _visited: visitedSet.has(name) ? 1 : 0, _key: name },
-        };
-      }),
-    };
-    src.setData(updated as any);
+    const updated = withVisitedFlags(cachedGeoJson, visitedSet);
+    src.setData(updated as GeoJSON.FeatureCollection);
   }, [visitedSet, ready]);
 
   // Render pins

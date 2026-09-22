@@ -11,6 +11,7 @@ import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import PassportBadgeUnlockSheet from "@/components/PassportBadgeUnlockSheet";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
+import type { SpotDetailsResponse } from "@/types/edge";
 import Seo from "@/components/Seo";
 import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
 import { absUrl, buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, type Crumb, type RelatedLink } from "@/lib/seoSchema";
@@ -109,7 +110,7 @@ export default function FilmingSpotDetail() {
 
         const { invokeCached } = await import("@/lib/aiClientCache");
         const cacheKey = `${slug}|${routeState?.titleHint || ""}`;
-        const data = await invokeCached<any>(
+        const data = await invokeCached<SpotDetailsResponse>(
           "spot-details",
           {
             slug,
@@ -127,7 +128,22 @@ export default function FilmingSpotDetail() {
           setError(data.error);
           return;
         }
-        setAiSpot(data);
+        // Normalise the best-effort AI payload into the shape this page renders.
+        const type = data.titles?.[0]?.type;
+        setAiSpot({
+          ...data,
+          name: data.name ?? data.label ?? "",
+          lat: data.lat ?? routeState?.lat ?? 0,
+          lng: data.lng ?? routeState?.lng ?? 0,
+          city: data.city ?? "",
+          country: data.country ?? "",
+          description: data.description ?? "",
+          image: data.image ?? undefined,
+          type: type === "Series" || type === "Book" ? type : routeState?.type ?? "Movie",
+          titles: (data.titles ?? []).map((t) => t.title),
+          funFacts: data.funFacts ?? [],
+          visitTips: data.visitTips ?? [],
+        });
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load location details");

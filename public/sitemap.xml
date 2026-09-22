@@ -409,7 +409,7 @@
   </url>
   <url>
     <loc>https://sarevista.com/title/mayday-2026-movie</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -428,6 +428,12 @@
   <url>
     <loc>https://sarevista.com/title/moana-2026-movie</loc>
     <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/title/mobland-2025-series</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -594,6 +600,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/slow-horses-2022-series</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/source-code-2011</loc>
     <lastmod>2026-06-15</lastmod>
     <changefreq>weekly</changefreq>
@@ -601,7 +613,7 @@
   </url>
   <url>
     <loc>https://sarevista.com/title/spider-man-brand-new-day-2026-movie</loc>
-    <lastmod>2026-09-13</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -714,6 +726,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/title/the-end-of-oak-street-2026-movie</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/title/the-gentlemen-2024-series</loc>
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
@@ -787,7 +805,7 @@
   </url>
   <url>
     <loc>https://sarevista.com/title/the-runner-2026-movie</loc>
-    <lastmod>2026-09-14</lastmod>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -900,6 +918,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/location/montclair</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/location/mumbai</loc>
     <lastmod>2026-06-08</lastmod>
     <changefreq>weekly</changefreq>
@@ -920,6 +944,12 @@
   <url>
     <loc>https://sarevista.com/location/paris</loc>
     <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/location/prague</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1026,6 +1056,12 @@
     <priority>0.7</priority>
   </url>
   <url>
+    <loc>https://sarevista.com/location/montclair/filming-spots</loc>
+    <lastmod>2026-09-19</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://sarevista.com/location/mumbai/filming-spots</loc>
     <lastmod>2026-06-08</lastmod>
     <changefreq>weekly</changefreq>
@@ -1046,6 +1082,12 @@
   <url>
     <loc>https://sarevista.com/location/paris/filming-spots</loc>
     <lastmod>2026-05-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/location/prague/filming-spots</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1166,6 +1208,12 @@
   <url>
     <loc>https://sarevista.com/spot/the-park-center-old-montgomery-ward</loc>
     <lastmod>2026-05-27</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://sarevista.com/spot/upper-montclair-new-jersey</loc>
+    <lastmod>2026-09-19</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>

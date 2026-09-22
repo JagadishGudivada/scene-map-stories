@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { invokeCached } from "@/lib/aiClientCache";
+import type { SearchLocationsResponse } from "@/types/edge";
 
 interface Props {
   open: boolean;
@@ -61,7 +62,7 @@ export default function CreatePostDialog({ open, onOpenChange, onPosted }: Props
     setLocSearching(true);
     debounceRef.current = setTimeout(async () => {
       try {
-        const data = await invokeCached<any>(
+        const data = await invokeCached<SearchLocationsResponse>(
           "search-locations",
           { query: q },
           q.toLowerCase(),
