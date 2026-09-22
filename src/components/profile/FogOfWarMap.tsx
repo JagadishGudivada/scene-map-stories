@@ -118,7 +118,7 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
           base: { type: "raster", tiles: [tiles], tileSize: 256, attribution: "© CARTO © OpenStreetMap" },
         },
         layers: [{ id: "base", type: "raster", source: "base" }],
-      } as any,
+      } as maplibregl.StyleSpecification,
       center: [10, 25],
       zoom: 1.2,
       attributionControl: false,
@@ -129,13 +129,8 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
       const geo = await loadCountries();
       if (!mapRef.current) return;
       // Attach visited flag per feature
-      const features = geo.features.map((f: any) => {
-        const name = normalize(f.properties?.ADMIN || f.properties?.NAME || f.properties?.NAME_LONG);
-        const isVisited = visitedSetRef.current.has(name);
-        return { ...f, properties: { ...f.properties, _visited: isVisited ? 1 : 0, _key: name } };
-      });
-      const fc = { type: "FeatureCollection", features };
-      map.addSource("countries", { type: "geojson", data: fc as any });
+      const fc = withVisitedFlags(geo, visitedSetRef.current);
+      map.addSource("countries", { type: "geojson", data: fc as GeoJSON.FeatureCollection });
 
       // Dim overlay for unvisited
       map.addLayer({
