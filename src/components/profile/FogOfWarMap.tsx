@@ -39,22 +39,39 @@ function normalize(name?: string | null) {
   return COUNTRY_ALIASES[n] ?? n;
 }
 
-let cachedGeoJson: any = null;
-async function loadCountries(): Promise<any> {
+/** Minimal shape of the Natural Earth countries file this map consumes. */
+type CountryFeature = {
+  type: "Feature";
+  geometry: unknown;
+  properties: Record<string, unknown> | null;
+};
+type CountryCollection = { type: "FeatureCollection"; features: CountryFeature[] };
+
+function countryName(props: Record<string, unknown> | null): string {
+  const raw = props?.ADMIN ?? props?.NAME ?? props?.NAME_LONG;
+  return normalize(typeof raw === "string" ? raw : null);
+}
+
+let cachedGeoJson: CountryCollection | null = null;
+async function loadCountries(): Promise<CountryCollection> {
   if (cachedGeoJson) return cachedGeoJson;
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
-      cachedGeoJson = JSON.parse(cached);
+      cachedGeoJson = JSON.parse(cached) as CountryCollection;
       return cachedGeoJson;
     }
-  } catch {}
+  } catch {
+    // unreadable cache — fall through to the network
+  }
   const res = await fetch(COUNTRIES_URL);
-  const json = await res.json();
+  const json = (await res.json()) as CountryCollection;
   cachedGeoJson = json;
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(json));
-  } catch {}
+  } catch {
+    // quota exceeded — the map still works without the cache
+  }
   return json;
 }
 
