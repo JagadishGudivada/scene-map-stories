@@ -52,6 +52,20 @@ function countryName(props: Record<string, unknown> | null): string {
   return normalize(typeof raw === "string" ? raw : null);
 }
 
+/** Tag every country with whether the user has visited it, for the paint expressions. */
+function withVisitedFlags(geo: CountryCollection, visited: Set<string>): CountryCollection {
+  return {
+    type: "FeatureCollection",
+    features: geo.features.map((f) => {
+      const name = countryName(f.properties);
+      return {
+        ...f,
+        properties: { ...(f.properties ?? {}), _visited: visited.has(name) ? 1 : 0, _key: name },
+      };
+    }),
+  };
+}
+
 let cachedGeoJson: CountryCollection | null = null;
 async function loadCountries(): Promise<CountryCollection> {
   if (cachedGeoJson) return cachedGeoJson;
