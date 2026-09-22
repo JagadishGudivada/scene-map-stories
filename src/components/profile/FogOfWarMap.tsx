@@ -79,10 +79,18 @@ export default function FogOfWarMap({ pins = [], visitedCountries = [], classNam
     [visitedCountries]
   );
 
-  // Init map
+  // The map is created once; these refs give that one-time setup the latest
+  // values without making the map itself depend on them (a second effect below
+  // pushes later visited changes into the live source).
+  const visitedSetRef = useRef(visitedSet);
+  visitedSetRef.current = visitedSet;
+  const isDarkRef = useRef(isDark);
+  isDarkRef.current = isDark;
+
+  // Init map — intentionally mount-only.
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    const tiles = isDark
+    const tiles = isDarkRef.current
       ? "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
       : "https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png";
     const map = new maplibregl.Map({
