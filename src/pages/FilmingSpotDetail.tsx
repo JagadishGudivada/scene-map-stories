@@ -11,6 +11,7 @@ import PlanYourTripDialog from "@/components/PlanYourTripDialog";
 import PassportBadgeUnlockSheet from "@/components/PassportBadgeUnlockSheet";
 import { getSpotBySlug, getSpotsByCity } from "@/lib/filmingSpotsData";
 import { supabase } from "@/integrations/supabase/client";
+import type { SpotDetailsResponse } from "@/types/edge";
 import Seo from "@/components/Seo";
 import SeoBreadcrumbs from "@/components/SeoBreadcrumbs";
 import { absUrl, buildBreadcrumbSchema, buildRelatedLinksSchema, buildWebPageSchema, type Crumb, type RelatedLink } from "@/lib/seoSchema";
