@@ -63,13 +63,13 @@ export function useAITitleSearch() {
     debounceRef.current = setTimeout(async () => {
       try {
         const q = query.trim();
-        const data = await invokeCached<any>(
+        const data = await invokeCached<SearchTitlesResponse>(
           "search-titles",
           { query: q },
           q.toLowerCase(),
           { ttlSeconds: 60 * 60 * 24, persist: "session" }
         );
-        const titles: TitleResult[] = (data?.titles || []).map((t: any) => ({
+        const titles: TitleResult[] = (data?.titles || []).map((t) => ({
           title: String(t.title),
           year: Number(t.year),
           type: t.type === "Series" || t.type === "Book" ? t.type : "Movie",
