@@ -189,6 +189,7 @@ export default function LocationDetail() {
   useEffect(() => {
     if (!slug) return;
     let active = true;
+    const controller = new AbortController();
     setAiLoading(true);
     setAiError(null);
     setAiData(null);
@@ -225,6 +226,7 @@ export default function LocationDetail() {
         const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         const response = await fetch(functionUrl, {
           method: "POST",
+          signal: controller.signal,
           headers: {
             "Content-Type": "application/json",
             Accept: "text/event-stream",
@@ -319,7 +321,7 @@ export default function LocationDetail() {
         setAiLoading(false);
       }
     })();
-    return () => { active = false; };
+    return () => { active = false; controller.abort(); };
   }, [slug]);
 
   useEffect(() => {
