@@ -15,4 +15,5 @@
 - [ ] Group 4.14 — Replace `console.error`-only failure paths with user messaging
 
 ## New
-- [ ] In-depth, file-by-file code review report (requested 2026-09-22) — deliver after the refactor groups above
+- [x] In-depth, file-by-file code review report (delivered 2026-09-23)
+- [ ] Review follow-ups: delete unused `useTitleMapLocations`; share one titles-pin loader between map hooks; abort location stream on unmount; memoize auth context
