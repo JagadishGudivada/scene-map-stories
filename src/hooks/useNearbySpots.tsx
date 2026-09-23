@@ -1,19 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { MapPin } from "@/components/LeafletMap";
-import type { MediaType } from "@/lib/mockData";
 import { haversineKm } from "@/lib/geo";
-
-type TitleDataLocation = {
-  label?: string;
-  name?: string;
-  city?: string;
-  country?: string;
-  lat?: number;
-  lng?: number;
-  image?: string;
-  image_url?: string;
-};
+import { normalizeMediaType, toNumber, toLocationArray } from "@/lib/titlePins";
 
 interface TitleRow {
   id: string;
@@ -28,30 +17,6 @@ interface TitleRow {
 interface NearbyPin extends MapPin {
   titleSlug?: string;
   distanceKm: number;
-}
-
-function normalizeMediaType(type: string | null | undefined): MediaType {
-  if (type === "Movie" || type === "Series" || type === "Book") return type;
-  return "Movie";
-}
-
-function toNumber(value: unknown): number | null {
-  const parsed = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function toLocationArray(data: unknown): TitleDataLocation[] {
-  if (!data || typeof data !== "object") return [];
-  const payload = data as Record<string, unknown>;
-  const candidates = [payload.locations, payload.spots, payload.pins];
-
-  for (const value of candidates) {
-    if (Array.isArray(value)) {
-      return value.filter((item): item is TitleDataLocation => Boolean(item && typeof item === "object"));
-    }
-  }
-
-  return [];
 }
 
 function mapTitleRowToPins(row: TitleRow): NearbyPin[] {
