@@ -1,40 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { MapPin } from "@/components/LeafletMap";
-import type { MediaType } from "@/lib/mockData";
 import { haversineKm } from "@/lib/geo";
-
-type RawLoc = {
-  label?: string;
-  name?: string;
-  city?: string;
-  country?: string;
-  lat?: unknown;
-  lng?: unknown;
-  image?: string;
-  image_url?: string;
-};
-
-function normalizeMediaType(t: unknown): MediaType {
-  if (t === "Movie" || t === "Series" || t === "Book") return t;
-  return "Movie";
-}
-
-function toNum(v: unknown): number | null {
-  const n = typeof v === "number" ? v : Number(v);
-  return Number.isFinite(n) ? n : null;
-}
-
-function toLocArray(data: unknown): RawLoc[] {
-  if (!data || typeof data !== "object") return [];
-  const p = data as Record<string, unknown>;
-  for (const v of [p.locations, p.spots, p.pins]) {
-    if (Array.isArray(v)) {
-      return v.filter((x): x is RawLoc => Boolean(x && typeof x === "object"));
-    }
-  }
-  return [];
-}
+import {
+  normalizeMediaType,
+  toNumber as toNum,
+  toLocationArray as toLocArray,
+} from "@/lib/titlePins";
 
 const MERGE_DISTANCE_KM = 0.15;
 const SPATIAL_BUCKET_DEGREES = 0.002;

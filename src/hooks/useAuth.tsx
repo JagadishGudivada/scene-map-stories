@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { toast } from "@/hooks/use-toast";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -44,13 +45,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) console.error("Sign out failed:", error.message);
-  };
+    if (error) {
+      console.error("Sign out failed:", error.message);
+      toast({ title: "Couldn't sign out", description: "Please try again.", variant: "destructive" });
+    }
+  }, []);
+
+  const value = useMemo(() => ({ user, session, loading, signOut }), [user, session, loading, signOut]);
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
