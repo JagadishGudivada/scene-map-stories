@@ -16,4 +16,6 @@
 
 ## New
 - [x] In-depth, file-by-file code review report (delivered 2026-09-23)
-- [ ] Review follow-ups: delete unused `useTitleMapLocations`; share one titles-pin loader between map hooks; abort location stream on unmount; memoize auth context
+- [x] Review step 1: removed unused useTitleMapLocations, shared lib/titlePins.ts, memoized auth, abort location stream
+- [ ] Review step 2: one cached titles-pin query shared by both map hooks
+- [ ] Review step 3: send signed-in user token on title/location streaming calls
