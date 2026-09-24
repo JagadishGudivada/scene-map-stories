@@ -269,7 +269,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                   if (!isActive) selectSlide(index, offset > 0 ? 1 : -1);
                 }}
                 className={cn(
-                  "absolute left-1/2 top-0 h-[400px] w-[78%] max-w-[390px] -translate-x-1/2 overflow-hidden rounded-xl border border-overlay-foreground/10 bg-card shadow-float sm:h-[485px] sm:w-[48%] sm:max-w-[430px] lg:h-[535px] lg:w-[38%] lg:max-w-[450px] [backface-visibility:hidden]",
+                  "absolute inset-x-0 top-0 mx-auto h-[400px] w-[78%] max-w-[390px] overflow-hidden rounded-xl border border-overlay-foreground/10 bg-card shadow-float sm:h-[485px] sm:w-[48%] sm:max-w-[430px] lg:h-[535px] lg:w-[38%] lg:max-w-[450px] [backface-visibility:hidden]",
                   isActive ? "z-20 cursor-grab active:cursor-grabbing" : "z-10 cursor-pointer",
                   !isVisible && "pointer-events-none",
                 )}
