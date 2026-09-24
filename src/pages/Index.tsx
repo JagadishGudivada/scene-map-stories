@@ -202,7 +202,7 @@ export default function Index() {
       <h1 className="sr-only">Sarevista — the screen-location memory map for movies, series & books</h1>
       {/* === HERO SECTION === */}
       <div className="relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-[72px] md:pt-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-[72px] md:pt-20">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
