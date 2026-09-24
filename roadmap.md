@@ -19,3 +19,10 @@
 - [x] Review step 1: removed unused useTitleMapLocations, shared lib/titlePins.ts, memoized auth, abort location stream
 - [ ] Review step 2: one cached titles-pin query shared by both map hooks
 - [ ] Review step 3: send signed-in user token on title/location streaming calls
+
+## Homepage 3D carousel
+- [ ] Build responsive 3D perspective stage with active and flanking slides
+- [ ] Add artwork-synced ambient backdrop with reduced-motion support
+- [ ] Add drag, swipe, keyboard, arrow, and horizontal wheel controls
+- [ ] Add selectable progress bars and position counter
+- [ ] Verify desktop, laptop, tablet, and mobile layouts and interactions
