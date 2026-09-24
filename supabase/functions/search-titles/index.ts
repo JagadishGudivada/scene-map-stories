@@ -24,7 +24,22 @@ function resolveReasoningEffort(model: string, requested: string): "none" | "min
   return normalized as "none" | "minimal" | "low" | "medium" | "high";
 }
 
-type TitleOut = { title: string; year: number; type: "Movie" | "Series" | "Book"; creator?: string; tmdb_id?: number };
+const TMDB_IMG = "https://image.tmdb.org/t/p/";
+
+type TitleOut = {
+  title: string;
+  year: number;
+  type: "Movie" | "Series" | "Book";
+  creator?: string;
+  tmdb_id?: number;
+  coverImage?: string;
+  backdropImage?: string;
+};
+
+function tmdbSizedUrl(path: unknown, size: "w780" | "w1280"): string | undefined {
+  if (typeof path !== "string" || !path.startsWith("/")) return undefined;
+  return `${TMDB_IMG}${size}${path}`;
+}
 
 async function tmdbMultiSearch(apiKey: string, query: string): Promise<TitleOut[]> {
   try {
@@ -45,11 +60,15 @@ async function tmdbMultiSearch(apiKey: string, query: string): Promise<TitleOut[
       .map((r) => {
         const date = r.release_date || r.first_air_date || "";
         const y = Number(date.slice(0, 4)) || new Date().getFullYear();
+        const coverImage = tmdbSizedUrl(r.poster_path, "w780") || tmdbSizedUrl(r.backdrop_path, "w1280");
+        const backdropImage = tmdbSizedUrl(r.backdrop_path, "w1280") || tmdbSizedUrl(r.poster_path, "w780");
         return {
           title: String(r.title || r.name || "").trim(),
           year: y,
           type: r.media_type === "tv" ? "Series" : "Movie",
           tmdb_id: typeof r.id === "number" ? r.id : undefined,
+          coverImage,
+          backdropImage,
         } as TitleOut;
       })
       .filter((t) => t.title.length > 0);
@@ -241,12 +260,17 @@ serve(async (req) => {
       }
     };
 
-    // Run TMDB and AI in parallel; both are soft-failable so a timeout never 500s the whole request.
-    const [tmdbTitles, aiTitles] = await Promise.all([
-      TMDB_API_KEY ? tmdbMultiSearch(TMDB_API_KEY, query.trim()) : Promise.resolve([] as TitleOut[]),
-      aiFetch(),
-    ]);
+    // TMDB first: movie/series hits already include poster/backdrop paths, so skip waiting on AI.
+    const tmdbTitles = TMDB_API_KEY
+      ? await tmdbMultiSearch(TMDB_API_KEY, query.trim())
+      : [];
+    if (tmdbTitles.length > 0) {
+      return new Response(JSON.stringify({ titles: tmdbTitles }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
+    const aiTitles = await aiFetch();
     const merged = mergeTitles(tmdbTitles, aiTitles, query.trim());
     return new Response(JSON.stringify({ titles: merged }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

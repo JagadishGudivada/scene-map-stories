@@ -2,12 +2,19 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { invokeCached } from "@/lib/aiClientCache";
 import type { SearchTitlesResponse } from "@/types/edge";
 
+function asHttpUrl(value: unknown): string | undefined {
+  if (typeof value !== "string" || !/^https?:\/\//i.test(value)) return undefined;
+  return value;
+}
+
 export type TitleResult = {
   title: string;
   year: number;
   type: "Movie" | "Series" | "Book";
   creator?: string;
   tmdb_id?: number;
+  coverImage?: string;
+  backdropImage?: string;
 };
 
 const TYPE_SUFFIX: Record<string, string> = { Movie: "movie", Series: "series", Book: "book" };
@@ -75,6 +82,8 @@ export function useAITitleSearch() {
           type: t.type === "Series" || t.type === "Book" ? t.type : "Movie",
           creator: t.creator || undefined,
           tmdb_id: typeof t.tmdb_id === "number" ? t.tmdb_id : undefined,
+          coverImage: asHttpUrl(t.coverImage),
+          backdropImage: asHttpUrl(t.backdropImage),
         }));
         if (!aliveRef.current) return;
         setResults(titles);

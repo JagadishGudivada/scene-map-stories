@@ -27,11 +27,26 @@ function normalizeTitleType(value: unknown): "Movie" | "Series" | "Book" | undef
   return value === "Movie" || value === "Series" || value === "Book" ? value : undefined;
 }
 
+function asHttpUrl(value: unknown): string | null {
+  if (typeof value !== "string" || !/^https?:\/\//i.test(value)) return null;
+  return value;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { slug, title: hintTitle, year: hintYear, creator: hintCreator, type: hintType, tmdb_id: hintTmdbId } = await req.json();
+    const body = await req.json();
+    const {
+      slug,
+      title: hintTitle,
+      year: hintYear,
+      creator: hintCreator,
+      type: hintType,
+      tmdb_id: hintTmdbId,
+      coverImage: hintCoverImage,
+      backdropImage: hintBackdropImage,
+    } = body ?? {};
     if (!slug || typeof slug !== "string") {
       return json({ error: "slug required" }, 400);
     }
@@ -75,7 +90,9 @@ serve(async (req) => {
     const AI_ENABLE_GOOGLE_GROUNDING = isTruthyEnv(Deno.env.get("AI_ENABLE_GOOGLE_GROUNDING"), false);
     if (!AI_API_KEY) throw new Error("AI_API_KEY is not configured");
 
-    // Reconstruct a human title from slug if no hint provided
+    const hintedCover = asHttpUrl(hintCoverImage);
+    const hintedBackdrop = asHttpUrl(hintBackdropImage);
+    const hasHintedImages = Boolean(hintedCover || hintedBackdrop);
     const slugTitle =
       hintTitle ||
       slugWithoutType
@@ -202,14 +219,18 @@ serve(async (req) => {
         stage: "ai_started",
       });
 
-      // Resolve the hinted image in parallel with the AI call so the hero poster
-      // can ship with the first `details` frame instead of waiting for `complete`.
-      const hintedImagePromise = resolveTitleImage({
-        title: slugTitle,
-        year: slugYear,
-        type: hintedType,
-        author: typeof hintCreator === "string" ? hintCreator : undefined,
-      });
+      // Reuse search/nav image URLs when present — skip a second TMDB lookup.
+      const hintedImagePromise = hasHintedImages
+        ? Promise.resolve({
+            coverImage: hintedCover,
+            backdropImage: hintedBackdrop || hintedCover,
+          })
+        : resolveTitleImage({
+            title: slugTitle,
+            year: slugYear,
+            type: hintedType,
+            author: typeof hintCreator === "string" ? hintCreator : undefined,
+          });
 
       const parsed = await generateDetails();
 
@@ -220,11 +241,13 @@ serve(async (req) => {
 
       const parsedType = normalizeTitleType(parsed.type);
       const shouldRetryImageLookup =
-        (!coverImage && !backdropImage) ||
-        parsed.title !== slugTitle ||
-        parsed.year !== slugYear ||
-        parsed.creator !== hintCreator ||
-        parsedType !== hintedType;
+        !hasHintedImages && (
+          (!coverImage && !backdropImage) ||
+          parsed.title !== slugTitle ||
+          parsed.year !== slugYear ||
+          parsed.creator !== hintCreator ||
+          parsedType !== hintedType
+        );
 
       if (shouldRetryImageLookup) {
         // A corrected image arrives on `complete`; the frontend merges it over

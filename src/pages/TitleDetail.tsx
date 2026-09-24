@@ -86,6 +86,18 @@ type AIDetails = {
   genres?: string[];
   locations?: AILocation[];
   coverImage?: string;
+  backdropImage?: string;
+};
+
+type TitleNavState = {
+  title?: string;
+  year?: number;
+  type?: string;
+  creator?: string;
+  locationCount?: number;
+  tmdb_id?: number;
+  coverImage?: string;
+  backdropImage?: string;
 };
 
 type StreamEventName = "meta" | "details" | "complete" | "error";
@@ -114,6 +126,7 @@ function applyTitlePatch(
     genres: patch.genres ?? previous?.genres ?? [],
     locations: patch.locations ?? previous?.locations ?? [],
     coverImage: patch.coverImage ?? previous?.coverImage,
+    backdropImage: patch.backdropImage ?? previous?.backdropImage,
   };
 }
 
@@ -174,9 +187,7 @@ function shouldPreferMapFallback(label: string, lat: number, lng: number) {
 export default function TitleDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const navState = useLocation().state as
-    | { title?: string; year?: number; type?: string; creator?: string; locationCount?: number; tmdb_id?: number }
-    | null;
+  const navState = useLocation().state as TitleNavState | null;
 
   const mockTitle = useMemo(
     () => {
@@ -212,6 +223,8 @@ export default function TitleDetail() {
         year: t.year,
         type: t.type,
         locationCount: t.locationCount ?? t.spots,
+        coverImage: t.coverImage,
+        backdropImage: t.heroImage || t.backdropImage,
       },
     });
   };
@@ -247,7 +260,22 @@ export default function TitleDetail() {
     setLoading(true);
     setStreamStage("idle");
     setError(null);
-    setAiDetails(null);
+    setAiDetails(
+      navState?.title
+        ? applyTitlePatch(
+            {
+              title: navState.title,
+              year: navState.year,
+              type: resolveTitleType(navState.type),
+              creator: navState.creator,
+              coverImage: navState.coverImage,
+              backdropImage: navState.backdropImage,
+            },
+            null,
+            navState
+          )
+        : null
+    );
     (async () => {
       try {
         // DB-first: if already enriched, render instantly (no edge cold start).
@@ -269,8 +297,8 @@ export default function TitleDetail() {
             synopsis: row.synopsis ?? undefined,
             genres: row.genres ?? [],
             rating: row.rating ?? undefined,
-            coverImage: row.poster_url ?? undefined,
-            backdropImage: row.backdrop_url ?? undefined,
+            coverImage: row.poster_url ?? (typeof base.coverImage === "string" ? base.coverImage : undefined),
+            backdropImage: row.backdrop_url ?? (typeof base.backdropImage === "string" ? base.backdropImage : undefined),
           } as Partial<AIDetails>;
           setAiDetails((prev) => applyTitlePatch(hydrated, prev, navState || {}));
           setStreamStage("complete");
@@ -289,7 +317,16 @@ export default function TitleDetail() {
             apikey: anonKey,
             Authorization: `Bearer ${anonKey}`,
           },
-          body: JSON.stringify({ slug, title: navState?.title, year: navState?.year, creator: navState?.creator, type: navState?.type, tmdb_id: navState?.tmdb_id }),
+          body: JSON.stringify({
+            slug,
+            title: navState?.title,
+            year: navState?.year,
+            creator: navState?.creator,
+            type: navState?.type,
+            tmdb_id: navState?.tmdb_id,
+            coverImage: navState?.coverImage,
+            backdropImage: navState?.backdropImage,
+          }),
         });
 
         if (!response.ok) {
@@ -410,6 +447,7 @@ export default function TitleDetail() {
         creator: undefined as string | undefined,
         genres: mockTitle.genres,
         coverImage: mockTitle.coverImage,
+        backdropImage: mockTitle.coverImage,
         locations: merged,
         locationCount: merged.length,
       };
@@ -426,6 +464,7 @@ export default function TitleDetail() {
         creator: aiDetails.creator,
         genres: aiDetails.genres || [],
         coverImage: aiDetails.coverImage || heroRomeImg,
+        backdropImage: aiDetails.backdropImage || aiDetails.coverImage || heroRomeImg,
         locations: merged,
         locationCount: merged.length,
       };
@@ -442,7 +481,8 @@ export default function TitleDetail() {
         synopsis: undefined as string | undefined,
         creator: navState.creator,
         genres: [] as string[],
-        coverImage: heroRomeImg,
+        coverImage: navState.coverImage || heroRomeImg,
+        backdropImage: navState.backdropImage || navState.coverImage || heroRomeImg,
         locations: merged,
         locationCount: merged.length,
       };
@@ -825,11 +865,17 @@ export default function TitleDetail() {
       )}
       {/* Hero */}
       <div className="relative h-[55vh] min-h-[400px] w-full overflow-hidden lg:mx-auto lg:mt-6 lg:max-w-5xl lg:h-[55vh] lg:min-h-[400px] lg:rounded-3xl lg:border lg:border-border lg:shadow-card">
-          <img
-            src={view.coverImage}
-            alt={view.title}
-            className="absolute inset-0 h-full w-full object-cover object-center lg:object-[center_22%]"
-          />
+          <picture>
+            {view.coverImage && view.coverImage !== view.backdropImage && (
+              <source media="(max-width: 1023px)" srcSet={view.coverImage} />
+            )}
+            <img
+              src={view.backdropImage || view.coverImage}
+              alt={view.title}
+              sizes="(min-width: 1024px) 64rem, 100vw"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
+          </picture>
           <div className="absolute inset-0 bg-gradient-to-t from-overlay/55 via-overlay/15 to-transparent" />
           <div className="absolute inset-0 bg-gradient-to-r from-overlay/25 via-transparent to-transparent" />
 

@@ -207,6 +207,8 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                       year: slide.year,
                       type: slide.type,
                       locationCount: slide.locationCount,
+                      coverImage: slide.coverImage,
+                      backdropImage: slide.image,
                     },
                   });
                 }}
@@ -223,6 +225,8 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                       type: slide.type,
                       locationCount: slide.locationCount,
                       autoSave: true,
+                      coverImage: slide.coverImage,
+                      backdropImage: slide.image,
                     },
                   });
                 }}

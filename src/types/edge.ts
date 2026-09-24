@@ -32,6 +32,8 @@ export interface EdgeTitle {
   type?: string;
   creator?: string | null;
   tmdb_id?: number | null;
+  coverImage?: string | null;
+  backdropImage?: string | null;
 }
 
 export interface SearchTitlesResponse {
