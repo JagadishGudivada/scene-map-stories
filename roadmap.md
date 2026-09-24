@@ -21,8 +21,8 @@
 - [ ] Review step 3: send signed-in user token on title/location streaming calls
 
 ## Homepage 3D carousel
-- [ ] Build responsive 3D perspective stage with active and flanking slides
-- [ ] Add artwork-synced ambient backdrop with reduced-motion support
-- [ ] Add drag, swipe, keyboard, arrow, and horizontal wheel controls
-- [ ] Add selectable progress bars and position counter
-- [ ] Verify desktop, laptop, tablet, and mobile layouts and interactions
+- [x] Build responsive 3D perspective stage with active and flanking slides
+- [x] Add artwork-synced ambient backdrop with reduced-motion support
+- [x] Add drag, swipe, keyboard, arrow, and horizontal wheel controls
+- [x] Add selectable progress bars and position counter
+- [x] Verify desktop, laptop, tablet, and mobile layouts and interactions
