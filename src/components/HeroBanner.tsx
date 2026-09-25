@@ -331,7 +331,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                           }}
                           className="h-9 rounded-full bg-gold-deep px-4 text-xs text-charcoal shadow-card hover:brightness-105 sm:h-10"
                         >
-                          Find where this was filmed
+                          Find Real Locations
                         </Button>
                         <Button
                           variant="outline"
@@ -343,7 +343,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                           className="h-9 rounded-full border-amber/45 bg-overlay/30 px-3 text-xs text-amber backdrop-blur hover:bg-amber/10 hover:text-amber sm:h-10"
                         >
                           <Bookmark />
-                          Save
+                         
                         </Button>
                       </div>
                     </motion.div>

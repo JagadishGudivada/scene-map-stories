@@ -709,6 +709,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      map_title_pins: {
+        Args: { p_limit: number; p_offset: number }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

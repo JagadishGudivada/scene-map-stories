@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { type Map as MapLibreMap, type StyleSpecification } from "maplibre-gl";
-import type { Feature, LineString, Point } from "geojson";
+import type { Feature, FeatureCollection, LineString, Point } from "geojson";
 import { ChevronDown, Info } from "lucide-react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { MediaType } from "@/lib/mockData";
@@ -52,6 +52,29 @@ const CLUSTER_STROKE_SMALL = "hsl(38, 45%, 55%)";
 const CLUSTER_STROKE_LARGE = "hsl(38, 95%, 30%)";
 const CLUSTER_TEXT_LIGHT = "hsl(40, 33%, 94%)";
 const CLUSTER_TEXT_DARK = "hsl(20, 30%, 10%)";
+
+const PINS_SOURCE_ID = "pins-source";
+const PINS_CLUSTER_LAYER_ID = "pins-clusters-layer";
+const PINS_CLUSTER_COUNT_LAYER_ID = "pins-cluster-count-layer";
+const PINS_UNCLUSTERED_LAYER_ID = "pins-unclustered-layer";
+
+function pinsToFeatureCollection(pins: MapPin[]): FeatureCollection<Point> {
+  return {
+    type: "FeatureCollection",
+    features: pins.map((pin, pinIndex) => ({
+      type: "Feature",
+      geometry: {
+        type: "Point",
+        coordinates: [pin.lng, pin.lat],
+      },
+      properties: {
+        pinIndex,
+        type: pin.type,
+        visited: pin.visited ? 1 : 0,
+      },
+    })),
+  };
+}
 
 interface LeafletMapProps {
   pins: MapPin[];
@@ -134,6 +157,12 @@ export default function LeafletMap({
   const mapInstanceRef = useRef<AppMap | null>(null);
   const visitedLabelsRef = useRef<maplibregl.Marker[]>([]);
   const mapPopupRef = useRef<maplibregl.Popup | null>(null);
+  const pinsRef = useRef(pins);
+  pinsRef.current = pins;
+  const onPinClickRef = useRef(onPinClick);
+  onPinClickRef.current = onPinClick;
+  const onMapClickRef = useRef(onMapClick);
+  onMapClickRef.current = onMapClick;
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const [legendOpen, setLegendOpen] = useState(false);
@@ -167,110 +196,78 @@ export default function LeafletMap({
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    const SOURCE_ID = "pins-source";
-    const CLUSTER_LAYER_ID = "pins-clusters-layer";
-    const CLUSTER_COUNT_LAYER_ID = "pins-cluster-count-layer";
-    const UNCLUSTERED_LAYER_ID = "pins-unclustered-layer";
-
     const clearPinLayers = () => {
       mapPopupRef.current?.remove();
       mapPopupRef.current = null;
 
       try {
-        if (map.getLayer(CLUSTER_COUNT_LAYER_ID)) map.removeLayer(CLUSTER_COUNT_LAYER_ID);
-        if (map.getLayer(CLUSTER_LAYER_ID)) map.removeLayer(CLUSTER_LAYER_ID);
-        if (map.getLayer(UNCLUSTERED_LAYER_ID)) map.removeLayer(UNCLUSTERED_LAYER_ID);
-        if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+        if (map.getLayer(PINS_CLUSTER_COUNT_LAYER_ID)) map.removeLayer(PINS_CLUSTER_COUNT_LAYER_ID);
+        if (map.getLayer(PINS_CLUSTER_LAYER_ID)) map.removeLayer(PINS_CLUSTER_LAYER_ID);
+        if (map.getLayer(PINS_UNCLUSTERED_LAYER_ID)) map.removeLayer(PINS_UNCLUSTERED_LAYER_ID);
+        if (map.getSource(PINS_SOURCE_ID)) map.removeSource(PINS_SOURCE_ID);
       } catch {
         // Map/style can already be disposed during theme swap unmount.
       }
     };
 
-    const handleClusterClick = (event: any) => {
-      const features = map.queryRenderedFeatures(event.point, { layers: [CLUSTER_LAYER_ID, CLUSTER_COUNT_LAYER_ID] });
+    const handleClusterClick = (event: maplibregl.MapMouseEvent) => {
+      const features = map.queryRenderedFeatures(event.point, { layers: [PINS_CLUSTER_LAYER_ID, PINS_CLUSTER_COUNT_LAYER_ID] });
       if (!features.length) return;
 
       const feature = features[0];
       const clusterId = feature.properties?.cluster_id;
       if (clusterId == null) return;
 
-      const source = map.getSource(SOURCE_ID) as any;
+      const source = map.getSource(PINS_SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
       if (!source) return;
-      const geometry = feature.geometry as any;
-      if (!geometry?.coordinates) return;
+      const geometry = feature.geometry;
+      if (!geometry || geometry.type !== "Point") return;
 
       const flyToZoom = (expansionZoom: number) => {
-        map.easeTo({ center: geometry.coordinates, zoom: expansionZoom + 0.4, duration: 500 });
+        map.easeTo({ center: geometry.coordinates as [number, number], zoom: expansionZoom + 0.4, duration: 500 });
       };
 
-      try {
-        const result = source.getClusterExpansionZoom(clusterId, (err: Error | null, expansionZoom: number) => {
-          if (err) return;
-          flyToZoom(expansionZoom);
-        });
-        // MapLibre v3+ returns a Promise instead of using the callback
-        if (result && typeof result.then === "function") {
-          result.then(flyToZoom).catch(() => {
-            map.easeTo({ center: geometry.coordinates, zoom: map.getZoom() + 2, duration: 500 });
-          });
-        }
-      } catch {
-        map.easeTo({ center: geometry.coordinates, zoom: map.getZoom() + 2, duration: 500 });
-      }
+      source.getClusterExpansionZoom(Number(clusterId)).then(flyToZoom).catch(() => {
+        map.easeTo({ center: geometry.coordinates as [number, number], zoom: map.getZoom() + 2, duration: 500 });
+      });
     };
 
-    const handleUnclusteredPinClick = (event: any) => {
-      const features = map.queryRenderedFeatures(event.point, { layers: [UNCLUSTERED_LAYER_ID] });
+    const handleUnclusteredPinClick = (event: maplibregl.MapMouseEvent) => {
+      const features = map.queryRenderedFeatures(event.point, { layers: [PINS_UNCLUSTERED_LAYER_ID] });
       const feature = features[0];
       if (!feature) return;
-    const handleMapClick = (event: any) => {
-      const clusterFeatures = map.queryRenderedFeatures(event.point, { layers: [CLUSTER_LAYER_ID, CLUSTER_COUNT_LAYER_ID] });
-      if (clusterFeatures.length) {
-        handleClusterClick(event);
-        return;
-      }
-
-      const pointFeatures = map.queryRenderedFeatures(event.point, { layers: [UNCLUSTERED_LAYER_ID] });
-      if (pointFeatures.length) {
-        handleUnclusteredPinClick(event);
-      }
-    };
-
 
       const pinIndex = Number(feature.properties?.pinIndex);
-      const pin = Number.isFinite(pinIndex) ? pins[pinIndex] : null;
+      const pin = Number.isFinite(pinIndex) ? pinsRef.current[pinIndex] : null;
       if (!pin) return;
 
-      onPinClick?.(pin);
+      onPinClickRef.current?.(pin);
 
-      const coordinates = (feature.geometry as any)?.coordinates;
-      if (!coordinates) return;
+      const geometry = feature.geometry;
+      if (!geometry || geometry.type !== "Point") return;
 
       mapPopupRef.current?.remove();
       mapPopupRef.current = new maplibregl.Popup({ closeButton: false, closeOnClick: true, offset: 14, className: "sarevista-popup" })
-        .setLngLat(coordinates)
+        .setLngLat(geometry.coordinates as [number, number])
         .setHTML(`<div class="sarevista-map-popup">${pin.visited ? "✓ " : ""}${pin.label}</div>`)
         .addTo(map);
     };
 
-    const handleMapClick = (event: any) => {
-      const clusterFeatures = map.queryRenderedFeatures(event.point, { layers: [CLUSTER_LAYER_ID, CLUSTER_COUNT_LAYER_ID] });
+    const handleMapClick = (event: maplibregl.MapMouseEvent) => {
+      const clusterFeatures = map.queryRenderedFeatures(event.point, { layers: [PINS_CLUSTER_LAYER_ID, PINS_CLUSTER_COUNT_LAYER_ID] });
       if (clusterFeatures.length) {
         handleClusterClick(event);
         return;
       }
 
-      const pointFeatures = map.queryRenderedFeatures(event.point, { layers: [UNCLUSTERED_LAYER_ID] });
+      const pointFeatures = map.queryRenderedFeatures(event.point, { layers: [PINS_UNCLUSTERED_LAYER_ID] });
       if (pointFeatures.length) {
         handleUnclusteredPinClick(event);
         return;
       }
 
-      if (onMapClick) {
-        onMapClick(event.lngLat.lng, event.lngLat.lat);
-      }
+      onMapClickRef.current?.(event.lngLat.lng, event.lngLat.lat);
     };
-
 
     const onMouseEnter = () => {
       map.getCanvas().style.cursor = "pointer";
@@ -282,34 +279,19 @@ export default function LeafletMap({
 
     const renderPinLayers = () => {
       clearPinLayers();
-      if (!pins.length) return;
 
-      map.addSource(SOURCE_ID, {
+      map.addSource(PINS_SOURCE_ID, {
         type: "geojson",
-        data: {
-          type: "FeatureCollection",
-          features: pins.map((pin, pinIndex) => ({
-            type: "Feature",
-            geometry: {
-              type: "Point",
-              coordinates: [pin.lng, pin.lat],
-            },
-            properties: {
-              pinIndex,
-              type: pin.type,
-              visited: pin.visited ? 1 : 0,
-            },
-          })),
-        },
+        data: pinsToFeatureCollection(pinsRef.current),
         cluster: true,
         clusterMaxZoom: 12,
         clusterRadius: 54,
       });
 
       map.addLayer({
-        id: CLUSTER_LAYER_ID,
+        id: PINS_CLUSTER_LAYER_ID,
         type: "circle",
-        source: SOURCE_ID,
+        source: PINS_SOURCE_ID,
         filter: ["has", "point_count"],
         paint: {
           // Cluster size (point_count) drives fill: darker/muted -> gold -> bright gold.
@@ -346,9 +328,9 @@ export default function LeafletMap({
       });
 
       map.addLayer({
-        id: CLUSTER_COUNT_LAYER_ID,
+        id: PINS_CLUSTER_COUNT_LAYER_ID,
         type: "symbol",
-        source: SOURCE_ID,
+        source: PINS_SOURCE_ID,
         filter: ["has", "point_count"],
         layout: {
           "text-field": ["to-string", ["get", "point_count"]],
@@ -378,9 +360,9 @@ export default function LeafletMap({
       });
 
       map.addLayer({
-        id: UNCLUSTERED_LAYER_ID,
+        id: PINS_UNCLUSTERED_LAYER_ID,
         type: "circle",
-        source: SOURCE_ID,
+        source: PINS_SOURCE_ID,
         filter: ["!", ["has", "point_count"]],
         paint: {
           "circle-radius": 10,
@@ -397,12 +379,12 @@ export default function LeafletMap({
       });
 
       map.on("click", handleMapClick);
-      map.on("mouseenter", CLUSTER_LAYER_ID, onMouseEnter);
-      map.on("mouseenter", CLUSTER_COUNT_LAYER_ID, onMouseEnter);
-      map.on("mouseenter", UNCLUSTERED_LAYER_ID, onMouseEnter);
-      map.on("mouseleave", CLUSTER_LAYER_ID, onMouseLeave);
-      map.on("mouseleave", CLUSTER_COUNT_LAYER_ID, onMouseLeave);
-      map.on("mouseleave", UNCLUSTERED_LAYER_ID, onMouseLeave);
+      map.on("mouseenter", PINS_CLUSTER_LAYER_ID, onMouseEnter);
+      map.on("mouseenter", PINS_CLUSTER_COUNT_LAYER_ID, onMouseEnter);
+      map.on("mouseenter", PINS_UNCLUSTERED_LAYER_ID, onMouseEnter);
+      map.on("mouseleave", PINS_CLUSTER_LAYER_ID, onMouseLeave);
+      map.on("mouseleave", PINS_CLUSTER_COUNT_LAYER_ID, onMouseLeave);
+      map.on("mouseleave", PINS_UNCLUSTERED_LAYER_ID, onMouseLeave);
     };
 
     if (map.isStyleLoaded()) renderPinLayers();
@@ -410,15 +392,24 @@ export default function LeafletMap({
 
     return () => {
       map.off("click", handleMapClick);
-      map.off("mouseenter", CLUSTER_LAYER_ID, onMouseEnter);
-      map.off("mouseenter", CLUSTER_COUNT_LAYER_ID, onMouseEnter);
-      map.off("mouseenter", UNCLUSTERED_LAYER_ID, onMouseEnter);
-      map.off("mouseleave", CLUSTER_LAYER_ID, onMouseLeave);
-      map.off("mouseleave", CLUSTER_COUNT_LAYER_ID, onMouseLeave);
-      map.off("mouseleave", UNCLUSTERED_LAYER_ID, onMouseLeave);
+      map.off("mouseenter", PINS_CLUSTER_LAYER_ID, onMouseEnter);
+      map.off("mouseenter", PINS_CLUSTER_COUNT_LAYER_ID, onMouseEnter);
+      map.off("mouseenter", PINS_UNCLUSTERED_LAYER_ID, onMouseEnter);
+      map.off("mouseleave", PINS_CLUSTER_LAYER_ID, onMouseLeave);
+      map.off("mouseleave", PINS_CLUSTER_COUNT_LAYER_ID, onMouseLeave);
+      map.off("mouseleave", PINS_UNCLUSTERED_LAYER_ID, onMouseLeave);
+      map.off("load", renderPinLayers);
       clearPinLayers();
     };
-  }, [pins, isDark, onPinClick, onMapClick]);
+  }, [isDark]);
+
+  useEffect(() => {
+    const map = mapInstanceRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    const source = map.getSource(PINS_SOURCE_ID) as maplibregl.GeoJSONSource | undefined;
+    if (!source) return;
+    source.setData(pinsToFeatureCollection(pins));
+  }, [pins]);
 
   useEffect(() => {
     const map = mapInstanceRef.current;

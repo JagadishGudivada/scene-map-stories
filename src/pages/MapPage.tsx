@@ -1,16 +1,14 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, X, SlidersHorizontal, MapPin, Film, Tv, BookOpen, Route, Sparkles, Loader2, Navigation, LocateFixed } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import LeafletMap, { type AppMap, type MapPin as MapPinType } from "@/components/LeafletMap";
-import LocationDetailPanel from "@/components/map/LocationDetailPanel";
 import MapVignette from "@/components/map/MapVignette";
 import MapPinHalo from "@/components/map/MapPinHalo";
 import type { MediaType } from "@/lib/mockData";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
-import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "@/components/ui/drawer";
 import { useAILocationSearch } from "@/hooks/useAILocationSearch";
 import { useConsolidatedMapPins } from "@/hooks/useConsolidatedMapPins";
 import { useNearbySpots } from "@/hooks/useNearbySpots";
@@ -18,6 +16,11 @@ import { toast } from "@/hooks/use-toast";
 import Seo from "@/components/Seo";
 import { isDisplayableTitle } from "@/lib/utils";
 
+
+const SIDEBAR_ROW_CAP = 40;
+
+const LocationDetailPanel = lazy(() => import("@/components/map/LocationDetailPanel"));
+const MapControlsDrawer = lazy(() => import("@/components/map/MapControlsDrawer"));
 
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen };
@@ -34,6 +37,7 @@ export default function MapPage() {
   const [selectedType, setSelectedType] = useState<"All" | MediaType>("All");
   const [showFilters, setShowFilters] = useState(false);
   const [mobileControlsOpen, setMobileControlsOpen] = useState(false);
+  const [mobileControlsMounted, setMobileControlsMounted] = useState(false);
   const [sidebarQuery, setSidebarQuery] = useState("");
   const [selectedPin, setSelectedPin] = useState<MapPinType | null>(null);
   const [pathMode, setPathMode] = useState(false);
@@ -254,6 +258,11 @@ export default function MapPage() {
     );
   }, [displayPins, sidebarQuery]);
 
+  const sidebarVisiblePins = useMemo(
+    () => sidebarFilteredPins.slice(0, SIDEBAR_ROW_CAP),
+    [sidebarFilteredPins],
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <Seo
@@ -409,7 +418,10 @@ export default function MapPage() {
         <div className="absolute bottom-24 md:bottom-8 left-4 z-[1000]">
           {/* Mobile: collapse into a drawer trigger instead of floating over the map */}
           <button
-            onClick={() => setMobileControlsOpen(true)}
+            onClick={() => {
+              setMobileControlsMounted(true);
+              setMobileControlsOpen(true);
+            }}
             className="md:hidden flex items-center gap-2 rounded-full bg-card/95 backdrop-blur-sm border border-border shadow-card pl-3 pr-4 py-2.5 text-xs font-medium text-foreground"
           >
             <SlidersHorizontal className="w-3.5 h-3.5 text-amber shrink-0" />
@@ -483,70 +495,25 @@ export default function MapPage() {
         </div>
 
         {/* Mobile drawer: same controls, full-width bottom sheet instead of a floating panel */}
-        <Drawer open={mobileControlsOpen} onOpenChange={setMobileControlsOpen}>
-          <DrawerContent className="md:hidden">
-            <DrawerHeader className="pb-2">
-              <DrawerTitle className="font-serif text-lg">Map controls</DrawerTitle>
-            </DrawerHeader>
-            <div className="px-4 pb-6 flex flex-col gap-3">
-              <div className="rounded-xl px-4 py-3 border border-border bg-muted/30">
-                <div className="flex items-center gap-3">
-                  <Route className="w-4 h-4 text-amber shrink-0" />
-                  <span className="text-sm font-medium text-foreground flex-1">Path Mode</span>
-                  <Switch checked={pathMode} onCheckedChange={setPathMode} />
-                </div>
-              </div>
-
-              <div className="rounded-xl px-4 py-3 border border-border bg-muted/30">
-                <div className="flex items-center gap-3">
-                  <Navigation className="w-4 h-4 text-amber shrink-0" />
-                  <span className="text-sm font-medium text-foreground flex-1">Near Me</span>
-                  <Switch checked={nearMeMode} onCheckedChange={toggleNearMe} />
-                </div>
-                {nearMeMode && (
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-xs text-muted-foreground">Radius</span>
-                      <span className="text-xs font-semibold text-amber">{nearMeRadius} km</span>
-                    </div>
-                    <Slider
-                      value={[nearMeRadius]}
-                      onValueChange={(v) => setNearMeRadius(v[0])}
-                      min={5}
-                      max={200}
-                      step={5}
-                    />
-                    <button
-                      onClick={handleUseMyLocation}
-                      className="mt-3 w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-amber/10 hover:bg-amber/20 border border-amber/30 text-amber text-sm font-medium transition-colors"
-                    >
-                      <LocateFixed className="w-4 h-4" />
-                      Use my location
-                    </button>
-                    {!nearMeCenter && (
-                      <p className="mt-2 text-xs text-muted-foreground leading-snug">
-                        Click anywhere on the map to find filming spots nearby.
-                      </p>
-                    )}
-                    {nearMeCenter && (
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {nearbyLoading ? "Searching…" : `${nearbyPins.length} spot${nearbyPins.length === 1 ? "" : "s"} within ${nearMeRadius} km`}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <div className="rounded-xl px-4 py-3 border border-border bg-muted/30">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-amber shrink-0" />
-                  <span className="text-sm font-medium text-foreground">{displayPins.length}</span>
-                  <span className="text-xs text-muted-foreground">locations</span>
-                </div>
-              </div>
-            </div>
-          </DrawerContent>
-        </Drawer>
+        {mobileControlsMounted && (
+          <Suspense fallback={null}>
+            <MapControlsDrawer
+              open={mobileControlsOpen}
+              onOpenChange={setMobileControlsOpen}
+              pathMode={pathMode}
+              onPathModeChange={setPathMode}
+              nearMeMode={nearMeMode}
+              onNearMeChange={toggleNearMe}
+              nearMeRadius={nearMeRadius}
+              onNearMeRadiusChange={setNearMeRadius}
+              onUseMyLocation={handleUseMyLocation}
+              nearMeCenter={nearMeCenter}
+              nearbyLoading={nearbyLoading}
+              nearbyCount={nearbyPins.length}
+              pinCount={displayPins.length}
+            />
+          </Suspense>
+        )}
 
         {/* Location sidebar list (desktop) */}
         {!selectedPin && (
@@ -558,6 +525,9 @@ export default function MapPage() {
                   {sidebarQuery
                     ? `${sidebarFilteredPins.length} of ${displayPins.length} spots`
                     : `${displayPins.length} pinned spots`}
+                  {sidebarFilteredPins.length > sidebarVisiblePins.length
+                    ? ` · showing ${sidebarVisiblePins.length}`
+                    : ""}
                 </p>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
@@ -584,7 +554,7 @@ export default function MapPage() {
                     No spots match "{sidebarQuery}"
                   </p>
                 )}
-                {sidebarFilteredPins.map((pin, i) => (
+                {sidebarVisiblePins.map((pin, i) => (
                   <motion.div
                     key={`${pin.lat}-${pin.lng}-${i}`}
                     layout
@@ -622,10 +592,12 @@ export default function MapPage() {
         {/* Sliding cinematic side panel */}
         <AnimatePresence>
           {selectedPin && (
-            <LocationDetailPanel
-              pin={selectedPin}
-              onClose={handleClosePanel}
-            />
+            <Suspense fallback={null}>
+              <LocationDetailPanel
+                pin={selectedPin}
+                onClose={handleClosePanel}
+              />
+            </Suspense>
           )}
         </AnimatePresence>
       </div>

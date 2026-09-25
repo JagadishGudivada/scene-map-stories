@@ -2,11 +2,26 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { MapPin } from "@/components/LeafletMap";
 import { haversineKm } from "@/lib/geo";
-import {
-  normalizeMediaType,
-  toNumber as toNum,
-  toLocationArray as toLocArray,
-} from "@/lib/titlePins";
+import { normalizeMediaType, toNumber as toNum } from "@/lib/titlePins";
+
+type MapTitlePinRow = {
+  slug: string;
+  title: string;
+  type: string;
+  poster_url: string | null;
+  backdrop_url: string | null;
+  lat: number;
+  lng: number;
+  label: string;
+  city: string | null;
+  country: string | null;
+  image: string | null;
+};
+
+type MapTitlePinsPage = {
+  title_count: number;
+  pins: MapTitlePinRow[];
+};
 
 const MERGE_DISTANCE_KM = 0.15;
 const SPATIAL_BUCKET_DEGREES = 0.002;
@@ -173,42 +188,36 @@ export function useConsolidatedMapPins() {
     const loadTitles = async () => {
       const batchSize = 300;
       for (let offset = 0; !cancelled; offset += batchSize) {
-        const { data, error } = await supabase
-          .from("titles")
-          .select("slug, title, type, poster_url, backdrop_url, data")
-          .order("created_at", { ascending: false })
-          .range(offset, offset + batchSize - 1);
-        if (error || !data || !data.length) break;
-        for (const row of data) {
-          const type = normalizeMediaType(row.type);
-          for (const loc of toLocArray(row.data)) {
-            const lat = toNum(loc.lat), lng = toNum(loc.lng);
-            if (lat === null || lng === null) continue;
-            const label =
-              (typeof loc.label === "string" && loc.label.trim()) ||
-              (typeof loc.name === "string" && loc.name.trim()) ||
-              [loc.city, loc.country].filter(Boolean).join(", ") ||
-              row.title;
-            if (!label) continue;
-            addPin(merged, spatialBuckets, {
-              lat, lng, label,
-              title: row.title,
-              type,
-              city: typeof loc.city === "string" ? loc.city : undefined,
-              country: typeof loc.country === "string" ? loc.country : undefined,
-              image:
-                (typeof loc.image_url === "string" && loc.image_url) ||
-                (typeof loc.image === "string" && loc.image) ||
-                row.poster_url ||
-                row.backdrop_url ||
-                undefined,
-              source: "title",
-            });
-          }
+        const { data, error } = await supabase.rpc("map_title_pins", {
+          p_limit: batchSize,
+          p_offset: offset,
+        });
+        if (error || !data || typeof data !== "object") {
+          if (error) console.error("map_title_pins", error);
+          break;
+        }
+        const page = data as MapTitlePinsPage;
+        const titleCount = page.title_count ?? 0;
+        if (!titleCount) break;
+        for (const row of page.pins ?? []) {
+          const lat = toNum(row.lat);
+          const lng = toNum(row.lng);
+          if (lat === null || lng === null || !row.label) continue;
+          addPin(merged, spatialBuckets, {
+            lat,
+            lng,
+            label: row.label,
+            title: row.title,
+            type: normalizeMediaType(row.type),
+            city: row.city ?? undefined,
+            country: row.country ?? undefined,
+            image: row.image || row.poster_url || row.backdrop_url || undefined,
+            source: "title",
+          });
         }
         // Stream progressive results to the map.
         commit();
-        if (data.length < batchSize) break;
+        if (titleCount < batchSize) break;
       }
     };
 

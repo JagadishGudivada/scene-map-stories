@@ -42,6 +42,10 @@ import {
   User,
 } from "lucide-react";
 
+function prefetchMapPage() {
+  void import("@/pages/MapPage");
+}
+
 const genres = ["All", "Drama", "Romance", "Crime", "Mystery", "Musical", "Fantasy", "Self-help"];
 const mediaTypes: ("All" | MediaType)[] = ["All", "Movie", "Series", "Book"];
 const eras = ["All", "2000s", "2010s", "Pre-2000"];
@@ -591,6 +595,8 @@ export default function Index() {
                   >
                     <Link
                       to="/map"
+                      onMouseEnter={prefetchMapPage}
+                      onFocus={prefetchMapPage}
                       className="flex items-center justify-between p-4 sm:p-6 rounded-2xl glass border border-border hover:border-amber/30 transition-all group gap-3"
                     >
                       <div className="flex items-center gap-3 sm:gap-4 min-w-0">
@@ -693,6 +699,8 @@ export default function Index() {
                       </Link>
                       <Link
                         to="/map"
+                        onMouseEnter={prefetchMapPage}
+                        onFocus={prefetchMapPage}
                         className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl glass border border-border text-foreground font-medium hover:glass-hover transition-all"
                       >
                         <Compass className="w-4 h-4" />
@@ -722,6 +730,8 @@ export default function Index() {
                       </Link>
                       <Link
                         to="/map"
+                        onMouseEnter={prefetchMapPage}
+                        onFocus={prefetchMapPage}
                         className="px-8 py-3 rounded-xl glass border border-border text-foreground font-medium hover:glass-hover transition-all"
                       >
                         Explore Map
