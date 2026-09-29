@@ -218,7 +218,7 @@ export default function Index() {
       </div>
 
       {/* === TOP SEARCH (desktop-prominent) === */}
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-5 md:pt-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-4 md:pt-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -385,7 +385,7 @@ export default function Index() {
           </AnimatePresence>
         </motion.div>
         <p className="text-xs text-muted-foreground/80 mt-2 text-center">
-          4,200+ real locations from 380+ films &amp; shows
+          Search a title to find its locations, then book the stay and the flight.
         </p>
       </div>
 

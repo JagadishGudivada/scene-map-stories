@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion, type PanInfo } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Bookmark, ChevronLeft, ChevronRight } from "lucide-react";
+import { Bookmark, ChevronLeft, ChevronRight, Hotel, Plane } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { slugifyTitle } from "@/hooks/useAITitleSearch";
+import { AFFILIATE_IDS, AFFILIATE_PARTNERS, type AffiliateCtx } from "@/lib/affiliates";
 import { heroSlides, type Title } from "@/lib/mockData";
+import { trackAffiliateClick } from "@/lib/trackAffiliateClick";
 import { cn } from "@/lib/utils";
 
 type HeroBannerProps = {
@@ -61,6 +63,14 @@ function formatCount(value: number) {
   return String(value).padStart(2, "0");
 }
 
+function realPlaceName(value?: string) {
+  const place = value?.trim();
+  if (!place) return null;
+  const normalized = place.toLowerCase();
+  if (normalized === "featured locations" || normalized === "filming locations") return null;
+  return place;
+}
+
 export default function HeroBanner({ titles = [] }: HeroBannerProps) {
   const navigate = useNavigate();
   const prefersReducedMotion = useReducedMotion();
@@ -83,19 +93,18 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
         locationCount: title.locationCount,
         coverImage: title.coverImage,
         image: title.heroImage || title.coverImage,
-        imageSrcSet: title.heroImageSrcSet,
-        imageDesktopSrcSet: title.heroImageDesktopSrcSet || title.heroImageSrcSet,
+        imageSrcSet: title.heroImageMobileSrcSet || title.heroImageSrcSet,
+        imageDesktopSrcSet: title.heroImageMobileSrcSet || title.heroImageSrcSet,
         imageMobileSrcSet: title.heroImageMobileSrcSet,
-        imageSizes: title.heroImageSizes,
-        imagePosition: (title as { heroImagePosition?: string }).heroImagePosition,
-        locationTag: title.locations?.[0] || "Filming locations",
-        hookLine: buildHookLine({ title: title.title, locationTag: title.locations?.[0] }),
+        imageSizes: "(max-width: 639px) 140px, (max-width: 1023px) 160px, 200px",
+        locationTag: realPlaceName(title.locations?.[0]) || "Filming locations",
+        hookLine: buildHookLine({ title: title.title, locationTag: realPlaceName(title.locations?.[0]) ?? undefined }),
       }));
     }
     return heroSlides.map((slide) => ({
       ...slide,
       locationCount: 0,
-      hookLine: buildHookLine({ title: slide.title, locationTag: slide.locationTag }),
+      hookLine: buildHookLine({ title: slide.title, locationTag: realPlaceName(slide.locationTag) ?? undefined }),
     })) as HeroSlide[];
   }, [titles]);
 
@@ -197,6 +206,33 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
   const activeSlide = slides[current];
   if (!activeSlide) return null;
 
+  const tripLocation = realPlaceName(activeSlide.locationTag);
+  const affiliateCtx: AffiliateCtx = {
+    originLabel: "your city",
+    originQuery: "your city",
+    locationName: tripLocation ?? activeSlide.title,
+    spotName: tripLocation ? activeSlide.title : undefined,
+  };
+  const hotelsPartner = AFFILIATE_PARTNERS.find((partner) => partner.service === "hotels");
+  const flightsPartner = AFFILIATE_PARTNERS.find((partner) => partner.service === "flights");
+  const hotelsUrl =
+    hotelsPartner?.buildUrl(affiliateCtx) ??
+    `https://www.booking.com/searchresults.html?ss=${encodeURIComponent(tripLocation ? `${activeSlide.title}, ${tripLocation}` : activeSlide.title)}`;
+  const flightsUrl =
+    flightsPartner && (AFFILIATE_IDS.travelpayouts || AFFILIATE_IDS.skyscanner)
+      ? flightsPartner.buildUrl(affiliateCtx)
+      : `https://www.google.com/travel/flights?q=${encodeURIComponent(tripLocation ? `Flights to ${tripLocation}` : `Flights to filming locations from ${activeSlide.title}`)}`;
+
+  const openPartner = (partner: string, service: "hotels" | "flights", url: string) => {
+    trackAffiliateClick({
+      partner,
+      service,
+      spotName: activeSlide.title,
+      locationName: tripLocation ?? activeSlide.title,
+      destinationUrl: url,
+    });
+  };
+
   return (
     <section
       ref={stageRef}
@@ -228,20 +264,65 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80" />
       </div>
 
-      <div className="relative px-4 pb-4 pt-5 sm:px-8 sm:pb-6 sm:pt-7 lg:px-12 lg:pb-7">
-        <div className="mb-3 flex items-center justify-between px-1 sm:mb-4">
-          <div className="flex items-center gap-2">
+      <div className="relative grid items-center gap-4 px-4 pb-4 pt-4 sm:px-8 sm:pb-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)] lg:gap-8 lg:px-10 lg:py-5">
+        <div className="relative z-30 max-w-xl">
+          <div className="mb-2 flex items-center gap-2">
             <span className="h-px w-7 bg-amber" />
-            <span className="font-mono text-[10px] uppercase text-overlay-foreground/70 sm:text-[11px]">
-              Now showing
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-overlay-foreground/70 sm:text-[11px]">
+              Find the place · book the trip
             </span>
           </div>
-          <span className="hidden font-mono text-[10px] uppercase text-overlay-foreground/50 sm:block">
-            Drag or scroll sideways
-          </span>
+          <h2 className="font-serif text-[1.7rem] italic leading-[1.08] text-foreground sm:text-4xl lg:text-[2.65rem]">
+            Stand where the story was filmed.
+          </h2>
+          <p className="mt-2 max-w-[46ch] text-sm leading-relaxed text-muted-foreground sm:text-[15px]">
+            Search a movie, series, or book and we pin the real locations. Then book a stay on Booking.com and flights to that place.
+          </p>
+          <p className="mt-3 font-mono text-[10px] uppercase tracking-wide text-amber sm:text-[11px]">
+            {activeSlide.title}{tripLocation ? ` · ${tripLocation}` : ""}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button
+              onClick={() => openTitle(activeSlide)}
+              className="h-9 rounded-full bg-gold-deep px-4 text-xs text-charcoal shadow-card hover:brightness-105"
+            >
+              Find real locations
+            </Button>
+            <Button variant="outline" asChild className="h-9 rounded-full border-amber/45 bg-overlay/20 px-3 text-xs text-foreground hover:bg-amber/10 hover:text-amber">
+              <a
+                href={hotelsUrl}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                onClick={() => openPartner(hotelsPartner?.partner ?? "booking", "hotels", hotelsUrl)}
+              >
+                <Hotel />
+                Stay on Booking.com
+              </a>
+            </Button>
+            <Button variant="outline" asChild className="h-9 rounded-full border-amber/45 bg-overlay/20 px-3 text-xs text-foreground hover:bg-amber/10 hover:text-amber">
+              <a
+                href={flightsUrl}
+                target="_blank"
+                rel="noopener noreferrer sponsored"
+                onClick={() => openPartner(flightsPartner?.partner ?? "flights", "flights", flightsUrl)}
+              >
+                <Plane />
+                Find flights
+              </a>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => openTitle(activeSlide, true)}
+              aria-label={`Save ${activeSlide.title}`}
+              className="h-9 w-9 rounded-full border-amber/45 bg-overlay/20 px-0 text-amber hover:bg-amber/10 hover:text-amber"
+            >
+              <Bookmark />
+            </Button>
+          </div>
         </div>
 
-        <div className="relative h-[430px] sm:h-[520px] lg:h-[570px] [perspective:1800px] [transform-style:preserve-3d]">
+        <div className="min-w-0">
+        <div className="relative h-[210px] sm:h-[240px] lg:h-[300px] [perspective:1400px] [transform-style:preserve-3d]">
           {slides.map((slide, index) => {
             const offset = signedOffset(index, current, slides.length);
             const distance = Math.abs(offset);
@@ -269,7 +350,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                   if (!isActive) selectSlide(index, offset > 0 ? 1 : -1);
                 }}
                 className={cn(
-                  "absolute inset-x-0 top-0 mx-auto h-[400px] w-[78%] max-w-[390px] overflow-hidden rounded-xl border border-overlay-foreground/10 bg-card shadow-float sm:h-[485px] sm:w-[48%] sm:max-w-[430px] lg:h-[535px] lg:w-[38%] lg:max-w-[450px] [backface-visibility:hidden]",
+                  "absolute inset-x-0 top-0 mx-auto h-[210px] w-[140px] overflow-hidden rounded-xl border border-overlay-foreground/10 bg-card shadow-float sm:h-[240px] sm:w-[160px] lg:h-[300px] lg:w-[200px] [backface-visibility:hidden]",
                   isActive ? "z-20 cursor-grab active:cursor-grabbing" : "z-10 cursor-pointer",
                   !isVisible && "pointer-events-none",
                 )}
@@ -284,70 +365,20 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                   className="relative h-full w-full touch-pan-y"
                 >
                   <picture>
-                    {slide.imageMobileSrcSet && (
-                      <source media="(max-width: 767px)" srcSet={slide.imageMobileSrcSet} sizes="78vw" />
-                    )}
-                    {slide.imageDesktopSrcSet && (
-                      <source media="(min-width: 768px)" srcSet={slide.imageDesktopSrcSet} sizes="(max-width: 1279px) 48vw, 450px" />
+                    {(slide.imageMobileSrcSet || slide.imageSrcSet) && (
+                      <source
+                        srcSet={slide.imageMobileSrcSet || slide.imageSrcSet}
+                        sizes={slide.imageSizes || "(max-width: 639px) 140px, (max-width: 1023px) 160px, 200px"}
+                      />
                     )}
                     <img
                       src={slide.coverImage || slide.image}
-                      srcSet={slide.imageMobileSrcSet ? undefined : slide.imageSrcSet}
-                      sizes={slide.imageSizes || "(max-width: 767px) 78vw, 450px"}
                       alt={isActive ? slide.title : ""}
-                      className="absolute inset-0 h-full w-full select-none object-cover"
-                      style={slide.imagePosition ? { objectPosition: slide.imagePosition } : undefined}
+                      className="absolute inset-0 h-full w-full select-none object-contain"
                       draggable={false}
                     />
                   </picture>
-                  <div className="absolute inset-0 bg-gradient-to-t from-overlay via-overlay/35 to-transparent" />
                   {!isActive && <div className="absolute inset-0 bg-overlay/35" />}
-
-                  {isActive && (
-                    <motion.div
-                      key={`${slide.id}-content`}
-                      initial={prefersReducedMotion ? false : { opacity: 0, y: 18 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.45, delay: prefersReducedMotion ? 0 : 0.14 }}
-                      className="absolute inset-x-0 bottom-0 z-10 p-5 text-overlay-foreground sm:p-7"
-                    >
-                      <div className="mb-2 flex items-center gap-2 font-mono text-[10px] uppercase text-overlay-foreground/75">
-                        <span className="text-amber">{slide.type}</span>
-                        <span aria-hidden="true">•</span>
-                        <span>{slide.year}</span>
-                      </div>
-                      <h2 className="mb-2 max-w-[14ch] font-serif text-3xl italic leading-[1.05] sm:text-5xl">
-                        {slide.title}
-                      </h2>
-                      <p className="mb-4 line-clamp-2 max-w-[38ch] text-xs leading-relaxed text-overlay-foreground/80 sm:text-sm">
-                        {slide.hookLine}
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        <Button
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openTitle(slide);
-                          }}
-                          className="h-9 rounded-full bg-gold-deep px-4 text-xs text-charcoal shadow-card hover:brightness-105 sm:h-10"
-                        >
-                          Find Real Locations
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            openTitle(slide, true);
-                          }}
-                          className="h-9 rounded-full border-amber/45 bg-overlay/30 px-3 text-xs text-amber backdrop-blur hover:bg-amber/10 hover:text-amber sm:h-10"
-                        >
-                          <Bookmark />
-                         
-                        </Button>
-                      </div>
-                    </motion.div>
-                  )}
                 </motion.div>
               </motion.article>
             );
@@ -427,6 +458,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
           >
             <ChevronRight />
           </Button>
+        </div>
         </div>
       </div>
     </section>
