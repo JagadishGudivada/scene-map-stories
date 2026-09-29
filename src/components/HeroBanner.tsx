@@ -246,7 +246,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
       onBlurCapture={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsInteracting(false);
       }}
-      className="relative isolate -mx-4 sm:-mx-6 overflow-hidden rounded-2xl sm:rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="relative isolate -mx-4 sm:-mx-6 overflow-hidden rounded-2xl border border-border sm:rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
       <div className="absolute inset-0 overflow-hidden bg-card" aria-hidden="true">
         {slides.map((slide, index) => (
@@ -260,15 +260,15 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             className="absolute -inset-[12%] h-[124%] w-[124%] scale-110 object-cover blur-3xl saturate-150"
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/45 via-background/65 to-background" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/90 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/40 to-background/90" />
       </div>
 
       <div className="relative grid items-center gap-4 px-4 pb-4 pt-4 sm:px-8 sm:pb-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(300px,0.95fr)] lg:gap-8 lg:px-10 lg:py-5">
         <div className="relative z-30 max-w-xl">
           <div className="mb-2 flex items-center gap-2">
             <span className="h-px w-7 bg-amber" />
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-overlay-foreground/70 sm:text-[11px]">
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:text-[11px]">
               Find the place · book the trip
             </span>
           </div>
@@ -288,7 +288,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             >
               Find real locations
             </Button>
-            <Button variant="outline" asChild className="h-9 rounded-full border-amber/45 bg-overlay/20 px-3 text-xs text-foreground hover:bg-amber/10 hover:text-amber">
+            <Button variant="outline" asChild className="h-9 rounded-full border-border bg-card px-3 text-xs text-foreground hover:bg-amber/10 hover:text-amber hover:border-amber/45">
               <a
                 href={hotelsUrl}
                 target="_blank"
@@ -299,7 +299,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                 Stay on Booking.com
               </a>
             </Button>
-            <Button variant="outline" asChild className="h-9 rounded-full border-amber/45 bg-overlay/20 px-3 text-xs text-foreground hover:bg-amber/10 hover:text-amber">
+            <Button variant="outline" asChild className="h-9 rounded-full border-border bg-card px-3 text-xs text-foreground hover:bg-amber/10 hover:text-amber hover:border-amber/45">
               <a
                 href={flightsUrl}
                 target="_blank"
@@ -314,7 +314,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
               variant="outline"
               onClick={() => openTitle(activeSlide, true)}
               aria-label={`Save ${activeSlide.title}`}
-              className="h-9 w-9 rounded-full border-amber/45 bg-overlay/20 px-0 text-amber hover:bg-amber/10 hover:text-amber"
+              className="h-9 w-9 rounded-full border-border bg-card px-0 text-amber hover:bg-amber/10 hover:text-amber hover:border-amber/45"
             >
               <Bookmark />
             </Button>
@@ -350,7 +350,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                   if (!isActive) selectSlide(index, offset > 0 ? 1 : -1);
                 }}
                 className={cn(
-                  "absolute inset-x-0 top-0 mx-auto h-[210px] w-[140px] overflow-hidden rounded-xl border border-overlay-foreground/10 bg-card shadow-float sm:h-[240px] sm:w-[160px] lg:h-[300px] lg:w-[200px] [backface-visibility:hidden]",
+                  "absolute inset-x-0 top-0 mx-auto h-[210px] w-[140px] overflow-hidden rounded-xl border border-border bg-card shadow-card sm:h-[240px] sm:w-[160px] lg:h-[300px] lg:w-[200px] [backface-visibility:hidden]",
                   isActive ? "z-20 cursor-grab active:cursor-grabbing" : "z-10 cursor-pointer",
                   !isVisible && "pointer-events-none",
                 )}
@@ -390,7 +390,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             size="icon"
             onClick={previous}
             aria-label="Previous slide"
-            className="absolute left-1 top-1/2 z-30 hidden -translate-y-1/2 rounded-full border-overlay-foreground/15 bg-overlay/35 text-overlay-foreground backdrop-blur hover:bg-overlay/60 hover:text-amber sm:flex lg:left-3"
+            className="absolute left-1 top-1/2 z-30 hidden -translate-y-1/2 rounded-full border-border bg-card/90 text-foreground backdrop-blur hover:bg-card hover:text-amber sm:flex lg:left-3"
           >
             <ChevronLeft />
           </Button>
@@ -400,7 +400,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             size="icon"
             onClick={next}
             aria-label="Next slide"
-            className="absolute right-1 top-1/2 z-30 hidden -translate-y-1/2 rounded-full border-overlay-foreground/15 bg-overlay/35 text-overlay-foreground backdrop-blur hover:bg-overlay/60 hover:text-amber sm:flex lg:right-3"
+            className="absolute right-1 top-1/2 z-30 hidden -translate-y-1/2 rounded-full border-border bg-card/90 text-foreground backdrop-blur hover:bg-card hover:text-amber sm:flex lg:right-3"
           >
             <ChevronRight />
           </Button>
@@ -413,7 +413,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             size="icon"
             onClick={previous}
             aria-label="Previous slide"
-            className="h-9 w-9 shrink-0 rounded-full text-overlay-foreground/70 hover:bg-overlay-foreground/10 hover:text-amber sm:hidden"
+            className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:bg-muted hover:text-amber sm:hidden"
           >
             <ChevronLeft />
           </Button>
@@ -430,7 +430,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
                 onClick={() => selectSlide(index)}
                 className="group h-8 min-w-0 flex-1 rounded-none px-0 hover:bg-transparent"
               >
-                <span className="relative block h-1 w-full overflow-hidden rounded-full bg-overlay-foreground/15">
+                <span className="relative block h-1 w-full overflow-hidden rounded-full bg-muted">
                   <motion.span
                     className="absolute inset-y-0 left-0 rounded-full bg-amber"
                     initial={false}
@@ -442,8 +442,8 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             ))}
           </div>
 
-          <div className="w-[58px] shrink-0 text-right font-mono text-xs text-overlay-foreground/55" aria-live="polite" aria-atomic="true">
-            <span className="text-overlay-foreground">{formatCount(current + 1)}</span>
+          <div className="w-[58px] shrink-0 text-right font-mono text-xs text-muted-foreground" aria-live="polite" aria-atomic="true">
+            <span className="text-foreground">{formatCount(current + 1)}</span>
             <span className="mx-1">/</span>
             <span>{formatCount(slides.length)}</span>
           </div>
@@ -454,7 +454,7 @@ export default function HeroBanner({ titles = [] }: HeroBannerProps) {
             size="icon"
             onClick={next}
             aria-label="Next slide"
-            className="h-9 w-9 shrink-0 rounded-full text-overlay-foreground/70 hover:bg-overlay-foreground/10 hover:text-amber sm:hidden"
+            className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:bg-muted hover:text-amber sm:hidden"
           >
             <ChevronRight />
           </Button>

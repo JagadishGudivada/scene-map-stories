@@ -13,7 +13,7 @@ function IconicCard({ loc, i, onClick }: { loc: IconicLocation; i: number; onCli
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.45, delay: Math.min(i, 4) * 0.05 }}
       onClick={onClick}
-      className="scrim-bottom group relative shrink-0 w-52 sm:w-72 aspect-[3/4] rounded-2xl sm:rounded-3xl overflow-hidden text-left ring-1 ring-white/5 shadow-xl shadow-black/40"
+      className="scrim-bottom group relative shrink-0 w-52 sm:w-72 aspect-[3/4] rounded-2xl sm:rounded-3xl overflow-hidden text-left ring-1 ring-border shadow-card"
     >
       <img
         src={src || loc.image}

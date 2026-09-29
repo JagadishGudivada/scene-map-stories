@@ -8,6 +8,7 @@ import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/useAuth";
 import { useAITitleSearch, slugifyTitle } from "@/hooks/useAITitleSearch";
 import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
 
 const typeIcons = { Movie: Film, Series: Tv, Book: BookOpen } as const;
 
@@ -21,6 +22,7 @@ export default function Navigation() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [profileUsername, setProfileUsername] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
@@ -47,6 +49,13 @@ export default function Navigation() {
     })();
     return () => { active = false; };
   }, [user]);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 4);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const profileHref = profileUsername ? `/u/${profileUsername}` : "/auth";
   const mobileLinks = [
@@ -116,7 +125,16 @@ export default function Navigation() {
     <>
       {/* Desktop/Tablet Top Nav */}
       <nav className="fixed top-0 left-0 right-0 z-50 h-16 md:h-20">
-        <div className="glass border-b border-border/50 h-full">
+        <div
+          className={cn(
+            "relative h-full bg-background transition-[background-color,backdrop-filter] duration-300",
+            scrolled && "bg-background/90 backdrop-blur-xl",
+          )}
+        >
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-full h-8 bg-gradient-to-b from-background to-transparent"
+          />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 h-full flex items-center justify-between gap-4">
             {/* Mobile hamburger */}
             <button
