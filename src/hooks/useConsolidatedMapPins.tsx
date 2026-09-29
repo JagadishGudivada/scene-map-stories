@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { MapPin } from "@/components/LeafletMap";
 import { haversineKm } from "@/lib/geo";
-import { normalizeMediaType, toNumber as toNum } from "@/lib/titlePins";
+import {
+  normalizeMediaType,
+  toLocationArray as toLocArray,
+  toNumber as toNum,
+} from "@/lib/titlePins";
 
 type MapTitlePinRow = {
   slug: string;
@@ -185,37 +189,98 @@ export function useConsolidatedMapPins() {
       }
     };
 
+    const addTitleLocationPins = (
+      title: string,
+      type: MapPin["type"],
+      posterUrl: string | null | undefined,
+      backdropUrl: string | null | undefined,
+      locations: { lat?: unknown; lng?: unknown; label?: string; name?: string; city?: string; country?: string; image?: string; image_url?: string }[],
+    ) => {
+      for (const loc of locations) {
+        const lat = toNum(loc.lat);
+        const lng = toNum(loc.lng);
+        if (lat === null || lng === null) continue;
+        const label =
+          (typeof loc.label === "string" && loc.label.trim()) ||
+          (typeof loc.name === "string" && loc.name.trim()) ||
+          [loc.city, loc.country].filter(Boolean).join(", ") ||
+          title;
+        if (!label) continue;
+        addPin(merged, spatialBuckets, {
+          lat,
+          lng,
+          label,
+          title,
+          type,
+          city: typeof loc.city === "string" ? loc.city : undefined,
+          country: typeof loc.country === "string" ? loc.country : undefined,
+          image:
+            (typeof loc.image_url === "string" && loc.image_url) ||
+            (typeof loc.image === "string" && loc.image) ||
+            posterUrl ||
+            backdropUrl ||
+            undefined,
+          source: "title",
+        });
+      }
+    };
+
+    const loadTitlePageFromData = async (offset: number, batchSize: number) => {
+      const { data, error } = await supabase
+        .from("titles")
+        .select("slug, title, type, poster_url, backdrop_url, data")
+        .order("created_at", { ascending: false })
+        .range(offset, offset + batchSize - 1);
+      if (error || !data?.length) {
+        if (error) console.error("titles pin fallback", error);
+        return 0;
+      }
+      for (const row of data) {
+        addTitleLocationPins(
+          row.title,
+          normalizeMediaType(row.type),
+          row.poster_url,
+          row.backdrop_url,
+          toLocArray(row.data),
+        );
+      }
+      return data.length;
+    };
+
     const loadTitles = async () => {
       const batchSize = 300;
+      let useFallback = false;
       for (let offset = 0; !cancelled; offset += batchSize) {
-        const { data, error } = await supabase.rpc("map_title_pins", {
-          p_limit: batchSize,
-          p_offset: offset,
-        });
-        if (error || !data || typeof data !== "object") {
-          if (error) console.error("map_title_pins", error);
-          break;
-        }
-        const page = data as MapTitlePinsPage;
-        const titleCount = page.title_count ?? 0;
-        if (!titleCount) break;
-        for (const row of page.pins ?? []) {
-          const lat = toNum(row.lat);
-          const lng = toNum(row.lng);
-          if (lat === null || lng === null || !row.label) continue;
-          addPin(merged, spatialBuckets, {
-            lat,
-            lng,
-            label: row.label,
-            title: row.title,
-            type: normalizeMediaType(row.type),
-            city: row.city ?? undefined,
-            country: row.country ?? undefined,
-            image: row.image || row.poster_url || row.backdrop_url || undefined,
-            source: "title",
+        if (!useFallback) {
+          const { data, error } = await supabase.rpc("map_title_pins", {
+            p_limit: batchSize,
+            p_offset: offset,
           });
+          const page = data && typeof data === "object" && !Array.isArray(data)
+            ? data as MapTitlePinsPage
+            : null;
+          if (error || !page || typeof page.title_count !== "number") {
+            if (error) console.error("map_title_pins", error);
+            useFallback = true;
+          } else {
+            if (!page.title_count) break;
+            for (const row of page.pins ?? []) {
+              addTitleLocationPins(
+                row.title,
+                normalizeMediaType(row.type),
+                row.poster_url,
+                row.backdrop_url,
+                [row],
+              );
+            }
+            commit();
+            if (page.title_count < batchSize) break;
+            continue;
+          }
         }
-        // Stream progressive results to the map.
+
+        const titleCount = await loadTitlePageFromData(offset, batchSize);
+        if (!titleCount) break;
         commit();
         if (titleCount < batchSize) break;
       }
