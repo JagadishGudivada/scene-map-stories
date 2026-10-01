@@ -77,6 +77,36 @@ export type Database = {
         }
         Relationships: []
       }
+      cluster_locations: {
+        Row: {
+          cluster_id: string
+          location_id: string
+        }
+        Insert: {
+          cluster_id: string
+          location_id: string
+        }
+        Update: {
+          cluster_id?: string
+          location_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cluster_locations_cluster_id_fkey"
+            columns: ["cluster_id"]
+            isOneToOne: false
+            referencedRelation: "destination_clusters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cluster_locations_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       data_reports: {
         Row: {
           created_at: string
@@ -124,6 +154,71 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      destination_clusters: {
+        Row: {
+          alt_airports: string[]
+          country_iso2: string | null
+          created_at: string
+          hero_image_url: string | null
+          id: string
+          is_visitable: boolean
+          lat: number | null
+          lng: number | null
+          name: string
+          primary_airport: string | null
+          radius_minutes: number | null
+          rank_score: number
+          slug: string
+          tag: Database["public"]["Enums"]["cluster_tag"] | null
+          title_id: string
+          verified_location_count: number
+        }
+        Insert: {
+          alt_airports?: string[]
+          country_iso2?: string | null
+          created_at?: string
+          hero_image_url?: string | null
+          id?: string
+          is_visitable?: boolean
+          lat?: number | null
+          lng?: number | null
+          name: string
+          primary_airport?: string | null
+          radius_minutes?: number | null
+          rank_score?: number
+          slug: string
+          tag?: Database["public"]["Enums"]["cluster_tag"] | null
+          title_id: string
+          verified_location_count?: number
+        }
+        Update: {
+          alt_airports?: string[]
+          country_iso2?: string | null
+          created_at?: string
+          hero_image_url?: string | null
+          id?: string
+          is_visitable?: boolean
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          primary_airport?: string | null
+          radius_minutes?: number | null
+          rank_score?: number
+          slug?: string
+          tag?: Database["public"]["Enums"]["cluster_tag"] | null
+          title_id?: string
+          verified_location_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "destination_clusters_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "titles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       location_suggestions: {
         Row: {
@@ -272,6 +367,42 @@ export type Database = {
         }
         Relationships: []
       }
+      outbound_clicks: {
+        Row: {
+          cluster_id: string | null
+          created_at: string
+          id: string
+          label: string
+          partner: string
+          session_id: string | null
+          surface: string
+          title_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cluster_id?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          partner: string
+          session_id?: string | null
+          surface: string
+          title_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cluster_id?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          partner?: string
+          session_id?: string | null
+          surface?: string
+          title_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           content: string
@@ -415,6 +546,35 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      saved_trips: {
+        Row: {
+          created_at: string
+          id: string
+          title_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_trips_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "titles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       spots: {
         Row: {
@@ -709,10 +869,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      map_title_pins: {
-        Args: { p_limit: number; p_offset: number }
-        Returns: Json
-      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -724,6 +880,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      cluster_tag: "best_base" | "most_iconic" | "day_trip"
       media_type: "Movie" | "Series" | "Book"
       notification_type:
         | "follow"
@@ -865,6 +1022,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      cluster_tag: ["best_base", "most_iconic", "day_trip"],
       media_type: ["Movie", "Series", "Book"],
       notification_type: [
         "follow",
